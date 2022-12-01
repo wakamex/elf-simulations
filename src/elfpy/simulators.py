@@ -165,6 +165,10 @@ class YieldSimulator:
                                 + f"{self.config.simulator.num_trading_days},"
                                 + f" not {len(value)}"
                             )
+            if key == "amm.verbose":
+                self.config.amm.verbose = value
+            if key == "simulator.verbose":
+                self.config.simulator.verbose = value
             if self.config.simulator.verbose:
                 print(f"Overridding {key} from {getattr(self, key) if hasattr(self, key) else 'None'} to {value}.")
         # override the init_share_price if it is in the override_dict
