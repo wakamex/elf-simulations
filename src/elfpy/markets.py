@@ -35,16 +35,10 @@ class MarketDeltas:
     d_bond_buffer: float = 0
     d_lp_reserves: float = 0
     d_lp_reserves_history: list = field(default_factory=list)
-    d_base_asset_slippage: float = 0
-    d_token_asset_slippage: float = 0
     d_share_fee: float = 0
     d_share_fee_history: dict = field(default_factory=dict)
     d_token_fee: float = 0
     d_token_fee_history: dict = field(default_factory=dict)
-    d_base_asset_orders: int = 0
-    d_token_asset_orders: int = 0
-    d_base_asset_volume: float = 0
-    d_token_asset_volume: float = 0
 
     def __getitem__(self, key):
         getattr(self, key)
@@ -256,12 +250,6 @@ class Market:
                     self.token_fee_history.update(market_deltas.d_token_fee_history)
                 else:
                     self.token_fee_history[key] += value
-        self.cum_base_asset_slippage += market_deltas.d_base_asset_slippage
-        self.cum_token_asset_slippage += market_deltas.d_token_asset_slippage
-        self.base_asset_orders += market_deltas.d_base_asset_orders
-        self.token_asset_orders += market_deltas.d_token_asset_orders
-        self.base_asset_volume += market_deltas.d_base_asset_volume
-        self.token_asset_volume += market_deltas.d_token_asset_volume
         if update_price_and_rate:
             self.spot_price = self.pricing_model.calc_spot_price_from_reserves(
                 share_reserves=self.share_reserves,
@@ -380,9 +368,6 @@ class Market:
             d_bond_buffer=+trade_details.trade_amount,
             d_share_fee=+fee / self.share_price,
             d_share_fee_history={trade_details.mint_time: fee / self.share_price},
-            d_base_asset_slippage=+abs(without_fee_or_slippage - output_without_fee),
-            d_base_asset_orders=+1,
-            d_base_asset_volume=+output_with_fee,
         )
         # TODO: _in_protocol values should be managed by pricing_model and referenced by user
         max_loss = trade_details.trade_amount - output_with_fee
@@ -429,9 +414,6 @@ class Market:
             d_bond_buffer=-trade_details.trade_amount,
             d_share_fee=+fee / self.share_price,
             d_share_fee_history={trade_details.mint_time: fee / self.share_price},
-            d_base_asset_slippage=+abs(without_fee_or_slippage - output_without_fee),
-            d_base_asset_orders=+1,
-            d_base_asset_volume=+output_with_fee,
         )
         # TODO: Add logic:
         # If the user is not closing a full short (i.e. the mint_time balance is not zeroed out)
@@ -474,9 +456,6 @@ class Market:
                 d_share_buffer=+output_with_fee / self.share_price,
                 d_token_fee=+fee,
                 d_token_fee_history={trade_details.mint_time: fee},
-                d_token_asset_slippage=+abs(without_fee_or_slippage - output_without_fee),
-                d_token_asset_orders=+1,
-                d_token_asset_volume=+output_with_fee,
             )
             agent_deltas = AgentWallet(
                 base_in_wallet=-trade_details.trade_amount,
@@ -516,9 +495,6 @@ class Market:
             d_share_buffer=-trade_details.trade_amount / self.share_price,
             d_share_fee=+fee / self.share_price,
             d_share_fee_history={trade_details.mint_time: fee / self.share_price},
-            d_base_asset_slippage=+abs(without_fee_or_slippage - output_without_fee),
-            d_base_asset_orders=+1,
-            d_base_asset_volume=+output_with_fee,
         )
         agent_deltas = AgentWallet(
             base_in_wallet=+output_with_fee,
