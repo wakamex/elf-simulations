@@ -33,7 +33,7 @@ base_test.run_base_lp_test(
     user_policies=["single_lp", "single_short"], config_file=config_file, additional_overrides=override_dict
 )
 dur = time.time() - start
-if dur > 1:
+if dur < 1:
     output_string = f"test took {float_to_string(dur*1000,precision=2)} milliseconds"
 else:
     output_string = f"test took {float_to_string(dur,precision=2)} seconds"

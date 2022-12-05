@@ -269,10 +269,10 @@ class User:
         else:
             output_string += f" made {bcolors.OKGREEN}"
         output_string += f"{float_to_string(profit_and_loss)}{bcolors.ENDC}"
-        output_string += f" on ₡{bcolors.OKCYAN}{float_to_string(spend)}{bcolors.ENDC} spent, APR = "
+        output_string += f" on ${bcolors.OKCYAN}{float_to_string(spend)}{bcolors.ENDC} spent, APR = "
         output_string += f"{bcolors.OKGREEN}" if annual_percentage_rate > 0 else f"{bcolors.FAIL}"
         output_string += f"{annual_percentage_rate:,.2%}{bcolors.ENDC}"
         output_string += f" ({holding_period_rate:,.2%} in {float_to_string(self.market.time,precision=2)} years)"
-        output_string += f", net worth = ₡{bcolors.FAIL}{float_to_string(worth)}{bcolors.ENDC}"
+        output_string += f", net worth = ${bcolors.FAIL}{float_to_string(worth)}{bcolors.ENDC}"
         output_string += f" from {float_to_string(base)} base and {float_to_string(tokens)} tokens at p={price}\n"
         print(output_string)

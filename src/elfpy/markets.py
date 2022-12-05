@@ -214,7 +214,7 @@ class Market:
         # update market state
         self.update_market(market_deltas, update_price_and_rate)
         if self.verbose:
-            print(f"market Δs ={market_deltas}")
+            print(f"market deltas ={market_deltas}")
         return agent_deltas
 
     def update_market(self, market_deltas, update_price_and_rate=True):
