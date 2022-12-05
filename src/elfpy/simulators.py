@@ -291,9 +291,11 @@ class YieldSimulator:
                 )
                 if self.config.simulator.shuffle_users:
                     self.rng.shuffle(self.agent_list)  # shuffle the agent order each block
-                self.collect_and_execute_trades(last_block_in_sim)
-                # if verbose:
-                #     print(f"{self.market.get_market_step_string()}")
+                if last_block_in_sim:
+                    self.agent_list = [x for x in reversed(self.agent_list)]
+                number_of_executed_trades = self.collect_and_execute_trades(last_block_in_sim)
+                if number_of_executed_trades > 0:
+                    print(f"executed {number_of_executed_trades} trades at {self.market.get_market_step_string()}")
                 if not last_block_in_sim:
                     self.market.tick(self.step_size())
                     self.block_number += 1
@@ -304,6 +306,7 @@ class YieldSimulator:
 
     def collect_and_execute_trades(self, last_block_in_sim=False):
         """Get trades from the agent list, execute them, and update states"""
+        number_of_executed_trades = 0
         for agent in self.agent_list:  # trade is different on the last block
             if last_block_in_sim:  # get all of a agent's trades
                 trade_list = agent.get_liquidation_trades()
@@ -313,10 +316,12 @@ class YieldSimulator:
                 wallet_deltas = self.market.trade_and_update(agent_trade)
                 agent.update_wallet(wallet_deltas)  # update agent state since market doesn't know about agents
                 if self.config.simulator.verbose:
-                    print(f"agent wallet deltas = {wallet_deltas}")
+                    print(f"agent deltas = {str(wallet_deltas)}")
                     print(f"post-trade {agent.status_report()}")
                 self.update_analysis_dict()
                 self.run_trade_number += 1
+                number_of_executed_trades += 1
+        return number_of_executed_trades
 
     def update_analysis_dict(self):
         """Increment the list for each key in the analysis_dict output variable"""
