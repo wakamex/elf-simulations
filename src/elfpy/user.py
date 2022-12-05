@@ -81,7 +81,7 @@ class User:
     # pylint: disable=no-member
     # pylint: disable=too-many-arguments
 
-    def __init__(self, market, rng, wallet_address, budget, verbose):
+    def __init__(self, market, rng, wallet_address, budget=1000, verbose=None):
         """
         Set up initial conditions
         """
