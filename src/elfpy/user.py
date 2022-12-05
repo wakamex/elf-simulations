@@ -34,9 +34,9 @@ class AgentWallet:
     def __post_init__(self):
         """Post initialization function"""
         # check if this represents a trade (one side will be negative)
-        total_tokens = sum(list(self.token_in_wallet.values()))
-        if self.base_in_wallet < 0 or total_tokens < 0:
-            self.effective_price = total_tokens / self.base_in_wallet
+        total_tokens = sum(list(self.token_in_protocol.values()))
+        if (self.base_in_wallet < 0 or total_tokens < 0) and total_tokens != 0:
+            self.effective_price = self.base_in_wallet / total_tokens
 
     def __getitem__(self, key):
         return getattr(self, key)
@@ -51,7 +51,13 @@ class AgentWallet:
                 if value != 0:
                     output_string += f" {key}: "
                     if isinstance(value, float):
-                        output_string += f"{float_to_string(value)}"
+                        if key in ["effective_price"]:
+                            precision = 4
+                            color = bcolors.FAIL
+                        else:
+                            precision = 3
+                            color = ""
+                        output_string += f"{color}{float_to_string(value, precision=precision)}{bcolors.ENDC}"
                     elif isinstance(value, list):
                         output_string += "[" + ", ".join([float_to_string(x) for x in value]) + "]"
                     elif isinstance(value, dict):
@@ -83,7 +89,7 @@ class User:
         self.rng = rng
         self.wallet_address = wallet_address
         self.budget = budget
-        self.verbose = verbose
+        self.verbose = False if verbose is None else verbose
         self.last_update_spend = 0
         self.product_of_time_and_base = 0
         self.wallet = AgentWallet(base_in_wallet=budget)
@@ -102,7 +108,7 @@ class User:
 
         def print_description_string(self):
             """Print a description of the Action"""
-            output_string = f"{bcolors.FAIL}{self.wallet_address}{bcolors.ENDC}"
+            output_string = f"{bcolors.FAIL}agent {self.wallet_address:03.0f}{bcolors.ENDC}"
             for key, value in self.__dict__.items():
                 if key == "action_type":
                     output_string += f" execute {bcolors.FAIL}{value}(){bcolors.ENDC}"
@@ -159,6 +165,7 @@ class User:
         and care less about how much we have to spend.
         we spend what we have to spend, and get what we get.
         """
+        self.action_list = []
         action_list = self.action()  # get the action list from the policy
         for action in action_list:  # edit each action in place
             if action.mint_time is None:
@@ -221,10 +228,6 @@ class User:
         """Get final trades for liquidating positions"""
         action_list = []
         for mint_time, position in self.wallet.token_in_protocol.items():
-            if self.verbose:
-                print(
-                    "  get_liquidation_trades() evaluating closing short:" f" mint_time={mint_time} position={position}"
-                )
             if position < 0:
                 action_list.append(
                     self.create_agent_action(
@@ -243,9 +246,11 @@ class User:
 
     def status_report(self):
         """Print user state"""
-        output_string = f"{bcolors.FAIL}{self.wallet_address}{bcolors.ENDC} "
+        output_string = f"{bcolors.FAIL}agent {self.wallet_address:03.0f}{bcolors.ENDC} "
         string_list = []
-        string_list.append(f"base_in_wallet: {bcolors.OKBLUE}{self.wallet.base_in_wallet:,.0f}{bcolors.ENDC}")
+        string_list.append(
+            f"base_in_wallet: {bcolors.OKBLUE}{float_to_string(self.wallet.base_in_wallet,precision=4)}{bcolors.ENDC}"
+        )
         if self.wallet.fees_paid:
             string_list.append(f"fees_paid: {bcolors.OKCYAN}{self.wallet.fees_paid:,.0f}{bcolors.ENDC}")
         output_string += ", ".join(string_list)
@@ -263,7 +268,7 @@ class User:
         spend = weighted_average_spend
         holding_period_rate = profit_and_loss / spend if spend != 0 else 0
         annual_percentage_rate = holding_period_rate / self.market.time
-        output_string = f" {bcolors.FAIL}{self.wallet_address}{bcolors.ENDC}"
+        output_string = f" {bcolors.FAIL}agent {self.wallet_address:03.0f}{bcolors.ENDC}"
         if profit_and_loss < 0:
             output_string += f" lost {bcolors.FAIL}"
         else:
