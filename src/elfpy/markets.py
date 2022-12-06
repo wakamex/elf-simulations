@@ -373,7 +373,7 @@ class Market:
         max_loss = trade_details.trade_amount - output_with_fee
         wallet_deltas = AgentWallet(
             base_in_wallet=-max_loss,
-            base_in_protocol={trade_details.mint_time: +max_loss},
+            base_in_protocol={trade_details.mint_time: +output_with_fee + max_loss},
             token_in_protocol={trade_details.mint_time: -trade_details.trade_amount},
             fees_paid=+fee,
         )
@@ -393,14 +393,14 @@ class Market:
             )
             trade_details.trade_amount = self.bond_reserves
         trade_results = self.pricing_model.calc_in_given_out(
-            trade_details.trade_amount,
-            self.share_reserves,
-            self.bond_reserves,
-            trade_details.token_in,
-            self.fee_percent,
-            trade_details.stretched_time_remaining,
-            self.init_share_price,
-            self.share_price,
+            out=trade_details.trade_amount,
+            share_reserves=self.share_reserves,
+            bond_Reserves=self.bond_reserves,
+            token_in=trade_details.token_in,
+            fee_percent=self.fee_percent,
+            time_remaining=trade_details.stretched_time_remaining,
+            init_share_price=self.init_share_price,
+            share_price=self.share_price,
         )
         (
             without_fee_or_slippage,
