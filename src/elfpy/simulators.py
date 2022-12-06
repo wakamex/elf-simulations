@@ -7,6 +7,7 @@ TODO: rewrite all functions to have typed inputs
 
 from importlib import import_module
 import json
+import re
 
 import numpy as np
 
@@ -190,6 +191,9 @@ class YieldSimulator:
         self.set_pricing_model(self.config.simulator.pricing_model_name)  # construct pricing model object
         # setup market
         time_stretch_constant = self.pricing_model.calc_time_stretch(self.config.simulator.init_pool_apy)
+        if "time_stretch_constant" in override_dict.keys():
+            time_stretch_constant = override_dict["time_stretch_constant"]
+            print(f"overriding time_stretch_constant to {time_stretch_constant}")
         # calculate reserves needed to deposit to hit target liquidity and APY
         init_reserves = price_utils.calc_liquidity(
             self.config.simulator.target_liquidity,
@@ -247,14 +251,14 @@ class YieldSimulator:
             self.agent_list = []
         # continue adding other users
         for policy_number, policy_instruction in enumerate(self.config.simulator.user_policies):
-            # split on both ( and )
             try:
                 policy_name, policy_args = policy_instruction.split(":")
-                policy_args = policy_args.split(",")
-                kwargs = {key: value for key, value in zip(policy_args[::2], policy_args[1::2])}
+                policy_args = re.split(r",|=", policy_args)
+                kwargs = {key: float(value) for key, value in zip(policy_args[::2], policy_args[1::2])}
             except ValueError:
                 policy_name = policy_instruction
                 kwargs = {}
+            print(f"creating agent {policy_number+1:03.0f} with policy {policy_name} and args {kwargs}")
             user_with_policy = import_module(f"elfpy.strategies.{policy_name}").Policy(
                 market=self.market,
                 rng=self.rng,

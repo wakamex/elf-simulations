@@ -10,6 +10,7 @@ from typing import Optional
 
 import numpy as np
 
+import elfpy.utils.time as time_utils
 from elfpy.utils.price import calc_apr_from_spot_price
 from elfpy.utils.outputs import float_to_string
 from elfpy.utils.bcolors import Bcolors as bcolors
@@ -101,6 +102,7 @@ class User:
         self.product_of_time_and_base = 0
         self.wallet = AgentWallet(base_in_wallet=budget)
         for key, value in kwargs.items():
+            print(f"setting agent's {key} to {value}")
             setattr(self, key, value)
 
     @dataclass
@@ -160,7 +162,28 @@ class User:
         if self.market.share_reserves == 0:
             return 0
         max_pt_short = self.market.share_reserves * self.market.share_price / self.market.spot_price
-        return max_pt_short
+        time_remaining = time_utils.get_yearfrac_remaining(
+            self.market.time, self.market.time, self.market.token_duration
+        )
+        stretched_time_remaining = time_utils.stretch_time(time_remaining, self.market.time_stretch_constant)
+        trade_results = self.market.pricing_model.calc_in_given_out(
+            self.market.share_reserves,
+            self.market.share_reserves,
+            self.market.bond_reserves,
+            "pt",
+            self.market.fee_percent,
+            stretched_time_remaining,
+            self.market.init_share_price,
+            self.market.share_price,
+        )
+        (
+            without_fee_or_slippage,
+            output_with_fee,
+            output_without_fee,
+            fee,
+        ) = trade_results
+        # print(f" comparing shorts: old={max_pt_short} new={output_without_fee}")
+        return output_with_fee
 
     def get_trade_list(self):
         """

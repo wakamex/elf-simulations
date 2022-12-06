@@ -27,11 +27,12 @@ override_dict = {
     "simulator.verbose": True,
     "amm.verbose": False,
     "vault_apy": 0.00,
+    # "time_stretch_constant": 1,
 }
 
 start = time.time()
 base_test.run_base_lp_test(
-    user_policies=["single_lp", "single_short:amount_to_short=200"],
+    user_policies=["single_lp:amount_to_lp=200", "single_short:pt_to_short=500"],
     config_file=config_file,
     additional_overrides=override_dict,
 )
