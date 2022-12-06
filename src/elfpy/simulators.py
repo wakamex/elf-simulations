@@ -213,16 +213,20 @@ class YieldSimulator:
         if self.config.simulator.verbose:
             print(
                 "initial market values:"
-                f"\n target_liquidity = {self.config.simulator.target_liquidity:,.0f}"
-                f"\n init_base_asset_reserves = {init_base_asset_reserves:,.0f}"
-                f"\n init_token_asset_reserves = {init_token_asset_reserves:,.0f}"
-                f"\n init_pool_apy = {self.config.simulator.init_pool_apy:.2%}"
                 f"\n vault_apy = {self.config.simulator.vault_apy[0]:.2%}"
                 f"\n fee_percent = {self.market.fee_percent}"
                 f"\n share_price = {self.market.share_price}"
                 f"\n init_share_price = {self.market.init_share_price}"
                 f"\n init_time_stretch = {self.market.time_stretch_constant}"
             )
+            if self.config.simulator.init_lp:
+                print(
+                    "bootstrapping liquidity with: "
+                    f"\n target_liquidity = {self.config.simulator.target_liquidity:,.0f}"
+                    f"\n init_base_asset_reserves = {init_base_asset_reserves:,.0f}"
+                    f"\n init_token_asset_reserves = {init_token_asset_reserves:,.0f}"
+                    f"\n init_pool_apy = {self.config.simulator.init_pool_apy:.2%}"
+                )
             print(f"{self.market.get_market_step_string()}")
         # fill market pools with an initial LP
         if self.config.simulator.init_lp:

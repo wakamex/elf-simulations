@@ -10,6 +10,7 @@ from typing import Optional
 
 import numpy as np
 
+from elfpy.utils.price import calc_apr_from_spot_price
 from elfpy.utils.outputs import float_to_string
 from elfpy.utils.bcolors import Bcolors as bcolors
 
@@ -30,6 +31,8 @@ class AgentWallet:
     base_in_protocol: dict = field(default_factory=dict)
     token_in_protocol: dict = field(default_factory=dict)
     effective_price: float = field(init=False)  # calculated after init, only for transactions
+    effective_rate: float = field(init=False)  # calculated after init, only for transactions
+    stretched_time_remaining: float = None
 
     def __post_init__(self):
         """Post initialization function"""
@@ -37,6 +40,7 @@ class AgentWallet:
         total_tokens = sum(list(self.token_in_protocol.values()))
         if (self.base_in_wallet < 0 or total_tokens < 0) and total_tokens != 0:
             self.effective_price = self.base_in_wallet / total_tokens
+            self.effective_rate = calc_apr_from_spot_price(self.effective_price, self.stretched_time_remaining)
 
     def __getitem__(self, key):
         return getattr(self, key)
@@ -48,10 +52,10 @@ class AgentWallet:
         output_string = ""
         for key, value in vars(self).items():
             if value:  #  check if object exists
-                if value != 0:
+                if value != 0 and value is not None and key not in ["stretched_time_remaining"]:
                     output_string += f" {key}: "
                     if isinstance(value, float):
-                        if key in ["effective_price"]:
+                        if key in ["effective_price", "effective_rate"]:
                             precision = 4
                             color = bcolors.FAIL
                         else:
@@ -219,7 +223,7 @@ class User:
                     # if self.verbose:
                     #    print(f"  post-trade {wallet_key:17s} = \
                     #       {{{' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])}}}")
-            elif wallet_key in ["fees_paid", "effective_price"]:
+            elif wallet_key in ["fees_paid", "effective_price", "effective_rate", "stretched_time_remaining"]:
                 pass
             else:
                 raise ValueError(f"wallet_key={wallet_key} is not allowed.")
@@ -279,5 +283,5 @@ class User:
         output_string += f"{annual_percentage_rate:,.2%}{bcolors.ENDC}"
         output_string += f" ({holding_period_rate:,.2%} in {float_to_string(self.market.time,precision=2)} years)"
         output_string += f", net worth = ${bcolors.FAIL}{float_to_string(worth)}{bcolors.ENDC}"
-        output_string += f" from {float_to_string(base)} base and {float_to_string(tokens)} tokens at p={price}\n"
+        output_string += f" from {float_to_string(base)} base and {float_to_string(tokens)} tokens at p={price}"
         print(output_string)

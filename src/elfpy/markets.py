@@ -376,6 +376,7 @@ class Market:
             base_in_protocol={trade_details.mint_time: +output_with_fee + max_loss},
             token_in_protocol={trade_details.mint_time: -trade_details.trade_amount},
             fees_paid=+fee,
+            stretched_time_remaining=trade_details.stretched_time_remaining,
         )
         return market_deltas, wallet_deltas
 
@@ -420,10 +421,11 @@ class Market:
         # then the user does not get any money into their wallet
         # Right now the user has to close the full short
         agent_deltas = AgentWallet(
-            base_in_wallet=+output_with_fee,
+            base_in_wallet=+trade_details.trade_amount - output_with_fee,
             base_in_protocol={trade_details.mint_time: -output_with_fee},
             token_in_protocol={trade_details.mint_time: +trade_details.trade_amount},
             fees_paid=+fee,
+            stretched_time_remaining=trade_details.stretched_time_remaining,
         )
         return market_deltas, agent_deltas
 
@@ -461,6 +463,7 @@ class Market:
                 base_in_wallet=-trade_details.trade_amount,
                 token_in_protocol={trade_details.mint_time: +output_with_fee},
                 fees_paid=+fee,
+                stretched_time_remaining=trade_details.stretched_time_remaining,
             )
         else:
             market_deltas = MarketDeltas()
@@ -500,6 +503,7 @@ class Market:
             base_in_wallet=+output_with_fee,
             token_in_wallet={trade_details.mint_time: -trade_details.trade_amount},
             fees_paid=+fee,
+            stretched_time_remaining=trade_details.stretched_time_remaining,
         )
         return market_deltas, agent_deltas
 
