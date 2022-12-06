@@ -166,8 +166,8 @@ class User:
         we spend what we have to spend, and get what we get.
         """
         self.action_list = []
-        action_list = self.action()  # get the action list from the policy
-        for action in action_list:  # edit each action in place
+        self.action()  # get the action list from the policy
+        for action in self.action_list:  # edit each action in place
             if action.mint_time is None:
                 action.mint_time = self.market.time
             if action.action_type == "close_short":
@@ -181,7 +181,7 @@ class User:
         #        f"user.py: ERROR: Trade amount should not be negative, but is {trade_amount_usd}"
         #        f" token_in={token_in} token_out={token_out}"
         #    )
-        return action_list
+        return self.action_list
 
     def update_spend(self):
         """Track over time the user's weighted average spend, for return calculation"""
