@@ -395,7 +395,7 @@ class Market:
         trade_results = self.pricing_model.calc_in_given_out(
             out=trade_details.trade_amount,
             share_reserves=self.share_reserves,
-            bond_Reserves=self.bond_reserves,
+            bond_reserves=self.bond_reserves,
             token_in=trade_details.token_in,
             fee_percent=self.fee_percent,
             time_remaining=trade_details.stretched_time_remaining,
