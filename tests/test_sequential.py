@@ -26,11 +26,14 @@ override_dict = {
     "init_lp": False,
     "simulator.verbose": True,
     "amm.verbose": False,
+    "vault_apy": 0.00,
 }
 
 start = time.time()
 base_test.run_base_lp_test(
-    user_policies=["single_lp", "single_short"], config_file=config_file, additional_overrides=override_dict
+    user_policies=["single_lp", "single_short:amount_to_short=200"],
+    config_file=config_file,
+    additional_overrides=override_dict,
 )
 dur = time.time() - start
 if dur < 1:

@@ -246,12 +246,21 @@ class YieldSimulator:
         else:  # manual market configuration
             self.agent_list = []
         # continue adding other users
-        for policy_number, policy_name in enumerate(self.config.simulator.user_policies):
+        for policy_number, policy_instruction in enumerate(self.config.simulator.user_policies):
+            # split on both ( and )
+            try:
+                policy_name, policy_args = policy_instruction.split(":")
+                policy_args = policy_args.split(",")
+                kwargs = {key: value for key, value in zip(policy_args[::2], policy_args[1::2])}
+            except ValueError:
+                policy_name = policy_instruction
+                kwargs = {}
             user_with_policy = import_module(f"elfpy.strategies.{policy_name}").Policy(
                 market=self.market,
                 rng=self.rng,
                 wallet_address=policy_number + 1,  # first policy goes to initial_lp
                 verbose=self.config.simulator.verbose,
+                **kwargs,
             )
             if self.config.simulator.verbose:
                 print(user_with_policy.status_report())

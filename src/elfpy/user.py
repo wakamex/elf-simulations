@@ -88,7 +88,7 @@ class User:
     # pylint: disable=no-member
     # pylint: disable=too-many-arguments
 
-    def __init__(self, market, rng, wallet_address, budget=1000, verbose=None):
+    def __init__(self, market, rng, wallet_address, budget=1000, verbose=None, **kwargs):
         """
         Set up initial conditions
         """
@@ -100,6 +100,8 @@ class User:
         self.last_update_spend = 0
         self.product_of_time_and_base = 0
         self.wallet = AgentWallet(base_in_wallet=budget)
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     @dataclass
     class AgentAction:
@@ -279,7 +281,7 @@ class User:
         if profit_and_loss < 0:
             output_string += f" lost {bcolors.FAIL}"
         else:
-            output_string += f" made {bcolors.OKGREEN}"
+            output_string += f" made {bcolors.OKGREEN}+"
         output_string += f"{float_to_string(profit_and_loss)}{bcolors.ENDC}"
         output_string += f" on ${bcolors.OKCYAN}{float_to_string(spend)}{bcolors.ENDC} spent, APR = "
         output_string += f"{bcolors.OKGREEN}" if annual_percentage_rate > 0 else f"{bcolors.FAIL}"
