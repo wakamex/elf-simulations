@@ -197,8 +197,7 @@ class User:
         and care less about how much we have to spend.
         we spend what we have to spend, and get what we get.
         """
-        self.action_list = []
-        self.action()  # get the action list from the policy
+        self.action_list = self.action()  # get the action list from the policy
         for action in self.action_list:  # edit each action in place
             if action.mint_time is None:
                 action.mint_time = self.market.time

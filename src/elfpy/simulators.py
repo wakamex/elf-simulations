@@ -195,6 +195,11 @@ class YieldSimulator:
             time_stretch_constant = override_dict["time_stretch_constant"]
             print(f"overriding time_stretch_constant to {time_stretch_constant}")
         # calculate reserves needed to deposit to hit target liquidity and APY
+        print(
+            f"target_liquidity: {self.config.simulator.target_liquidity} {self.config.market.base_asset_price}"
+            f" {self.config.simulator.init_pool_apy} {self.config.simulator.token_duration} {time_stretch_constant}"
+            f" {self.init_share_price} {self.init_share_price}"
+        )
         init_reserves = price_utils.calc_liquidity(
             self.config.simulator.target_liquidity,
             self.config.market.base_asset_price,
@@ -204,6 +209,7 @@ class YieldSimulator:
             self.init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
             self.init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
         )
+        print(f" init_reserves: {init_reserves}")
         init_base_asset_reserves, init_token_asset_reserves = init_reserves[:2]
         self.market = Market(
             fee_percent=self.config.simulator.fee_percent,  # g
@@ -244,6 +250,7 @@ class YieldSimulator:
                 short_until_apr=self.config.simulator.init_pool_apy,
                 verbose=self.config.simulator.verbose,
             )
+            print(f" initial_lp: {initial_lp}")
             self.agent_list = [initial_lp]
             # execute one special block just for the initial_lp
             self.collect_and_execute_trades()
@@ -311,8 +318,6 @@ class YieldSimulator:
                 if last_block_in_sim:
                     self.agent_list = [x for x in reversed(self.agent_list)]
                 number_of_executed_trades = self.collect_and_execute_trades(last_block_in_sim)
-                if number_of_executed_trades > 0:
-                    print(f"executed {number_of_executed_trades} trades at {self.market.get_market_step_string()}")
                 if not last_block_in_sim:
                     self.market.tick(self.step_size())
                     self.block_number += 1
@@ -337,7 +342,9 @@ class YieldSimulator:
                     print(f"post-trade {agent.status_report()}")
                 self.update_analysis_dict()
                 self.run_trade_number += 1
-                number_of_executed_trades += 1
+                number_of_executed_trades = number_of_executed_trades + 1
+        if number_of_executed_trades > 0:
+            print(f"executed {number_of_executed_trades} trades at {self.market.get_market_step_string()}")
         return number_of_executed_trades
 
     def update_analysis_dict(self):
