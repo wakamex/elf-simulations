@@ -347,10 +347,10 @@ class ElementPricingModel(PricingModel):
         assert (
             1 >= fee_percent >= 0
         ), f"pricing_models.calc_in_given_out: ERROR: expected 1 >= fee_percent >= 0, not {fee_percent}!"
-        assert (
-            1 > stretched_time_remaining >= 0
-        ), "pricing_models.calc_in_given_out: ERROR: expected 1 > stretched_time_remaining >= 0,"\
-        +f" not {stretched_time_remaining}!"
+        assert 1 > stretched_time_remaining >= 0, (
+            "pricing_models.calc_in_given_out: ERROR: expected 1 > stretched_time_remaining >= 0,"
+            + f" not {stretched_time_remaining}!"
+        )
         assert share_price == init_share_price == 1, (
             "pricing_models.calc_in_given_out: ERROR: expected share_price == init_share_price == 1,"
             f"not share_price={share_price} and init_share_price={init_share_price}!"
@@ -1006,10 +1006,10 @@ class HyperdrivePricingModel(PricingModel):
         assert (
             1 >= fee_percent >= 0
         ), f"pricing_models.calc_in_given_out: ERROR: expected 1 >= fee_percent >= 0, not {fee_percent}!"
-        assert (
-            1 > stretched_time_remaining >= 0
-        ), "pricing_models.calc_in_given_out: ERROR: expected 1 > "\
-        +f"stretched_time_remaining >= 0, not {stretched_time_remaining}!"
+        assert 1 > stretched_time_remaining >= 0, (
+            "pricing_models.calc_in_given_out: ERROR: expected 1 > "
+            + f"stretched_time_remaining >= 0, not {stretched_time_remaining}!"
+        )
         assert share_price >= init_share_price >= 1, (
             f"pricing_models.calc_in_given_out: ERROR:"
             f" expected share_price >= init_share_price >= 1, not share_price={share_price}"
@@ -1074,10 +1074,10 @@ class HyperdrivePricingModel(PricingModel):
             in_reserves = bond_reserves + total_reserves  # in is in units of pt, here we add virtual liquidity
             out_reserves = share_reserves  # out is in units of base
             d_shares = out / share_price  # out is in units of base, so we convert it to shares (x = c * z => z = x / c)
-            assert (
-                d_shares <= share_reserves
-            ), "pricing_models.calc_in_given_out: ERROR: expected d_shares <= share_reserves,"\
-            +f"got {d_shares} > {share_reserves}!"
+            assert d_shares <= share_reserves, (
+                "pricing_models.calc_in_given_out: ERROR: expected d_shares <= share_reserves,"
+                + f"got {d_shares} > {share_reserves}!"
+            )
             # The amount the user pays without fees or slippage is simply the
             # amount of base the user would receive times the inverse of the
             # spot price of base in terms of bonds. The amount of base the user
