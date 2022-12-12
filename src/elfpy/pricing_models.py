@@ -55,7 +55,7 @@ class PricingModel(ABC):
         bond_reserves: float,
         token_in: TokenType,
         fee_percent: float,
-        time_remaining: float,
+        stretched_time_remaining: float,
         init_share_price: float,
         share_price: float,
     ) -> TradeResult:
@@ -270,7 +270,7 @@ class ElementPricingModel(PricingModel):
         bond_reserves: float,
         token_in: TokenType,
         fee_percent: float,
-        time_remaining: float,
+        stretched_time_remaining: float,
         init_share_price=1.0,
         share_price=1.0,
     ) -> TradeResult:
@@ -348,16 +348,17 @@ class ElementPricingModel(PricingModel):
             1 >= fee_percent >= 0
         ), f"pricing_models.calc_in_given_out: ERROR: expected 1 >= fee_percent >= 0, not {fee_percent}!"
         assert (
-            1 > time_remaining >= 0
-        ), f"pricing_models.calc_in_given_out: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
+            1 > stretched_time_remaining >= 0
+        ), "pricing_models.calc_in_given_out: ERROR: expected 1 > stretched_time_remaining >= 0,"\
+        +f" not {stretched_time_remaining}!"
         assert share_price == init_share_price == 1, (
             "pricing_models.calc_in_given_out: ERROR: expected share_price == init_share_price == 1,"
             f"not share_price={share_price} and init_share_price={init_share_price}!"
         )
 
-        time_elapsed = 1 - time_remaining
+        time_elapsed = 1 - stretched_time_remaining
         bond_reserves_ = 2 * bond_reserves + share_reserves
-        spot_price = self.calc_spot_price_from_reserves(share_reserves, bond_reserves, 1, 1, time_remaining)
+        spot_price = self.calc_spot_price_from_reserves(share_reserves, bond_reserves, 1, 1, stretched_time_remaining)
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
         #
@@ -461,7 +462,7 @@ class ElementPricingModel(PricingModel):
             init_share_price,
             share_price,
             fee_percent,
-            time_remaining,
+            stretched_time_remaining,
             time_elapsed,
             token_in,
             spot_price,
@@ -1007,7 +1008,8 @@ class HyperdrivePricingModel(PricingModel):
         ), f"pricing_models.calc_in_given_out: ERROR: expected 1 >= fee_percent >= 0, not {fee_percent}!"
         assert (
             1 > stretched_time_remaining >= 0
-        ), f"pricing_models.calc_in_given_out: ERROR: expected 1 > stretched_time_remaining >= 0, not {stretched_time_remaining}!"
+        ), "pricing_models.calc_in_given_out: ERROR: expected 1 > "\
+        +f"stretched_time_remaining >= 0, not {stretched_time_remaining}!"
         assert share_price >= init_share_price >= 1, (
             f"pricing_models.calc_in_given_out: ERROR:"
             f" expected share_price >= init_share_price >= 1, not share_price={share_price}"
@@ -1074,7 +1076,8 @@ class HyperdrivePricingModel(PricingModel):
             d_shares = out / share_price  # out is in units of base, so we convert it to shares (x = c * z => z = x / c)
             assert (
                 d_shares <= share_reserves
-            ), f"pricing_models.calc_in_given_out: ERROR: expected d_shares <= share_reserves, got {d_shares} > {share_reserves}!"
+            ), "pricing_models.calc_in_given_out: ERROR: expected d_shares <= share_reserves,"\
+            +f"got {d_shares} > {share_reserves}!"
             # The amount the user pays without fees or slippage is simply the
             # amount of base the user would receive times the inverse of the
             # spot price of base in terms of bonds. The amount of base the user

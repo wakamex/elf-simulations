@@ -185,7 +185,8 @@ class Market:
         self.check_action_type(agent_action.action_type)
         # TODO: check the desired amount is feasible, otherwise return descriptive error
         # update market variables which may have changed since the user action was created
-        logging.debug(f"evaluating time_remaining for agent_action {agent_action} at time {self.time}")
+        logging.debug("evaluating time_remaining for agent_action %s at time %s",
+            agent_action, self.time)
         action_mint_time = agent_action.mint_time if agent_action.mint_time is not None else self.time
         time_remaining = time_utils.get_yearfrac_remaining(self.time, action_mint_time, self.token_duration)
         stretched_time_remaining = time_utils.stretch_time(time_remaining, self.time_stretch_constant)
@@ -365,7 +366,8 @@ class Market:
         ) = trade_results
         logging.info(
             (
-                "opening short: without_fee_or_slippage = %g base, output_with_fee = %g base, output_without_fee = %g base, fee = %g base"
+                "opening short: without_fee_or_slippage = %g base, output_with_fee = %g base, "
+                "output_without_fee = %g base, fee = %g base"
             ),
             without_fee_or_slippage,
             output_with_fee,
