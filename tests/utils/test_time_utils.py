@@ -27,9 +27,7 @@ class TestTimeUtils(unittest.TestCase):
         before = now - time_delta
         after = now + time_delta
 
-        assert (
-            before < test_time < after
-        ), f"Unexpected time value {test_time} should be between {before} and {after}"
+        assert before < test_time < after, f"Unexpected time value {test_time} should be between {before} and {after}"
 
     def test_block_number_to_datetime(self):
         """Test the block_number_to_datetime function"""

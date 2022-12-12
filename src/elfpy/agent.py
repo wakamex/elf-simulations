@@ -18,9 +18,7 @@ class Agent:
     date value is an inte with how many tokens they have for that date
     """
 
-    def __init__(
-        self, market: Market, rng: Generator, wallet_address: int, budget: float = 1000, **kwargs
-    ):
+    def __init__(self, market: Market, rng: Generator, wallet_address: int, budget: float = 1000, **kwargs):
         """
         Set up initial conditions
         """
@@ -74,9 +72,9 @@ class Agent:
             self.market.time, self.market.time, self.market.token_duration
         )
         stretched_time_remaining = time_utils.stretch_time(time_remaining, self.market.time_stretch_constant)
-        logging.debug(f"evaluating max short, share_reserves:{self.market.share_reserves}")
+        logging.debug("evaluating max short, share_reserves:%s", self.market.share_reserves)
         trade_results = self.market.pricing_model.calc_in_given_out(
-            out=self.market.share_reserves*self.market.share_price,  # out is in units of base
+            out=self.market.share_reserves * self.market.share_price,  # out is in units of base
             share_reserves=self.market.share_reserves,
             bond_reserves=self.market.bond_reserves,
             token_in="pt",  # in is in units of pt
@@ -85,18 +83,28 @@ class Agent:
             init_share_price=self.market.init_share_price,
             share_price=self.market.share_price,
         )
-        logging.debug(f"running calc_in_given_out, inputs:"
-                f" out={self.market.share_reserves*self.market.share_price}"
-                f" share_reserves={self.market.share_reserves}"
-                f" bond_reserves={self.market.bond_reserves}"
-                f" token_in=pt"
-                f" fee_percent={self.market.fee_percent}"
-                f" stretched_time_remaining={stretched_time_remaining}"
-                f" init_share_price={self.market.init_share_price}"
-                f" share_price={self.market.share_price}"
-                f" trade_results={trade_results}"
+        logging.debug(
+            (
+                "running calc_in_given_out, inputs:"
+                " out=%s"
+                " share_reserves=%s"
+                " bond_reserves=%s"
+                " token_in=pt"
+                " fee_percent=%s"
+                " stretched_time_remaining=%s"
+                " init_share_price=%s"
+                " share_price=%s"
+                " trade_results=%s"
+            ),
+            self.market.share_reserves * self.market.share_price,
+            self.market.share_reserves,
+            self.market.bond_reserves,
+            self.market.fee_percent,
+            stretched_time_remaining,
+            self.market.init_share_price,
+            self.market.share_price,
+            trade_results,
         )
-        logging.debug(f"evaluating max short, trade_results={trade_results}")
         output_with_fee = trade_results[1]
         return output_with_fee
 
@@ -113,7 +121,7 @@ class Agent:
         we spend what we have to spend, and get what we get.
         """
         action_list = self.action()  # get the action list from the policy
-        #TODO: is this the right place to modify an action's mint_time? why not in __post_init__?
+        # TODO: is this the right place to modify an action's mint_time? why not in __post_init__?
         for action in action_list:  # edit each action in place
             if action.mint_time is None:
                 action.mint_time = self.market.time

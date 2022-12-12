@@ -356,13 +356,13 @@ class Market:
             time_remaining=stretched_time_remaining,
             init_share_price=self.init_share_price,
             share_price=self.share_price,
-            )
+        )
         (
             without_fee_or_slippage,
             output_with_fee,
             output_without_fee,
             fee,
-         ) = trade_results
+        ) = trade_results
         logging.info(
             (
                 "opening short: without_fee_or_slippage = %g base, output_with_fee = %g base, output_without_fee = %g base, fee = %g base"

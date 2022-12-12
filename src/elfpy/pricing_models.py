@@ -1072,7 +1072,9 @@ class HyperdrivePricingModel(PricingModel):
             in_reserves = bond_reserves + total_reserves  # in is in units of pt, here we add virtual liquidity
             out_reserves = share_reserves  # out is in units of base
             d_shares = out / share_price  # out is in units of base, so we convert it to shares (x = c * z => z = x / c)
-            assert d_shares <= share_reserves, f"pricing_models.calc_in_given_out: ERROR: expected d_shares <= share_reserves, got {d_shares} > {share_reserves}!"
+            assert (
+                d_shares <= share_reserves
+            ), f"pricing_models.calc_in_given_out: ERROR: expected d_shares <= share_reserves, got {d_shares} > {share_reserves}!"
             # The amount the user pays without fees or slippage is simply the
             # amount of base the user would receive times the inverse of the
             # spot price of base in terms of bonds. The amount of base the user
@@ -1366,7 +1368,7 @@ class HyperdrivePricingModel(PricingModel):
             logging.debug(
                 (
                     "fee = ((1 / spot_price) - 1) * fee_percent * share_price * d_shares\n\t",
-                    "%g = ((1 / %g) - 1) * %g * %g * %g"
+                    "%g = ((1 / %g) - 1) * %g * %g * %g",
                 ),
                 fee,
                 spot_price,

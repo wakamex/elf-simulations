@@ -37,7 +37,7 @@ class Wallet:
                     if isinstance(value, float):
                         output_string += f"{value}"
                     elif isinstance(value, list):
-                        output_string += "[" + ", ".join([x for x in value]) + "]"
+                        output_string += "[" + ", ".join(list(value)) + "]"
                     elif isinstance(value, dict):
                         output_string += "{" + ", ".join([f"{k}: {v}" for k, v in value.items()]) + "}"
                     else:
