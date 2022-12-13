@@ -238,6 +238,26 @@ class YieldSimulator:
         )
         return init_lp_agent
 
+    def validate_custom_parameters(self):
+        policy_name, policy_args = policy_instruction.split(":")
+        #TODO: add tests to check that these work
+        try:
+            policy_args = policy_args.split(",")
+        except AttributeError as e:
+            logging.info("ERROR: No policy arguments provided")
+            raise e
+        try:
+            policy_args = [arg.split("=") for arg in policy_args]
+        except AttributeError as e:
+            logging.info("ERROR: Policy arguments must be provided as key=value pairs")
+            raise e
+        try:
+            kwargs = {key: float(value) for key, value in policy_args}
+        except ValueError as e:
+            logging.info("ERROR: Policy arguments must be provided as key=value pairs")
+            raise e
+        return policy_name, kwargs
+
     def setup_simulated_entities(self, override_dict=None):
         """
         Constructs the agent list, pricing model, and market member variables
@@ -282,10 +302,7 @@ class YieldSimulator:
         # continue adding other users
         for policy_number, policy_instruction in enumerate(self.config.simulator.user_policies):
             if ":" in policy_instruction:  # we have custom parameters
-                policy_name, policy_args = policy_instruction.split(":")
-                policy_args = policy_args.split(",")
-                policy_args = [arg.split("=") for arg in policy_args]
-                kwargs = {key: float(value) for key, value in policy_args}
+                policy_name, kwargs = validate_custom_parameters(policy_instruction)
             else:  # we don't havev custom parameters
                 policy_name = policy_instruction
                 kwargs = {}
