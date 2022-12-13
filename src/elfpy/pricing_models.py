@@ -1333,11 +1333,6 @@ class HyperdrivePricingModel(PricingModel):
             # calculation that excluded fees. Subtracting the fees results in less
             # tokens received, which indicates that the fees are working correctly.
             with_fee = without_fee - fee
-
-            # convert from shares to base
-            # with_fee = with_fee * share_price
-            # without_fee = without_fee * share_price
-            # without_fee_or_slippage = without_fee_or_slippage * share_price
         elif token_out == "pt":
             d_shares = in_ / share_price  # convert from base_asset to z (x=cz)
             in_reserves = share_reserves
