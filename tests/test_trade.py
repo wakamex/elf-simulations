@@ -9,7 +9,6 @@ Testing for the ElfPy package modules
 
 import unittest
 import os
-from pathlib import Path, PurePath
 import logging
 
 import numpy as np
