@@ -38,7 +38,7 @@ class TestSimulator(unittest.TestCase):
             handler,
         ]
 
-    def test_hyperdrive_sim(self):
+    def test_hyperdrive_sim(self, delete_log_file=True):
         """Tests the simulator output to verify that indices are correct"""
         self.setup_logging()
         simulator = YieldSimulator(
@@ -63,8 +63,11 @@ class TestSimulator(unittest.TestCase):
             except Exception as exc:
                 assert False, f"ERROR: Test failed at seed {rng_seed} with exception\n{exc}"
         # comment this to view the generated log files
-        file_loc = logging.getLogger().handlers[0].baseFilename
-        os.remove(file_loc)
+        os.close(logging.getLogger().handlers[0].stream.fileno())  # close the log file
+        # comment this or pass in delete_log_file=False to view the generated log files
+        if delete_log_file:
+            file_loc = logging.getLogger().handlers[0].baseFilename
+            os.remove(file_loc)  # delete the log file
 
     # TODO Update element pricing model to include lp calcs
     # def test_element_sim(self):
