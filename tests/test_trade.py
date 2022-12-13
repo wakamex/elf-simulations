@@ -9,6 +9,7 @@ Testing for the ElfPy package modules
 
 import unittest
 import os
+from pathlib import Path, PurePath
 import logging
 
 import numpy as np
@@ -38,10 +39,11 @@ class BaseTradeTest(unittest.TestCase):
         logging.getLogger().handlers = [
             handler,
         ]
+        return handler, handler.baseFilename
 
     def run_base_trade_test(self, user_policies, config_file, delete_log_file=True, additional_overrides=None):
         """Assigns member variables that are useful for many tests"""
-        self.setup_logging()
+        handler, file_loc = self.setup_logging()
         # load default config
         config = load_and_parse_config_file(config_file)
         simulator = YieldSimulator(config)
@@ -61,10 +63,9 @@ class BaseTradeTest(unittest.TestCase):
             override_dict.update(additional_overrides)
         simulator.setup_simulated_entities(override_dict)
         simulator.run_simulation()
-        os.close(logging.getLogger().handlers[0].stream.fileno())  # close the log file
+        handler.close()  # close file to avoid permission errors in windows
         # comment this or pass in delete_log_file=False to view the generated log files
         if delete_log_file:
-            file_loc = logging.getLogger().handlers[0].baseFilename
             os.remove(file_loc)  # delete the log file
 
     def run_base_lp_test(self, user_policies, config_file, delete_log_file=True, additional_overrides=None):
@@ -72,7 +73,7 @@ class BaseTradeTest(unittest.TestCase):
         Assigns member variables that are useful for many tests
         TODO: Check that the market values match the desired amounts
         """
-        self.setup_logging()
+        handler, file_loc = self.setup_logging()
         config = load_and_parse_config_file(config_file)
         simulator = YieldSimulator(config)
         simulator.set_random_variables()
@@ -102,10 +103,9 @@ class BaseTradeTest(unittest.TestCase):
                 total_liquidity, target_liquidity, atol=target_liquidity * 0.05
             ), f"test_trade.run_base_lp_test: ERROR: {target_liquidity=} does not equal {total_liquidity=}"
         simulator.run_simulation()
-        os.close(logging.getLogger().handlers[0].stream.fileno())  # close the log file
+        handler.close()  # close file to avoid permission errors in windows
         # comment this or pass in delete_log_file=False to view the generated log files
         if delete_log_file:
-            file_loc = logging.getLogger().handlers[0].baseFilename
             os.remove(file_loc)  # delete the log file
 
 
