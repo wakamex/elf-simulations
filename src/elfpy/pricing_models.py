@@ -1328,11 +1328,6 @@ class HyperdrivePricingModel(PricingModel):
             #
             # fee = (1 - p) * φ * d_y
             fee = (1 - spot_price) * fee_percent * d_bonds
-
-            # To get the amount paid with fees, subtract the fee from the
-            # calculation that excluded fees. Subtracting the fees results in less
-            # tokens received, which indicates that the fees are working correctly.
-            with_fee = without_fee - fee
         elif token_out == "pt":
             d_shares = in_ / share_price  # convert from base_asset to z (x=cz)
             in_reserves = share_reserves
@@ -1374,16 +1369,14 @@ class HyperdrivePricingModel(PricingModel):
                 share_price,
                 d_shares,
             )
-
-            # To get the amount paid with fees, subtract the fee from the
-            # calculation that excluded fees. Subtracting the fees results in less
-            # tokens received, which indicates that the fees are working correctly.
-            with_fee = without_fee - fee
         else:
             raise AssertionError(
                 f'pricing_models.calc_out_given_in: ERROR: expected token_out to be "base" or "pt", not {token_out}!'
             )
-
+        # To get the amount paid with fees, subtract the fee from the
+        # calculation that excluded fees. Subtracting the fees results in less
+        # tokens received, which indicates that the fees are working correctly.
+        with_fee = without_fee - fee
         # TODO(jalextowle): With some analysis, it seems possible to show that
         # we skip straight from non-negative reals to the complex plane without
         # hitting negative reals.
