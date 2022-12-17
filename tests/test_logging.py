@@ -63,5 +63,4 @@ class LoggingTest(unittest.TestCase):
             handler.close()
             # comment this to view the generated log files
             if handler_type == "file":
-                file_loc = logging.getLogger().handlers[0].baseFilename
-                os.remove(file_loc)
+                os.remove(handler.baseFilename)
