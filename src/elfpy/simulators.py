@@ -238,7 +238,7 @@ class YieldSimulator:
         )
         return init_lp_agent
 
-    def validate_custom_parameters(self):
+    def validate_custom_parameters(self, policy_instruction):
         policy_name, policy_args = policy_instruction.split(":")
         # TODO: add tests to check that these work
         try:
@@ -302,7 +302,7 @@ class YieldSimulator:
         # continue adding other users
         for policy_number, policy_instruction in enumerate(self.config.simulator.user_policies):
             if ":" in policy_instruction:  # we have custom parameters
-                policy_name, kwargs = validate_custom_parameters(policy_instruction)
+                policy_name, kwargs = self.validate_custom_parameters(policy_instruction)
             else:  # we don't havev custom parameters
                 policy_name = policy_instruction
                 kwargs = {}
