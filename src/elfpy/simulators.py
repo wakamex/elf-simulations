@@ -240,7 +240,7 @@ class YieldSimulator:
 
     def validate_custom_parameters(self):
         policy_name, policy_args = policy_instruction.split(":")
-        #TODO: add tests to check that these work
+        # TODO: add tests to check that these work
         try:
             policy_args = policy_args.split(",")
         except AttributeError as e:

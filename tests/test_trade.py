@@ -43,7 +43,7 @@ class BaseTradeTest(unittest.TestCase):
     def run_base_trade_test(self, user_policies, config_file, delete_log_file=True, additional_overrides=None):
         """Assigns member variables that are useful for many tests"""
         handler, file_loc = self.setup_logging()
-        config = load_and_parse_config_file(config_file) # load default config
+        config = load_and_parse_config_file(config_file)  # load default config
         simulator = YieldSimulator(config)
         simulator_rng = np.random.default_rng(simulator.config.simulator.random_seed)
         simulator.reset_rng(simulator_rng)
@@ -72,7 +72,7 @@ class BaseTradeTest(unittest.TestCase):
         TODO: Check that the market values match the desired amounts
         """
         handler, file_loc = self.setup_logging()
-        config = load_and_parse_config_file(config_file) # load default config
+        config = load_and_parse_config_file(config_file)  # load default config
         simulator = YieldSimulator(config)
         simulator_rng = np.random.default_rng(simulator.config.simulator.random_seed)
         simulator.reset_rng(simulator_rng)
