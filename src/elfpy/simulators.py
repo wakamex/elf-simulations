@@ -226,7 +226,7 @@ class YieldSimulator:
         )
         logging.info(
             (
-                "Init LP agent %03.0f statistics:\ntarget_apy = %g; target_liquidity = %g; "
+                "Init LP agent #%03.0f statistics:\ntarget_apy = %g; target_liquidity = %g; "
                 "budget = %g; base_to_lp = %g; pt_to_short = %g"
             ),
             init_lp_agent.wallet_address,
@@ -307,7 +307,7 @@ class YieldSimulator:
                 policy_name = policy_instruction
                 kwargs = {}
             logging.info(
-                "creating agent %03.0f with policy %s and args %s",
+                "creating agent #%03.0f with policy %s and args %s",
                 policy_number + 1,
                 policy_name,
                 kwargs,
@@ -384,7 +384,6 @@ class YieldSimulator:
         # The initial LPer should be able to remove their liquidity and any open shorts can still be closed.
         # But right now, if the LPer removes liquidity while shorts are open,
         # then closing the shorts results in an error (share_reserves == 0).
-        wallet_ids = [key for key in self.agents if key > 0]  # exclude init_lp before shuffling
         if self.config.simulator.shuffle_users:
             if last_block_in_sim:
                 wallet_ids = self.rng.permutation(  # shuffle wallets except init_lp
@@ -408,7 +407,7 @@ class YieldSimulator:
                 wallet_deltas = self.market.trade_and_update(agent_trade)
                 agent.update_wallet(wallet_deltas)  # update agent state since market doesn't know about agents
                 logging.debug(
-                    "agent %03.0f wallet deltas = \n%s",
+                    "agent #%03.0f wallet deltas = \n%s",
                     agent.wallet_address,
                     wallet_deltas.__dict__,
                 )

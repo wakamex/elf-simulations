@@ -36,7 +36,7 @@ class Policy(BasicPolicy):
         action_list = []
         has_lp = self.wallet.lp_in_wallet > 0
         can_lp = self.wallet.base_in_wallet >= self.base_to_lp
-        logging.info(
+        logging.debug(
             ("evaluating LP, base_in_wallet: %g, can_lp: %g, has_lp: %g"),
             self.wallet.base_in_wallet,
             can_lp,

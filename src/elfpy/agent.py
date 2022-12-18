@@ -68,7 +68,7 @@ class Agent:
         if self.market.share_reserves == 0:
             return 0
         time_remaining = time_utils.get_yearfrac_remaining(
-            self.market.time, self.market.time, self.market.token_duration
+            market_time=self.market.time, mint_time=self.market.time, token_duration=self.market.token_duration
         )
         stretched_time_remaining = time_utils.stretch_time(time_remaining, self.market.time_stretch_constant)
         logging.debug("evaluating max short, share_reserves:%s", self.market.share_reserves)
@@ -150,7 +150,7 @@ class Agent:
             if key in ["base_in_wallet", "lp_in_wallet"]:
                 if value_or_dict != 0 or self.wallet[key] != 0:
                     logging.info(
-                        "agent %03.0f %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
+                        "agent #%03.0f %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
                         self.wallet_address,
                         key,
                         self.wallet[key],
@@ -162,7 +162,7 @@ class Agent:
             elif key in ["base_in_protocol", "token_in_wallet", "token_in_protocol"]:
                 for mint_time, amount in value_or_dict.items():
                     logging.info(
-                        "agent %03.0f trade %s, mint_time = %g\npre-trade amount = %s\ntrade delta = %s",
+                        "agent #%03.0f trade %s, mint_time = %g\npre-trade amount = %s\ntrade delta = %s",
                         self.wallet_address,
                         key,
                         mint_time,
@@ -202,7 +202,7 @@ class Agent:
     def log_status_report(self) -> str:
         """Return user state"""
         logging.info(
-            "agent %03.0f base_in_wallet = %s",
+            "agent #%03.0f base_in_wallet = %s",
             self.wallet_address,
             self.wallet.base_in_wallet,
         )
@@ -230,7 +230,7 @@ class Agent:
         lost_or_made = "lost" if profit_and_loss < 0 else "made"
         logging.info(
             (
-                "agent %03.0f %s %s on $%s spent, APR = %g"
+                "agent #%03.0f %s %s on $%s spent, APR = %g"
                 " (%.2g in %s years), net worth = $%s"
                 " from %s base and %s tokens at p = %g\n"
             ),
