@@ -4,7 +4,6 @@ User strategy that adds base liquidity and doesn't remove until liquidation
 # TODO: the init calls are replicated across each strategy, which looks like duplicate code
 #     this should be resolved once we fix user inheritance
 # pylint: disable=duplicate-code
-# pylint: disable=too-many-arguments
 
 import logging
 
@@ -12,8 +11,20 @@ from elfpy.strategies.basic import BasicPolicy
 
 
 class Policy(BasicPolicy):
-    "single LP: only has one LP open at a time"
-    base_to_lp = 100
+    """
+    single LP
+    only has one LP open at a time
+    """
+
+    def __init__(self, market, rng, wallet_address, budget=1000, **kwargs):
+        self.base_to_lp = 100
+        super().__init__(
+            market=market,
+            rng=rng,
+            wallet_address=wallet_address,
+            budget=budget,
+            **kwargs,
+        )
 
     def action(self):
         action_list = []

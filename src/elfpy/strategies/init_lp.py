@@ -20,12 +20,11 @@ class Policy(BasicPolicy):
         rng,
         wallet_address,
         budget=1000,
-        base_to_lp=100,
-        pt_to_short=100,
+        **kwargs,
     ):
         """call basic policy init then add custom stuff"""
-        self.base_to_lp = base_to_lp
-        self.pt_to_short = pt_to_short
+        self.base_to_lp = 100
+        self.pt_to_short = 100
         super().__init__(
             market=market,
             rng=rng,

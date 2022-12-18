@@ -10,9 +10,20 @@ from elfpy.strategies.basic import BasicPolicy
 
 
 class Policy(BasicPolicy):
-    """single short: only has one long open at a time"""
+    """
+    single short
+    only has one long open at a time
+    """
 
-    pt_to_short = 100
+    def __init__(self, market, rng, wallet_address, budget=1000, **kwargs):
+        self.pt_to_short = 100
+        super().__init__(
+            market,
+            rng,
+            wallet_address,
+            budget,
+            **kwargs,
+        )
 
     def action(self):
         action_list = []
