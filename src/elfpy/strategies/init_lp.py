@@ -4,6 +4,8 @@ Special reserved user strategy that is used to initialize a market with a desire
 # pylint: disable=duplicate-code
 # pylint: disable=too-many-arguments
 
+import logging
+
 from elfpy.strategies.basic import BasicPolicy
 from elfpy.pricing_models import ElementPricingModel
 
@@ -23,6 +25,7 @@ class Policy(BasicPolicy):
         **kwargs,
     ):
         """call basic policy init then add custom stuff"""
+        # these are default values only, they get overwritten by custom values in kwargs
         self.base_to_lp = 100
         self.pt_to_short = 100
         super().__init__(
@@ -30,11 +33,18 @@ class Policy(BasicPolicy):
             rng=rng,
             wallet_address=wallet_address,
             budget=budget,
+            **kwargs,
+        )
+        logging.debug(
+            "initializing init_lp strategy with base_to_lp: %g, pt_to_short: %g, kwargs: %s",
+            self.base_to_lp,
+            self.pt_to_short,
+            kwargs,
         )
 
     def action(self):
         """
-        implement user strategy
+        implement agent strategy
         LP if you can, but only do it once
         short if you can, but only do it once
         """

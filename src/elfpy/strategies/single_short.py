@@ -16,6 +16,8 @@ class Policy(BasicPolicy):
     """
 
     def __init__(self, market, rng, wallet_address, budget=1000, **kwargs):
+        """call basic policy init then add custom stuff"""
+        # these are default values only, they get overwritten by custom values in kwargs
         self.pt_to_short = 100
         super().__init__(
             market,
@@ -26,6 +28,10 @@ class Policy(BasicPolicy):
         )
 
     def action(self):
+        """
+        implement agent strategy
+        short if you can, but only do it once
+        """
         action_list = []
         block_position_list = list(self.wallet.token_in_protocol.values())
         has_opened_short = bool(any((x < -1 for x in block_position_list)))

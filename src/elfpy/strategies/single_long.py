@@ -14,6 +14,7 @@ class Policy(BasicPolicy):
 
     def __init__(self, market, rng, wallet_address, budget=1000, **kwargs):
         """call basic policy init then add custom stuff"""
+        # these are default values only, they get overwritten by custom values in kwargs
         self.amount_to_trade = 100
         super().__init__(
             market,
@@ -24,7 +25,10 @@ class Policy(BasicPolicy):
         )
 
     def action(self):
-        """Specify action"""
+        """
+        implement agent strategy
+        long if you can, but only do it once
+        """
         can_open_long = (self.wallet.base_in_wallet >= self.amount_to_trade) and (
             self.market.share_reserves >= self.amount_to_trade
         )

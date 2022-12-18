@@ -17,6 +17,8 @@ class Policy(BasicPolicy):
     """
 
     def __init__(self, market, rng, wallet_address, budget=1000, **kwargs):
+        """call basic policy init then add custom stuff"""
+        # these are default values only, they get overwritten by custom values in kwargs
         self.base_to_lp = 100
         super().__init__(
             market=market,
@@ -27,6 +29,10 @@ class Policy(BasicPolicy):
         )
 
     def action(self):
+        """
+        implement agent strategy
+        LP if you can, but only do it once
+        """
         action_list = []
         has_lp = self.wallet.lp_in_wallet > 0
         can_lp = self.wallet.base_in_wallet >= self.base_to_lp
