@@ -57,7 +57,6 @@ class Agent:
         """Returns the amount of base that the agent can spend."""
         return np.minimum(self.wallet.base_in_wallet, self.market.bond_reserves)
 
-    # TODO: Fix up this function
     def get_max_pt_short(self) -> float:
         """
         Returns an approximation of maximum amount of base that the agent can short given current market conditions
