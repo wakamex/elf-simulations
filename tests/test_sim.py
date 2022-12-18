@@ -63,10 +63,8 @@ class TestSimulator(unittest.TestCase):
             # pylint: disable=broad-except
             except Exception as exc:
                 assert False, f"ERROR: Test failed at seed {rng_seed} with exception\n{exc}"
-        # comment this to view the generated log files
         handler.close()  # close the log file
-        # comment this or pass in delete_log_file=False to view the generated log files
-        if delete_log_file:
+        if delete_log_file:  # pass in delete_log_file=False to view the generated log files
             os.remove(file_loc)  # delete the log file
 
     # TODO Update element pricing model to include lp calcs

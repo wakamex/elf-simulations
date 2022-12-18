@@ -62,8 +62,7 @@ class BaseTradeTest(unittest.TestCase):
         simulator.setup_simulated_entities(override_dict)
         simulator.run_simulation()
         handler.close()  # close file to avoid permission errors in windows
-        # comment this or pass in delete_log_file=False to view the generated log files
-        if delete_log_file:
+        if delete_log_file:  # pass in delete_log_file=False to view the generated log files
             os.remove(file_loc)  # delete the log file
         return simulator
 
@@ -105,8 +104,7 @@ class BaseTradeTest(unittest.TestCase):
             ), f"test_trade.run_base_lp_test: ERROR: {target_liquidity=} does not equal {total_liquidity=}"
         simulator.run_simulation()
         handler.close()  # close file to avoid permission errors in windows
-        # comment this or pass in delete_log_file=False to view the generated log files
-        if delete_log_file:
+        if delete_log_file:  # pass in delete_log_file=False to view the generated log files
             os.remove(file_loc)  # delete the log file
 
 
