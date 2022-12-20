@@ -239,23 +239,25 @@ class YieldSimulator:
         return init_lp_agent
 
     def validate_custom_parameters(self, policy_instruction):
+        """
+        separate the policy name from the policy arguments and validate the arguments
+        """
         policy_name, policy_args = policy_instruction.split(":")
-        # TODO: add tests to check that these work
         try:
             policy_args = policy_args.split(",")
-        except AttributeError as e:
+        except AttributeError as exception:
             logging.info("ERROR: No policy arguments provided")
-            raise e
+            raise exception
         try:
             policy_args = [arg.split("=") for arg in policy_args]
-        except AttributeError as e:
+        except AttributeError as exception:
             logging.info("ERROR: Policy arguments must be provided as key=value pairs")
-            raise e
+            raise exception
         try:
             kwargs = {key: float(value) for key, value in policy_args}
-        except ValueError as e:
+        except ValueError as exception:
             logging.info("ERROR: Policy arguments must be provided as key=value pairs")
-            raise e
+            raise exception
         return policy_name, kwargs
 
     def setup_simulated_entities(self, override_dict=None):

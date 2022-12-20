@@ -128,6 +128,7 @@ class SingleTradeTests(BaseTradeTest):
         self.run_base_lp_test(user_policies=["single_lp"], config_file="config/example_config.toml")
 
     def run_custom_parameters_test(self, user_policies, agent_params_to_check):
+        """Test custom parameters passed to agent creation"""
         simulator = self.run_base_trade_test(user_policies=user_policies, config_file="config/example_config.toml")
         for agent, agent_param in enumerate(agent_params_to_check):
             for key, value in agent_param.items():
