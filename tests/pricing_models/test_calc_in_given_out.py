@@ -1003,7 +1003,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                         bond_reserves=test_case.bond_reserves,
                         token_in=test_case.token_in,
                         fee_percent=test_case.fee_percent,
-                        time_remaining=test_case.time_remaining,
+                        stretched_time_remaining=test_case.time_remaining,
                         init_share_price=test_case.init_share_price,
                         share_price=test_case.share_price,
                     )

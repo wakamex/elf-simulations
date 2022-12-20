@@ -13,7 +13,6 @@ from elfpy.pricing_models import ElementPricingModel, HyperdrivePricingModel, Tr
 from elfpy.token import TokenType
 import elfpy.utils.time as time_utils
 import elfpy.utils.price as price_utils
-from elfpy.utils.outputs import float_to_string
 from elfpy.wallet import Wallet
 
 
@@ -33,18 +32,19 @@ class MarketAction:
     # wallet_address is always set automatically by the basic agent class
     wallet_address: int
     # mint time is set only for trades that act on existing positions (close long or close short)
-    mint_time: float = 0
+    mint_time: float = None
 
     def __str__(self):
         """Return a description of the Action"""
-        output_string = f"AGENT ACTION:\nagent #{self.wallet_address}"
+        output_string = f"MarketAction(agent {self.wallet_address:03.0f}"
         for key, value in self.__dict__.items():
             if key == "action_type":
                 output_string += f" execute {value}()"
             elif key in ["trade_amount", "mint_time"]:
-                output_string += f" {key}: {float_to_string(value)}"
+                output_string += f" {key}: {value}"
             elif key not in ["wallet_address", "agent"]:
-                output_string += f" {key}: {float_to_string(value)}"
+                output_string += f" {key}: {value}"
+        output_string += ")"
         return output_string
 
 
@@ -75,11 +75,11 @@ class MarketDeltas:
                 if value != 0:
                     output_string += f" {key}: "
                     if isinstance(value, float):
-                        output_string += f"{float_to_string(value)}"
+                        output_string += f"{value}"
                     elif isinstance(value, list):
-                        output_string += "[" + ", ".join([float_to_string(x) for x in value]) + "]"
+                        output_string += "[" + ", ".join(value) + "]"
                     elif isinstance(value, dict):
-                        output_string += "{" + ", ".join([f"{k}: {float_to_string(v)}" for k, v in value.items()]) + "}"
+                        output_string += "{" + ", ".join([f"{k}: {v}" for k, v in value.items()]) + "}"
                     else:
                         output_string += f"{value}"
         return output_string
@@ -185,7 +185,9 @@ class Market:
         self.check_action_type(agent_action.action_type)
         # TODO: check the desired amount is feasible, otherwise return descriptive error
         # update market variables which may have changed since the user action was created
-        time_remaining = time_utils.get_yearfrac_remaining(self.time, agent_action.mint_time, self.token_duration)
+        logging.debug("evaluating time_remaining for agent_action %s at time %s", agent_action, self.time)
+        action_mint_time = agent_action.mint_time if agent_action.mint_time is not None else self.time
+        time_remaining = time_utils.get_yearfrac_remaining(self.time, action_mint_time, self.token_duration)
         stretched_time_remaining = time_utils.stretch_time(time_remaining, self.time_stretch_constant)
         # for each position, specify how to forumulate trade and then execute
         if agent_action.action_type == "open_long":  # buy to open long
@@ -198,7 +200,7 @@ class Market:
             )
         elif agent_action.action_type == "open_short":  # sell PT to open short
             market_deltas, agent_deltas = self._open_short(
-                agent_action=agent_action, token_out="pt", stretched_time_remaining=stretched_time_remaining
+                agent_action=agent_action, token_out="base", stretched_time_remaining=stretched_time_remaining
             )
         elif agent_action.action_type == "close_short":  # buy PT to close short
             market_deltas, agent_deltas = self._close_short(
@@ -346,10 +348,10 @@ class Market:
         will be conditional on the pricing model
         """
         trade_results = self.pricing_model.calc_out_given_in(
-            in_=agent_action.trade_amount,
+            in_=agent_action.trade_amount,  # in units of pt (selling into amm)
             share_reserves=self.share_reserves,
             bond_reserves=self.bond_reserves,
-            token_out=token_out,
+            token_out=token_out,  # in units of base (trading out of amm)
             fee_percent=self.fee_percent,
             time_remaining=stretched_time_remaining,
             init_share_price=self.init_share_price,
@@ -361,8 +363,11 @@ class Market:
             output_without_fee,
             fee,
         ) = trade_results
-        logging.debug(
-            "opening short: without_fee_or_slippage = %g, output_with_fee = %g, output_without_fee = %g, fee = %g",
+        logging.info(
+            (
+                "opening short: without_fee_or_slippage = %g base, output_with_fee = %g base, "
+                "output_without_fee = %g base, fee = %g base"
+            ),
             without_fee_or_slippage,
             output_with_fee,
             output_without_fee,
@@ -380,7 +385,6 @@ class Market:
             base_in_wallet=-max_loss,
             base_in_protocol={agent_action.mint_time: +output_with_fee + max_loss},
             token_in_protocol={agent_action.mint_time: -agent_action.trade_amount},
-            fees_paid=+fee,
         )
         return market_deltas, wallet_deltas
 
@@ -433,10 +437,9 @@ class Market:
         )
         agent_deltas = Wallet(
             address=agent_action.wallet_address,
-            base_in_wallet=+output_with_fee,
+            base_in_wallet=+agent_action.trade_amount - output_with_fee,
             base_in_protocol={agent_action.mint_time: agent_action.trade_amount - output_with_fee},
             token_in_protocol={agent_action.mint_time: +agent_action.trade_amount},
-            fees_paid=+fee,
         )
         return market_deltas, agent_deltas
 
@@ -481,7 +484,6 @@ class Market:
                 address=agent_action.wallet_address,
                 base_in_wallet=-agent_action.trade_amount,
                 token_in_protocol={agent_action.mint_time: +output_with_fee},
-                fees_paid=+fee,
             )
         else:
             market_deltas = MarketDeltas()
@@ -528,7 +530,6 @@ class Market:
             address=agent_action.wallet_address,
             base_in_wallet=+output_with_fee,
             token_in_wallet={agent_action.mint_time: -agent_action.trade_amount},
-            fees_paid=+fee,
         )
         return market_deltas, agent_deltas
 
@@ -607,7 +608,7 @@ class Market:
         else:
             spot_price = self.get_spot_price()
             rate = self.get_rate()
-        logging.debug(
+        logging.info(
             (
                 "t = %g"
                 "\nx = %g"

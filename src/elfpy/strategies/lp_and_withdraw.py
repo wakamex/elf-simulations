@@ -13,21 +13,24 @@ class Policy(BasicPolicy):
     only has one LP open at a time
     """
 
-    def __init__(self, market, rng, wallet_address, budget=1000):
+    def __init__(self, market, rng, wallet_address, budget=1000, **kwargs):
         """call basic policy init then add custom stuff"""
+        # these are default values only, they get overwritten by custom values in kwargs
         self.time_to_withdraw = self.rng.uniform(0.5, 1.5)
         self.amount_to_lp = 100
         super().__init__(
-            market=market,
-            rng=rng,
-            wallet_address=wallet_address,
-            budget=budget,
+            market,
+            rng,
+            wallet_address,
+            budget,
+            **kwargs,
         )
 
     def action(self):
         """
-        implement user strategy
+        implement agent strategy
         LP if you can, but only do it once
+        withdraw if enough time has passed
         """
         action_list = []
         has_lp = self.wallet.lp_in_wallet > 0

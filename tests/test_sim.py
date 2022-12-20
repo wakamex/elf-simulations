@@ -37,10 +37,11 @@ class TestSimulator(unittest.TestCase):
         logging.getLogger().handlers = [
             handler,
         ]
+        return handler, handler.baseFilename
 
-    def test_hyperdrive_sim(self):
+    def test_hyperdrive_sim(self, delete_log_file=True):
         """Tests the simulator output to verify that indices are correct"""
-        self.setup_logging()
+        handler, file_loc = self.setup_logging()
         simulator = YieldSimulator(
             Config(
                 market=MarketConfig(),
@@ -62,9 +63,9 @@ class TestSimulator(unittest.TestCase):
             # pylint: disable=broad-except
             except Exception as exc:
                 assert False, f"ERROR: Test failed at seed {rng_seed} with exception\n{exc}"
-        # comment this to view the generated log files
-        file_loc = logging.getLogger().handlers[0].baseFilename
-        os.remove(file_loc)
+        handler.close()  # close the log file
+        if delete_log_file:  # pass in delete_log_file=False to view the generated log files
+            os.remove(file_loc)  # delete the log file
 
     # TODO Update element pricing model to include lp calcs
     # def test_element_sim(self):

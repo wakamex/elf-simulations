@@ -166,9 +166,9 @@ class YieldSimulator:
                                 + f" not {len(value)}"
                             )
             if hasattr(self, key):
-                logging.debug("Overridding %s from %g to %s.", key, str(getattr(self, key)), str(value))
+                logging.info("Overriding %s from %s to %s.", key, str(getattr(self, key)), str(value))
             else:
-                logging.debug("Overridding %s from %s to %s.", key, "None", str(value))
+                logging.info("Overriding %s from %s to %s.", key, "None", str(value))
         # override the init_share_price if it is in the override_dict
         if "init_share_price" in override_dict.keys():
             self.init_share_price = override_dict["init_share_price"]  # \mu variable
@@ -226,7 +226,7 @@ class YieldSimulator:
         )
         logging.info(
             (
-                "Init LP agent #%g statistics:\ntarget_apy = %g; target_liquidity = %g; "
+                "Init LP agent #%03.0f statistics:\ntarget_apy = %g; target_liquidity = %g; "
                 "budget = %g; base_to_lp = %g; pt_to_short = %g"
             ),
             init_lp_agent.wallet_address,
@@ -237,6 +237,28 @@ class YieldSimulator:
             init_bond_reserves,
         )
         return init_lp_agent
+
+    def validate_custom_parameters(self, policy_instruction):
+        """
+        separate the policy name from the policy arguments and validate the arguments
+        """
+        policy_name, policy_args = policy_instruction.split(":")
+        try:
+            policy_args = policy_args.split(",")
+        except AttributeError as exception:
+            logging.info("ERROR: No policy arguments provided")
+            raise exception
+        try:
+            policy_args = [arg.split("=") for arg in policy_args]
+        except AttributeError as exception:
+            logging.info("ERROR: Policy arguments must be provided as key=value pairs")
+            raise exception
+        try:
+            kwargs = {key: float(value) for key, value in policy_args}
+        except ValueError as exception:
+            logging.info("ERROR: Policy arguments must be provided as key=value pairs")
+            raise exception
+        return policy_name, kwargs
 
     def setup_simulated_entities(self, override_dict=None):
         """
@@ -280,11 +302,23 @@ class YieldSimulator:
             self.agents = {}
         self.market.log_market_step_string()
         # continue adding other users
-        for policy_number, policy_name in enumerate(self.config.simulator.user_policies):
+        for policy_number, policy_instruction in enumerate(self.config.simulator.user_policies):
+            if ":" in policy_instruction:  # we have custom parameters
+                policy_name, kwargs = self.validate_custom_parameters(policy_instruction)
+            else:  # we don't havev custom parameters
+                policy_name = policy_instruction
+                kwargs = {}
+            logging.info(
+                "creating agent #%03.0f with policy %s and args %s",
+                policy_number + 1,
+                policy_name,
+                kwargs,
+            )
             agent = import_module(f"elfpy.strategies.{policy_name}").Policy(
                 market=self.market,
                 rng=self.rng,
-                wallet_address=policy_number + 1,  # first policy goes to init_lp_agent
+                wallet_address=policy_number + 1,  # reserve agent 000 for init_lp, even if not used
+                **kwargs,
             )
             agent.log_status_report()
             self.agents.update({agent.wallet_address: agent})
@@ -347,6 +381,7 @@ class YieldSimulator:
         """Get trades from the agent list, execute them, and update states"""
         if not isinstance(self.market, Market):
             raise ValueError("market not defined")
+        number_of_executed_trades = 0
         # TODO: This is a HACK to prevent the initial LPer from rugging other agents.
         # The initial LPer should be able to remove their liquidity and any open shorts can still be closed.
         # But right now, if the LPer removes liquidity while shorts are open,
@@ -357,8 +392,13 @@ class YieldSimulator:
                     [key for key in self.agents if key > 0]  # exclude init_lp before shuffling
                 )
                 wallet_ids = np.append(wallet_ids, 0)  # add init_lp so that they're always last
-            else:
+            else:  # include init_lp only on the last block, to let it unwind
                 wallet_ids = self.rng.permutation(list(self.agents))
+        else:  # we are in a deterministic mode
+            # reverse the list excluding 0 (init_lp)
+            wallet_ids = [key for key in self.agents if key > 0][::-1]
+            if self.config.simulator.init_lp and last_block_in_sim:  # prepend init_lp to the list
+                wallet_ids = np.append(wallet_ids, 0)
         for agent_id in wallet_ids:  # trade is different on the last block
             agent = self.agents[agent_id]
             if last_block_in_sim:  # get all of a agent's trades
@@ -369,17 +409,21 @@ class YieldSimulator:
                 wallet_deltas = self.market.trade_and_update(agent_trade)
                 agent.update_wallet(wallet_deltas)  # update agent state since market doesn't know about agents
                 logging.debug(
-                    "agent #%g wallet deltas = \n%s",
+                    "agent #%03.0f wallet deltas = \n%s",
                     agent.wallet_address,
                     wallet_deltas.__dict__,
                 )
                 agent.log_status_report()
                 self.update_analysis_dict()
                 self.run_trade_number += 1
+                number_of_executed_trades += 1
+        if number_of_executed_trades > 0:
+            logging.info("executed %f trades at %s", number_of_executed_trades, self.market.get_market_state_string())
 
     def update_analysis_dict(self):
         """Increment the list for each key in the analysis_dict output variable"""
         # pylint: disable=too-many-statements
+
         if not isinstance(self.market, Market):
             raise ValueError("market not defined")
         self.analysis_dict["model_name"].append(self.market.pricing_model.model_name())
