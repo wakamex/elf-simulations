@@ -117,15 +117,14 @@ def get_market(
     Market
         instantiated market without any liquidity (i.e. no shares or bonds)
     """
-    a = config.num_position_days / 365
     position_duration = StretchedTime(
         days=config.num_position_days,
-        time_stretch=pricing_model.calc_time_stretch(config.target_pool_apr * a),
+        time_stretch=pricing_model.calc_time_stretch(config.target_pool_apr),
         normalizing_constant=config.num_position_days,
     )
     # apr is "annual", so if position durations is not 365
     # then we need to rescale the target apr passed to calc_liquidity
-    adjusted_target_apr = config.target_pool_apr * a
+    adjusted_target_apr = config.target_pool_apr * config.num_position_days / 365
     share_reserves_direct, bond_reserves_direct = pricing_model.calc_liquidity(
         market_state=MarketState(share_price=config.init_share_price, init_share_price=config.init_share_price),
         target_liquidity=init_target_liquidity,
