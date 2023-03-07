@@ -528,6 +528,15 @@ class YieldspacePricingModel(PricingModel):
             base.
         """
         # Calculate some common values up front
+        print("=== inside yieldspace.calc_out_given_in ===")
+        print(f"time_remaining: {time_remaining}")
+        norm_time = time_remaining.days / time_remaining.normalizing_constant
+        print(f"norm_time: {norm_time}")
+        stretched_time = norm_time / time_remaining.time_stretch
+        print(f"stretched_time: {stretched_time}")
+        print(f"{time_remaining.stretched_time=}")
+        print(f"{Decimal(time_remaining.stretched_time)=}")
+        print(f"{1-Decimal(time_remaining.stretched_time)=}")
         time_elapsed = 1 - Decimal(time_remaining.stretched_time)
         init_share_price = Decimal(market_state.init_share_price)
         share_price = Decimal(market_state.share_price)
@@ -535,12 +544,26 @@ class YieldspacePricingModel(PricingModel):
         share_reserves = Decimal(market_state.share_reserves)
         bond_reserves = Decimal(market_state.bond_reserves)
         total_reserves = share_price * share_reserves + bond_reserves
+        print(f"{total_reserves=}")
         spot_price = self._calc_spot_price_from_reserves_high_precision(
             market_state,
             time_remaining,
         )
         in_amount = Decimal(in_.amount)
         trade_fee_percent = Decimal(market_state.trade_fee_percent)
+
+        print("time_remaining: ", time_remaining)
+        print("time_elapsed: ", time_elapsed)
+        print("init_share_price: ", init_share_price)
+        print("share_price: ", share_price)
+        print("scale: ", scale)
+        print("share_reserves: ", share_reserves)
+        print("bond_reserves: ", bond_reserves)
+        print("total_reserves: ", total_reserves)
+        print("spot_price: ", spot_price)
+        print("in_amount: ", in_amount)
+        print("trade_fee_percent: ", trade_fee_percent)
+
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
         #

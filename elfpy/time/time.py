@@ -51,7 +51,7 @@ class StretchedTime:
     @property
     def stretched_time(self):
         r"""Returns days / normalizing_constant / time_stretch"""
-        return days_to_time_remaining(self.days, self.time_stretch, normalizing_constant=self.normalizing_constant)
+        return self.days / self.time_stretch / self.normalizing_constant
 
     @property
     def normalized_time(self):

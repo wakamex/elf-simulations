@@ -305,8 +305,14 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         print(f"calc_out_given_in: {time_remaining=}")
         print(f"calc_out_given_in: {time_remaining_passed_to_yieldspace=}")
 
+        in_quantity = types.Quantity(amount=float(curve_amount), unit=in_.unit)
+        print("== calls to yieldspace.calc_out_given_in ==")
+        print(f"calc_out_given_in: {in_quantity=}")
+        print(f"calc_out_given_in: {market_state=}")
+        print(f"calc_out_given_in: {time_remaining_passed_to_yieldspace=}")
+
         curve = super().calc_out_given_in(
-            in_=types.Quantity(amount=float(curve_amount), unit=in_.unit),
+            in_=in_quantity,
             market_state=market_state,
             time_remaining=time_remaining_passed_to_yieldspace,
         )
