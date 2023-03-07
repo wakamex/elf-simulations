@@ -214,6 +214,8 @@ class TestCloseLong(unittest.TestCase):
         print(f"{self.hyperdrive.market_state.trade_fee_percent=}")
         print(f"{self.hyperdrive.market_state.redemption_fee_percent=}")
         print(f"{self.target_apr=}")
+        print(f"{self.hyperdrive.fixed_apr=}")
+        print(f"{self.hyperdrive.position_duration.time_stretch=}")
         print(f"open_{base_amount=}")
         _, agent_deltas_open = self.hyperdrive.open_long(
             agent_wallet=self.bob.wallet,
@@ -221,6 +223,7 @@ class TestCloseLong(unittest.TestCase):
         )
         print("\nPOST OPEN DETAILS:")
         print(f"{agent_deltas_open.longs[0].balance=}")
+        print(f"{self.hyperdrive.fixed_apr=}")
         # advance time (which also causes the share price to change)
         time_delta = 0.5
         self.hyperdrive.block_time.set_time(
@@ -233,6 +236,9 @@ class TestCloseLong(unittest.TestCase):
         market_state_before_close = self.hyperdrive.market_state.copy()
         print("\nCLOSE DETAILS:")
         # Bob closes his long half way to maturity
+        print(f"test_close_long: normalized_time = {self.hyperdrive.block_time.time=}")
+        print(f"{self.hyperdrive.market_state.trade_fee_percent=}")
+        print(f"{self.hyperdrive.market_state.redemption_fee_percent=}")
         _, agent_deltas_close = self.hyperdrive.close_long(
             agent_wallet=self.bob.wallet,
             bond_amount=agent_deltas_open.longs[0].balance,
@@ -250,6 +256,9 @@ class TestCloseLong(unittest.TestCase):
         print("\nPOST CLOSE DETAILS:")
         print(f"{base_proceeds=}")
         print(f"{realized_apr=}")
+        effective_price = agent_deltas_open.longs[0].balance / base_proceeds
+        print(f"{effective_price=} bonds per base")
+        print(f"{1/effective_price=} base per bond")
         self.assertAlmostEqual(
             realized_apr,
             self.target_apr,

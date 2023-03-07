@@ -341,6 +341,7 @@ def calc_close_long(
     This function takes the trade spec & turn it into trade details.
     """
     # Compute the time remaining given the mint time.
+    print(f"hyperdrive_actions: {market.block_time.time=}")
     years_remaining = time.get_years_remaining(
         market_time=market.block_time.time,
         mint_time=mint_time,
@@ -351,7 +352,7 @@ def calc_close_long(
         time_stretch=market.position_duration.time_stretch,
         normalizing_constant=market.position_duration.normalizing_constant,
     )
-    print(f"{time_remaining.normalized_time=}")
+    print(f"hyperdrive_actions: {time_remaining.normalized_time=}")
     # Perform the trade.
     trade_quantity = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
     market.pricing_model.check_input_assertions(
@@ -359,11 +360,15 @@ def calc_close_long(
         market_state=market.market_state,
         time_remaining=time_remaining,
     )
+    print("hyperdrive_actions: calc_close_long: in_= ", trade_quantity)
+    print("hyperdrive_actions: calc_close_long: market.market_state= ", market.market_state)
+    print("hyperdrive_actions: calc_close_long: time_remaining= ", time_remaining)
     trade_result = market.pricing_model.calc_out_given_in(
         in_=trade_quantity,
         market_state=market.market_state,
         time_remaining=time_remaining,
     )
+    print(f"{trade_result=}")
     print(f"{trade_result.market_result.d_bonds=}")
     print(f"{trade_result.market_result.d_base=}")
     # Update accouting for average maturity time, base volume and longs outstanding

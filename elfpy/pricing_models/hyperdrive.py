@@ -264,8 +264,16 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         share_price = Decimal(market_state.share_price)
         d_bonds = in_amount * (1 - normalized_time)
         d_shares = d_bonds / share_price
+        print(f"calc_out_given_in: {in_amount=}")
+        print(f"calc_out_given_in: {time_remaining.normalized_time=}")
+        print(f"calc_out_given_in: {share_price=}")
+        print(f"calc_out_given_in: {d_bonds=}")
+        print(f"calc_out_given_in: {d_shares=}")
+        print(f"calc_out_given_in: {in_.unit=}")
 
         market_state = market_state.copy()
+
+        print(f"calc_out_given_in: pre-adjustment  {market_state=}")
 
         # TODO: This is somewhat strange since these updates never actually hit the reserves.
         # Redeem the matured bonds 1:1 and simulate these updates hitting the reserves.
@@ -281,16 +289,28 @@ class HyperdrivePricingModel(YieldspacePricingModel):
                 f"Expected in_.unit to be {types.TokenType.BASE} or {types.TokenType.PT}, not {in_.unit}!"
             )
 
+        print(f"calc_out_given_in: post-adjustment {market_state=}")
+
         # Trade the bonds that haven't matured on the YieldSpace curve.
-        curve = super().calc_out_given_in(
-            in_=types.Quantity(amount=float(in_amount * normalized_time), unit=in_.unit),
-            market_state=market_state,
-            time_remaining=time.StretchedTime(  # time remaining is always fixed to the full term for flat+curve
+        curve_amount = in_amount * normalized_time
+        print(f"calc_out_given_in: {curve_amount=}")
+
+        time_remaining_passed_to_yieldspace = (
+            time.StretchedTime(  # time remaining is always fixed to the full term for flat+curve
                 days=time_remaining.normalizing_constant,  # position duration is the normalizing constant
                 time_stretch=time_remaining.time_stretch,
                 normalizing_constant=time_remaining.normalizing_constant,
-            ),
+            )
         )
+        print(f"calc_out_given_in: {time_remaining=}")
+        print(f"calc_out_given_in: {time_remaining_passed_to_yieldspace=}")
+
+        curve = super().calc_out_given_in(
+            in_=types.Quantity(amount=float(curve_amount), unit=in_.unit),
+            market_state=market_state,
+            time_remaining=time_remaining_passed_to_yieldspace,
+        )
+        print(f"calc_out_given_in: {curve=}")
 
         # Compute flat part with fee
         flat_without_fee = in_amount * (1 - normalized_time)
