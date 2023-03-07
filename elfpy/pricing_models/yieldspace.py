@@ -544,11 +544,13 @@ class YieldspacePricingModel(PricingModel):
         share_reserves = Decimal(market_state.share_reserves)
         bond_reserves = Decimal(market_state.bond_reserves)
         total_reserves = share_price * share_reserves + bond_reserves
+        # total_reserves = share_reserves + bond_reserves
         print(f"{total_reserves=}")
         spot_price = self._calc_spot_price_from_reserves_high_precision(
             market_state,
             time_remaining,
         )
+        print(f"{spot_price=}")
         in_amount = Decimal(in_.amount)
         trade_fee_percent = Decimal(market_state.trade_fee_percent)
 
@@ -670,6 +672,12 @@ class YieldspacePricingModel(PricingModel):
                 f"pricing_models.calc_out_given_in: ERROR: expected in_.unit"
                 f" to be {types.TokenType.BASE} or {types.TokenType.PT}, not {in_.unit}!"
             )
+        print(f"calc_out_given_in: {user_result=}")
+        print(f"calc_out_given_in: {market_result=}")
+        print(f"calc_out_given_in: {without_fee_or_slippage=}")
+        print(f"calc_out_given_in: {with_fee=}")
+        print(f"calc_out_given_in: {without_fee=}")
+        print(f"calc_out_given_in: {fee=}")
         return trades.TradeResult(
             user_result=user_result,
             market_result=market_result,
