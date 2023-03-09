@@ -15,23 +15,8 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class Long:
-    r"""An open long position.
-
-    Parameters
-    ----------
-    balance : float
-        The amount of bonds that the position is long.
-
-    .. todo:: make balance a Quantity to enforce units
-    """
-
-    balance: float  # bonds
-
-
-@dataclass
-class Short:
-    r"""An open short position.
+class Position:
+    r"""A position: negative balance denotes short, positive balance denotes long
 
     Parameters
     ----------
