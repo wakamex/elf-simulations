@@ -9,13 +9,10 @@ from decimal import Decimal
 import logging
 from functools import wraps
 from importlib import import_module
-from typing import TYPE_CHECKING, Type, Any, Dict, Optional
+from typing import Type, Any, Dict, Optional
 
 import numpy as np
 from numpy.random import Generator
-
-if TYPE_CHECKING:
-    from elfpy.agent import Agent
 
 # Setup barebones logging without a handler for users to adapt to their needs.
 logging.getLogger(__name__).addHandler(logging.NullHandler())
@@ -293,6 +290,7 @@ class Wallet:
 
     # reserves
     base: float = 0
+    shares: float = 0
     bonds: float = 0
     base_buffer: float = 0
     bond_buffer: float = 0
@@ -384,127 +382,23 @@ class MarketAction:
     mint_time: Optional[float] = field(default=None, metadata={"description": "the mint time of the position to close"})
 
 
-def get_pricing_model(model: str):
-    """Get the pricing model from the string"""  # sourcery skip: assign-if-exp, reintroduce-else
-    model = model.lower()
-    if model == "yieldspace":
-        return YieldSpacePricingModel
-    if model == "hyperdrive":
-        return HyperdrivePricingModel
-    return PricingModel
-
-
-@freezable(frozen=False, no_new_attribs=False)
-@dataclass
-class MarketState:
-    r"""The state of an AMM
-
-    Implements a class for all that that an AMM smart contract would hold or would have access to
-    For example, reserve numbers are local state variables of the AMM.  The variable_rate will most
-    likely be accessible through the AMM as well.
-
-    Attributes
-    ----------
-    share_reserves: float
-        Quantity of shares stored in the market
-    bond_reserves: float
-        Quantity of bonds stored in the market
-    base_buffer: float
-        Base amount set aside to account for open longs
-    bond_buffer: float
-        Bond amount set aside to account for open shorts
-    lp: float
-        Amount of lp tokens
-    variable_rate: float
-        .. todo: fill this in
-    share_price: float
-        .. todo: fill this in
-    init_share_price: float
-        .. todo: fill this in
-    trade_fee_percent : float
-        The percentage of the difference between the amount paid without
-        slippage and the amount received that will be added to the input
-        as a fee.
-    redemption_fee_percent : float
-        A flat fee applied to the output.  Not used in this equation for Yieldspace.
-    """
-
-    # dataclasses can have many attributes
-    # pylint: disable=too-many-instance-attributes
-
-    pricing_model: PricingModel = field(default_factory=get_pricing_model("hyperdrive"))
-    time: float = 0.0
-    term_length_in_days: float = 90
-    time_stretch: float = 1
-    share_reserves: float = 0.0
-    bond_reserves: float = 0.0
-    base_buffer: float = 0.0
-    bond_buffer: float = 0.0
-    lp_reserves: float = 0.0
-    variable_rate: float = 0.0
-    share_price: float = 1.0
-    init_share_price: float = 1.0
-    trade_fee_percent: float = 0.0
-    redemption_fee_percent: float = 0.0
-
-    @property
-    def term_length_in_years(self) -> float:
-        """Returns the term length in years"""
-        return self.term_length_in_days / 365
-
-    @property
-    def apr(self) -> float:
-        """Returns the current market apr (returns nan if shares are zero)"""
-        return (
-            np.nan
-            if self.share_reserves <= 0
-            else calc_apr_from_spot_price(price=self.spot_price, time_remaining_in_years=self.term_length_in_years)
-        )
-
-    @property
-    def spot_price(self) -> float:
-        """Returns the current market price of the share reserves (returns nan if shares are zero)"""
-        return (
-            np.nan
-            if self.share_reserves == 0
-            else self.pricing_model.calc_spot_price_from_reserves(
-                market_state=self,
-                time_remaining_in_years=self.term_length_in_years,
-                time_stretch=self.time_stretch,
-            )
-        )
-
-    def copy(self) -> "MarketState":
-        """Returns a copy of the market state"""
-        return deepcopy(self)
-
-
-def apply_delta(simulation_state_, delta: Wallet) -> None:
-    r"""Applies a delta to the market state."""
-    simulation_state_.share_reserves += delta.base / simulation_state_.share_price
-    simulation_state_.bond_reserves += delta.bonds
-    simulation_state_.base_buffer += delta.base_buffer
-    simulation_state_.bond_buffer += delta.bond_buffer
-    simulation_state_.lp += delta.lp
-    simulation_state_.share_price += delta.share_price
-
-    # TODO: issue #146
-    # this is an imperfect solution to rounding errors, but it works for now
-    # ideally we'd find a more thorough solution than just catching errors
-    # when they are.
-    for key, value in simulation_state_.__dict__.items():
-        if 0 > value > -PRECISION_THRESHOLD:
-            logging.debug(
-                ("%s=%s is negative within PRECISION_THRESHOLD=%f, setting it to 0"),
-                key,
-                value,
-                PRECISION_THRESHOLD,
-            )
-            setattr(simulation_state_, key, 0)
+def apply_delta(wallet: Wallet, delta: Wallet) -> None:
+    r"""Applies a delta to the wallet"""
+    for key, value in delta.__dict__.items():
+        if key == "address":
+            continue
+        if isinstance(value, dict):
+            apply_delta(wallet[key], delta[key])
         else:
-            assert (
-                value > -PRECISION_THRESHOLD
-            ), f"MarketState values must be > {-PRECISION_THRESHOLD}. Error on {key} = {value}"
+            wallet[key] += value
+            if key in ["shares", "bonds", "base_buffer", "bond_buffer", "lp", "share_price"]:
+                assert (
+                    0 > value > -PRECISION_THRESHOLD
+                ), f"Wallet {key} must be > {-PRECISION_THRESHOLD}. Error on {value=}"
+    if "shares" in delta and delta["shares"] != 0:
+        wallet.base = wallet.shares * wallet.share_price
+    elif "base" in delta and delta["base"] != 0:
+        wallet.shares = wallet.base / wallet.share_price
 
 
 def trade_and_update(simulation_state_, action_details: tuple[int, MarketAction]) -> tuple[int, Wallet, Wallet]:
@@ -1043,7 +937,7 @@ def setup_agents(config, agent_policies=None) -> dict[int, Agent]:
                 setattr(agent, key, value)
             else:
                 raise AttributeError(f"Policy {policy_name} does not have parameter {key}")
-        agent.log_status_report()
+        logging.info(agent)
         agents[wallet_address] = agent
     return agents
 
@@ -1108,11 +1002,11 @@ def collect_and_execute_trades(simulation_state_, last_block_in_sim: bool = Fals
     agent_trades = collect_trades(simulation_state_, agent_ids, liquidate=last_block_in_sim)
     for trade in agent_trades:
         agent_id, agent_deltas, market_deltas = simulation_state_.market.trade_and_update(trade)
-        simulation_state_.market_state.apply_delta(market_deltas)
+        simulation_state_.wallet.apply_delta(market_deltas)
         agent = simulation_state_.agents[agent_id]
         logging.debug("agent #%g wallet deltas:\n%s", agent.wallet.address, agent_deltas)
-        agent.update_wallet(agent_deltas, simulation_state_.market)
-        agent.log_status_report()
+        agent.wallet.apply_delta(agent_deltas)
+        logging.info(agent)
         # TODO: need to log deaggregated trade informaiton, i.e. trade_deltas
         # issue #215
         update_simulation_state(simulation_state_)
@@ -1253,11 +1147,8 @@ def execute_trades(simulation_state_, agent_trades: list[tuple[int, MarketAction
             agent.wallet.address,
             agent_deltas,
         )
-        agent.update_wallet(agent_deltas, simulation_state_.market)
-        # TODO: Get simulator, market, pricing model, agent state strings and log
-        agent.log_status_report()
-        # TODO: need to log deaggregated trade informaiton, i.e. trade_deltas
-        # issue #215
+        agent.wallet.apply_deltas(agent_deltas)
+        logging.info(agent)
         simulation_state_.update_simulation_state()
         simulation_state_.run_trade_number += 1
 
@@ -1344,7 +1235,7 @@ class PricingModel(ABC):
         time_remaining_in_years: float,
         time_stretch: float,
         simulation_state_: SimulationState,
-    ) -> float:
+    ) -> float:  # sourcery skip: inline-immediately-returned-variable
         """Returns the assumed bond (i.e. token asset) reserve amounts given
         the share (i.e. base asset) reserves and APR
 
@@ -1382,7 +1273,7 @@ class PricingModel(ABC):
         time_remaining_in_years: float,
         time_stretch: float,
         init_share_price: float = 1,
-    ):
+    ):  # sourcery skip: inline-immediately-returned-variable
         """Returns the assumed share (i.e. base asset) reserve amounts given
         the bond (i.e. token asset) reserves and APR
 
@@ -1422,7 +1313,6 @@ class PricingModel(ABC):
                 - init_share_price
             )
         )
-
         return share_reserves
 
     def calc_base_for_target_apr(
@@ -1577,7 +1467,7 @@ class PricingModel(ABC):
         market_state: MarketState,
         time_remaining_in_years: float,
         time_stretch: float,
-    ) -> Decimal:
+    ) -> Decimal:  # sourcery skip: inline-immediately-returned-variable
         r"""
         Calculates the current market spot price of base in terms of bonds.
         This variant returns the result in a high precision format.
@@ -2435,7 +2325,7 @@ class YieldSpacePricingModel(PricingModel):
         )
 
 
-class HyperdrivePricingModel(YieldSpacePricingModel):  # type: ignore
+class HyperdrivePricingModel(YieldSpacePricingModel):
     """
     Hyperdrive Pricing Model
 
@@ -2737,7 +2627,301 @@ class HyperdrivePricingModel(YieldSpacePricingModel):  # type: ignore
         )
 
 
+def get_pricing_model(model: str):
+    """Get the pricing model from the string"""  # sourcery skip: assign-if-exp, reintroduce-else
+    model = model.lower()
+    if model == "yieldspace":
+        return YieldSpacePricingModel
+    if model == "hyperdrive":
+        return HyperdrivePricingModel
+    return PricingModel
+
+
+@freezable(frozen=False, no_new_attribs=False)
+@dataclass
+class MarketState:
+    r"""The state of an AMM
+
+    Implements a class for all that that an AMM smart contract would hold or would have access to
+    For example, reserve numbers are local state variables of the AMM.  The variable_rate will most
+    likely be accessible through the AMM as well.
+
+    Attributes
+    ----------
+    share_reserves: float
+        Quantity of shares stored in the market
+    bond_reserves: float
+        Quantity of bonds stored in the market
+    base_buffer: float
+        Base amount set aside to account for open longs
+    bond_buffer: float
+        Bond amount set aside to account for open shorts
+    lp: float
+        Amount of lp tokens
+    variable_rate: float
+        .. todo: fill this in
+    share_price: float
+        .. todo: fill this in
+    init_share_price: float
+        .. todo: fill this in
+    trade_fee_percent : float
+        The percentage of the difference between the amount paid without
+        slippage and the amount received that will be added to the input
+        as a fee.
+    redemption_fee_percent : float
+        A flat fee applied to the output.  Not used in this equation for Yieldspace.
+    """
+
+    # dataclasses can have many attributes
+    # pylint: disable=too-many-instance-attributes
+
+    pricing_model: PricingModel = field(default_factory=get_pricing_model("hyperdrive"))
+    time: float = 0.0
+    term_length_in_days: float = 90
+    time_stretch: float = 1
+    share_reserves: float = 0.0
+    bond_reserves: float = 0.0
+    base_buffer: float = 0.0
+    bond_buffer: float = 0.0
+    lp_reserves: float = 0.0
+    variable_rate: float = 0.0
+    share_price: float = 1.0
+    init_share_price: float = 1.0
+    trade_fee_percent: float = 0.0
+    redemption_fee_percent: float = 0.0
+
+    @property
+    def term_length_in_years(self) -> float:
+        """Returns the term length in years"""
+        return self.term_length_in_days / 365
+
+    @property
+    def apr(self) -> float:
+        """Returns the current market apr (returns nan if shares are zero)"""
+        return (
+            np.nan
+            if self.share_reserves <= 0
+            else calc_apr_from_spot_price(price=self.spot_price, time_remaining_in_years=self.term_length_in_years)
+        )
+
+    @property
+    def spot_price(self) -> float:
+        """Returns the current market price of the share reserves (returns nan if shares are zero)"""
+        return (
+            np.nan
+            if self.share_reserves == 0
+            else self.pricing_model.calc_spot_price_from_reserves(
+                market_state=self,
+                time_remaining_in_years=self.term_length_in_years,
+                time_stretch=self.time_stretch,
+            )
+        )
+
+    def copy(self) -> "MarketState":
+        """Returns a copy of the market state"""
+        return deepcopy(self)
+
+
+class Agent:
+    r"""Agent class for conducting trades on the market
+
+    Implements a class that controls agent behavior agent has a budget that is a dict, keyed with a
+    date value is an inte with how many tokens they have for that date.
+
+    Attributes
+    ----------
+    market : elfpy.markets.Market
+        Market object that this Agent will be trading on.
+    rng : numpy.random._generator.Generator
+        Random number generator used for various simulation functions
+    wallet_address : int
+        Random ID used to identify this specific agent in the simulation
+    budget : float
+        Amount of assets that this agent has available for spending in the simulation
+    last_update_spend : float
+        Time relative to the market, in yearfracs, when this agent last made a trade. This is used to track PnL
+    product_of_time_and_base : float
+        Helper attribute used to track how an agent spends their assets over time
+    wallet : elfpy.wallet.Wallet
+        Wallet object which tracks the agent's asset balances
+    """
+
+    def __init__(self, wallet_address: int, budget: float):
+        """Set up initial conditions"""
+        self.budget: float = budget
+        self.last_update_spend: float = 0  # timestamp
+        self.product_of_time_and_base: float = 0
+        self.wallet: Wallet = Wallet(address=wallet_address, base=budget)
+        self.name = str(self).split(" ", maxsplit=1)[0][len("<elfpy.policies.") : -len(".Policy")]
+
+    def action(self, simulation_state_: SimulationState) -> list[MarketAction]:
+        """Abstract method meant to be implemented by the specific policy"""
+        raise NotImplementedError
+
+
+def weighted_average_spend(agent_, simulation_state_: SimulationState) -> float:
+    """Calculates the weighted average spend of the agent"""
+    return agent_.product_of_time_and_base / (simulation_state_.time - agent_.last_update_spend)
+
+
+def get_agent_max_long(agent_: Agent, market_state_: MarketState) -> float:
+    """Gets an approximation of the maximum amount of base the agent can use"""
+    max_long, _ = market_state_.pricing_model.get_max_long(
+        market_state=market_state_,
+        time_remaining_in_years=market_state_.term_length_in_years,
+        time_stretch=market_state_.time_stretch,
+    )
+    return min(agent_.wallet.base, max_long)
+
+
+def get_agent_max_short(agent_: Agent, market_state_: MarketState) -> float:
+    """Gets an approximation of the maximum amount of bonds the agent can short."""
+    # Get the market level max short.
+    max_short_max_loss, max_short = market_state_.pricing_model.get_max_short(
+        market_state=market_state_,
+        time_remaining_in_years=market_state_.term_length_in_years,
+        time_stretch=market_state_.time_stretch,
+    )
+    # If the Agent's base balance can cover the max loss of the maximum short, we can simply return the maximum short
+    if agent_.wallet.base >= max_short_max_loss:
+        return max_short
+    last_maybe_max_short = 0
+    bond_percent = 1
+    num_iters = 25
+    for step_size in [1 / (2 ** (x + 1)) for x in range(num_iters)]:
+        # Compute the amount of base returned by selling the specified amount of bonds
+        maybe_max_short = max_short * bond_percent
+        trade_result = market_state_.pricing_model.calc_out_given_in(
+            in_=Quantity(amount=maybe_max_short, unit=TokenType.PT),
+            market_state=market_state_,
+            time_remaining_in_years=market_state_.term_length_in_years,
+            time_stretch=market_state_.time_stretch,
+        )
+        # If the max loss is greater than the wallet's base, we need to
+        # decrease the bond percentage. Otherwise, we may have found the
+        # max short, and we should increase the bond percentage.
+        max_loss = maybe_max_short - trade_result.user_result.base
+        if max_loss > agent_.wallet.base:
+            bond_percent -= step_size
+        else:
+            last_maybe_max_short = maybe_max_short
+            if bond_percent == 1:
+                return last_maybe_max_short
+            bond_percent += step_size
+
+    # do one more iteration at the last step size in case the bisection method was stuck
+    # approaching a max_short value with slightly more base than an agent has.
+    trade_result = market_state_.pricing_model.calc_out_given_in(
+        in_=Quantity(amount=last_maybe_max_short, unit=TokenType.PT),
+        market_state=market_state_,
+        time_remaining_in_years=market_state_.term_length_in_years,
+        time_stretch=market_state_.time_stretch,
+    )
+    max_loss = last_maybe_max_short - trade_result.user_result.base
+    last_step_size = 1 / (2**num_iters + 1)
+    if max_loss > agent_.wallet.base:
+        bond_percent -= last_step_size
+        last_maybe_max_short = max_short * bond_percent
+    return last_maybe_max_short
+
+
+def get_trades(agent_: Agent, simulation_state_: SimulationState) -> list:
+    """Helper function for computing a agent trade"""
+    actions = agent_.action(simulation_state_=simulation_state_)  # get the action list from the policy
+    for action in actions:  # edit each action in place
+        if action.mint_time is None:
+            action.mint_time = simulation_state_.time
+    return actions
+
+
+def get_liquidation_trades(agent_: Agent, simulation_state_: SimulationState) -> list[MarketAction]:
+    """Get final trades for liquidating positions"""
+    action_list: list[MarketAction] = []
+    for mint_time, long in agent_.wallet.longs.items():
+        logging.debug("evaluating closing long: mint_time=%g, position=%s", mint_time, long)
+        if long.balance > 0:
+            action_list.append(
+                MarketAction(
+                    action_type=MarketActionType.CLOSE_LONG,
+                    trade_amount=long.balance,
+                    mint_time=mint_time,
+                )
+            )
+    for mint_time, short in agent_.wallet.shorts.items():
+        logging.debug("evaluating closing short: mint_time=%g, position=%s", mint_time, short)
+        if short.balance > 0:
+            action_list.append(
+                MarketAction(
+                    action_type=MarketActionType.CLOSE_SHORT,
+                    trade_amount=short.balance,
+                    mint_time=mint_time,
+                )
+            )
+    if agent_.wallet.lp > 0:
+        logging.debug("evaluating closing lp: mint_time=%g, position=%s", simulation_state_.time, agent_.wallet.lp)
+        action_list.append(
+            MarketAction(
+                action_type=MarketActionType.REMOVE_LIQUIDITY,
+                trade_amount=agent_.wallet.lp,
+            )
+        )
+    return action_list
+
+
+def log_final_report(agent_: Agent, simulation_state_: SimulationState) -> None:
+    """Logs a report of the agent's state"""
+    market_state_ = simulation_state_.market_state
+    price = market_state_.spot_price
+    base = agent_.wallet.base
+    longs = list(agent_.wallet.longs.values())
+    shorts = list(agent_.wallet.shorts.values())
+
+    # Calculate the total pnl of the trader.
+    longs_value = (sum(long.balance for long in longs) if longs else 0) * price
+    shorts_value = (
+        sum(
+            # take the interest from the margin and subtract the bonds shorted at the current price
+            (market_state_.share_price / short.open_share_price) * short.balance - price * short.balance
+            for short in shorts
+        )
+        if shorts
+        else 0
+    )
+    total_value = base + longs_value + shorts_value
+    profit_and_loss = total_value - agent_.budget
+
+    # Calculated spending statistics.
+    spend = weighted_average_spend(agent_=agent_, simulation_state_=simulation_state_)
+    holding_period_rate = profit_and_loss / spend if spend != 0 else 0
+    if simulation_state_.time > 0:
+        annual_percentage_rate = holding_period_rate / simulation_state_.time
+    else:
+        annual_percentage_rate = np.nan
+
+    # Log the trading report.
+    lost_or_made = "lost" if profit_and_loss < 0 else "made"
+    logging.info(
+        (
+            "agent #%g %s %s on $%s spent, APR = %g"
+            " (%.2g in %s years), net worth = $%s"
+            " from %s base, %s longs, and %s shorts at p = %g\n"
+        ),
+        agent_.wallet.address,
+        lost_or_made,
+        profit_and_loss,
+        spend,
+        annual_percentage_rate,
+        holding_period_rate,
+        simulation_state_.time,
+        total_value,
+        base,
+        sum(long.balance for long in longs),
+        sum(short.balance for short in shorts),
+        price,
+    )
+
+
 if __name__ == "__main__":
     simulation_state = SimulationState()
-    print(f"{simulation_state=}")
+    # print(f"{simulation_state=}")
     run_simulation(simulation_state_=simulation_state)
