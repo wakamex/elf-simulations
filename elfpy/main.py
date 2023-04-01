@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING, Type, Any, Dict, Optional
 import numpy as np
 from numpy.random import Generator
 
-import elfpy.utils.time as time_utils
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 
@@ -1125,7 +1124,6 @@ def run_simulation(simulation_state_, liquidate_on_end: bool = True) -> None:
     There are no returns, but the function does update the simulation_state member variable
     """
     last_block_in_sim = False
-    simulation_state_.start_time = time_utils.current_datetime()
     for day in range(simulation_state_.config.num_trading_days):
         simulation_state_.day = day
         simulation_state_.market.market_state.vault_apr = simulation_state_.config.vault_apr[simulation_state_.day]
