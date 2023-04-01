@@ -892,7 +892,7 @@ class SimulationState:
                 market_state=self.market_state, share_price=self.market_state.share_price
             )
             lp_amount = self.config.target_liquidity - current_market_liquidity
-            init_lp_agent = import_module("elfpy.policies.init_lp").Policy(wallet_address=0, budget=lp_amount)
+            init_lp_agent = InitLP(wallet_address=0, budget=lp_amount)
             self.agents.update({0: init_lp_agent})
         collect_and_execute_trades(simulation_state_=self)  # Initialize the simulator using only the initial LP
         self.agents.update(setup_agents(self.config))
@@ -919,8 +919,19 @@ def validate_custom_parameters(policy_instruction):
     return policy_name, kwargs
 
 
+def get_agent(agent: str) -> Type[Agent]:
+    if agent in {"init_lp", "InitLP"}:  # sourcery skip: assign-if-exp, reintroduce-else
+        return InitLP
+    if agent in {"lp_and_withdraw", "LPandWithdraw"}:
+        return LPandWithdraw
+    if agent in {"single_long", "SingleLong"}:
+        return SingleLong
+    if agent in {"single_short", "SingleShort"}:
+        return SingleShort
+    return NullAgent
+
+
 def setup_agents(config, agent_policies=None) -> dict[int, Agent]:
-    """setup agents"""
     agent_policies = config.agent_policies if agent_policies is None else agent_policies
     agents = {}
     for agent_id, policy_instruction in enumerate(agent_policies):
@@ -930,8 +941,8 @@ def setup_agents(config, agent_policies=None) -> dict[int, Agent]:
             policy_name = policy_instruction
             not_kwargs = {}
         wallet_address = agent_id + 1
-        policy = import_module("elfpy.policies.{policy_name}").Policy
-        agent = policy(wallet_address=wallet_address, budget=1000)  # first policy goes to init_lp_agent
+        agent_class: Type[Agent] = get_agent(policy_name)
+        agent = agent_class(wallet_address=wallet_address, budget=1000)  # first policy goes to init_lp_agent
         for key, value in not_kwargs.items():
             if hasattr(agent, key):  # check if parameter exists
                 setattr(agent, key, value)
@@ -2921,24 +2932,21 @@ def log_final_report(agent_: Agent, simulation_state_: SimulationState) -> None:
     )
 
 
-class InitLP(Agent):
-    """Adds a large LP"""
-
+class NullAgent(Agent):
     def action(self, simulation_state_: SimulationState) -> list[MarketAction]:
-        """User strategy adds liquidity and then takes no additional actions"""
+        """Do nothing"""
+        return []
+
+
+class InitLP(Agent):
+    def action(self, simulation_state_: SimulationState) -> list[MarketAction]:
+        """LP if you can, but only once"""
         if self.wallet.lp > 0:  # has already opened the lp
             return []
-        return [
-            MarketAction(
-                action_type=MarketActionType.ADD_LIQUIDITY,
-                trade_amount=self.budget,
-            )
-        ]
+        return [MarketAction(action_type=MarketActionType.ADD_LIQUIDITY, trade_amount=self.budget)]
 
 
 class LPandWithdraw(Agent):
-    """Adds a large LP and then withdraws it"""
-
     def __init__(self, wallet_address, budget=1000):
         """call basic policy init then add custom stuff"""
         self.time_to_withdraw = 1.0
@@ -2946,28 +2954,17 @@ class LPandWithdraw(Agent):
         super().__init__(wallet_address, budget)
 
     def action(self, simulation_state_: SimulationState) -> list[MarketAction]:
-        """
-        implement user strategy
-        LP if you can, but only do it once
-        """
+        """LP if you can, but only once, the withdraw after a certain amount of time"""
         action_list = []
         has_lp = self.wallet.lp > 0
         can_lp = self.wallet.base >= self.amount_to_lp
         if not has_lp and can_lp:
-            action_list.append(
-                MarketAction(
-                    action_type=MarketActionType.ADD_LIQUIDITY,
-                    trade_amount=self.amount_to_lp,
-                )
-            )
+            action_list.append(MarketAction(action_type=MarketActionType.ADD_LIQUIDITY, trade_amount=self.amount_to_lp))
         elif has_lp:
             enough_time_has_passed = simulation_state_.time > self.time_to_withdraw
             if enough_time_has_passed:
                 action_list.append(
-                    MarketAction(
-                        action_type=MarketActionType.REMOVE_LIQUIDITY,
-                        trade_amount=self.wallet.lp,
-                    )
+                    MarketAction(action_type=MarketActionType.REMOVE_LIQUIDITY, trade_amount=self.wallet.lp)
                 )
         return action_list
 
@@ -2986,9 +2983,7 @@ class SingleLong(Agent):
             if enough_time_has_passed:
                 action_list.append(
                     MarketAction(
-                        action_type=MarketActionType.CLOSE_LONG,
-                        trade_amount=longs[-1].balance,
-                        mint_time=mint_time,
+                        action_type=MarketActionType.CLOSE_LONG, trade_amount=longs[-1].balance, mint_time=mint_time
                     )
                 )
         else:
@@ -2998,15 +2993,12 @@ class SingleLong(Agent):
 
 
 class SingleLP(Agent):
-    """Opens a single LP position"""
-
     def __init__(self, wallet_address, budget=1000):
-        """call basic policy init then add custom stuff"""
         self.amount_to_lp = 100
         super().__init__(wallet_address, budget)
 
     def action(self, simulation_state_: SimulationState) -> list[MarketAction]:
-        """Specify action"""
+        """LP if you can, but only once"""
         action_list = []
         has_lp = self.wallet.lp > 0
         can_lp = self.wallet.base >= self.amount_to_lp
@@ -3016,15 +3008,12 @@ class SingleLP(Agent):
 
 
 class SingleShort(Agent):
-    """Opens a single short position"""
-
     def __init__(self, wallet_address, budget=100):
-        """call basic policy init then add custom stuff"""
         self.amount_to_trade = 100
         super().__init__(wallet_address, budget)
 
     def action(self, simulation_state_: SimulationState) -> list[MarketAction]:
-        """Specify action"""
+        """Short if you can, but only once"""
         action_list = []
         shorts = list(self.wallet.shorts.values())
         has_opened_short = any((short.balance > 0 for short in shorts))
