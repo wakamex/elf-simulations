@@ -250,12 +250,6 @@ class MarketActionType(Enum):
     REMOVE_LIQUIDITY = "remove_liquidity"
 
 
-@property
-def stretched_time(self):
-    r"""The time in years, stretched by the time_stretch"""
-    return self.time_in_years / self.time_stretch
-
-
 @dataclass
 class Position:
     r"""A Long or Short position
@@ -432,6 +426,7 @@ class MarketState:
     time: float = 0.0
     pricing_model: PricingModel = field(default_factory=HyperdrivePricingModel)
     term_length_in_days: float = 90
+    time_stretch: float = 1
     share_reserves: float = 0.0
     bond_reserves: float = 0.0
     base_buffer: float = 0.0
@@ -464,7 +459,9 @@ class MarketState:
             np.nan
             if self.share_reserves == 0
             else self.pricing_model.calc_spot_price_from_reserves(
-                market_state=self, time_remaining=self.term_length_in_years
+                market_state=self,
+                time_remaining_in_years=self.term_length_in_years,
+                time_stretch=self.time_stretch,
             )
         )
 
@@ -919,20 +916,23 @@ def log_market_step_string(simulation_state_) -> None:
     )
 
 
-def init_market_state(market_state_, config, pricing_model, init_target_liquidity: float = 1):
+def init_market_state(
+    simulation_state_: SimulationState, config: Config, pricing_model: PricingModel, init_target_liquidity: float = 1
+):
     """Calculate reserves required to hit init targets and assign them to market_state"""
     term_length_in_years = config.num_position_days / 365
-    time_stretch = pricing_model.calc_time_stretch(config.target_pool_apr)
-    adjusted_target_apr = config.target_pool_apr * config.num_position_days / 365
+    time_stretch = pricing_model.calc_time_stretch(config.target_fixed_rate)
+    adjusted_target_apr = config.target_fixed_rate * config.num_position_days / 365
     share_reserves_direct, bond_reserves_direct = pricing_model.calc_liquidity(
-        market_state=market_state_,
+        simulation_state_=simulation_state_,
         target_liquidity=init_target_liquidity,
         target_apr=adjusted_target_apr,
         term_length_in_years=term_length_in_years,
         time_stretch=time_stretch,
     )
-    market_state_.share_reserves = share_reserves_direct
-    market_state_.bond_reserves = bond_reserves_direct
+    simulation_state_.market_state.time_stretch = time_stretch
+    simulation_state_.market_state.share_reserves = share_reserves_direct
+    simulation_state_.market_state.bond_reserves = bond_reserves_direct
 
 
 @dataclass
