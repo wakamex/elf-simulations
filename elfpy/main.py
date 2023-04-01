@@ -1,4 +1,4 @@
-"""Simulator class wraps the pricing models and markets for experiment tracking and execution"""
+"""Main body of the elfpy simulation"""
 from __future__ import annotations
 from dataclasses import dataclass, field  # types will be strings by default in 3.11
 from enum import Enum
@@ -251,31 +251,10 @@ class MarketActionType(Enum):
     REMOVE_LIQUIDITY = "remove_liquidity"
 
 
-@freezable(frozen=True, no_new_attribs=True)
-@dataclass
-class StretchedTime:
-    r"""Stores time in units of days, as well as normalized & stretched variants
-
-    .. todo:: Improve this constructor so that StretchedTime can be constructed from years.
-    """
-    days: float
-    time_stretch: float
-    normalizing_constant: float
-
-    @property
-    def stretched_time(self):
-        r"""Returns days / normalizing_constant / time_stretch"""
-        return time_utils.days_to_time_remaining(
-            self.days, self.time_stretch, normalizing_constant=self.normalizing_constant
-        )
-
-    @property
-    def normalized_time(self):
-        r"""Format time as normalized days"""
-        return time_utils.norm_days(
-            self.days,
-            self.normalizing_constant,
-        )
+@property
+def stretched_time(self):
+    r"""The time in years, stretched by the time_stretch"""
+    return self.time_in_years / self.time_stretch
 
 
 @dataclass
@@ -345,8 +324,10 @@ def get_state(wallet_, simulation_state_: SimulationState) -> dict:
     .. todo:: TODO: return a dataclass instead of dict to avoid having to check keys & the get_state_keys func
     """
     lp_token_value = 0
-    if wallet_.lp_tokens > 0 and simulation_state_.market_state.lp > 0:  # check if LP, and avoid divide by zero
-        share_of_pool = wallet_.lp_tokens / simulation_state_.market_state.lp
+    if (
+        wallet_.lp_tokens > 0 and simulation_state_.market_state.lp_reserves > 0
+    ):  # check if LP, and avoid divide by zero
+        share_of_pool = wallet_.lp_tokens / simulation_state_.market_state.lp_reserves
         pool_value = (
             simulation_state_.market_state.bond_reserves * simulation_state_.market_state.spot_price  # in base
             + simulation_state_.market_state.share_reserves * simulation_state_.market_state.share_price  # in base
@@ -451,14 +432,12 @@ class MarketState:
 
     time: float = 0.0
     pricing_model: PricingModel = field(default_factory=HyperdrivePricingModel)
-    position_duration: StretchedTime = field(
-        default_factory=lambda: StretchedTime(days=365, time_stretch=22, normalizing_constant=365)
-    )
+    term_length_in_days: float = 90
     share_reserves: float = 0.0
     bond_reserves: float = 0.0
     base_buffer: float = 0.0
     bond_buffer: float = 0.0
-    lp: float = 0.0
+    lp_reserves: float = 0.0
     variable_rate: float = 0.0
     share_price: float = 1.0
     init_share_price: float = 1.0
@@ -466,12 +445,17 @@ class MarketState:
     redemption_fee_percent: float = 0.0
 
     @property
+    def term_length_in_years(self) -> float:
+        """Returns the term length in years"""
+        return self.term_length_in_days / 365
+
+    @property
     def apr(self) -> float:
         """Returns the current market apr (returns nan if shares are zero)"""
         return (
             np.nan
             if self.share_reserves <= 0
-            else calc_apr_from_spot_price(price=self.spot_price, time_remaining=self.position_duration)
+            else calc_apr_from_spot_price(price=self.spot_price, time_remaining_in_years=self.term_length_in_years)
         )
 
     @property
@@ -481,7 +465,7 @@ class MarketState:
             np.nan
             if self.share_reserves == 0
             else self.pricing_model.calc_spot_price_from_reserves(
-                market_state=self, time_remaining=self.position_duration
+                market_state=self, time_remaining=self.term_length_in_years
             )
         )
 
@@ -594,55 +578,26 @@ def trade_and_update(simulation_state_, action_details: tuple[int, MarketAction]
         agent_deltas,
         simulation_state_.market_state,
     )
-    return (agent_id, agent_deltas, market_deltas)
+    return agent_id, agent_deltas, market_deltas
 
 
 ### Spot Price and APR ###
-def calc_apr_from_spot_price(price: float, time_remaining: StretchedTime):
-    r"""
-    Returns the APR (decimal) given the current (positive) base asset price and the remaining pool duration
-
-    Parameters
-    ----------
-    price : float
-        Spot price of bonds in terms of base
-    time_remaining : StretchedTime
-        Time remaining until bond maturity, in yearfracs
-
-    Returns
-    -------
-    float
-        APR (decimal) calculated from the provided parameters
-    """
+def calc_apr_from_spot_price(price: float, time_remaining_in_years: float):
+    """Returns the APR (decimal) given the current (positive) base asset price and the remaining pool duration"""
     assert price > 0, (
         "utils.price.calc_apr_from_spot_price: ERROR: "
         f"Price argument should be greater or equal to zero, not {price}"
     )
-    assert time_remaining.normalized_time > 0, (
+    assert time_remaining_in_years > 0, (
         "utils.price.calc_apr_from_spot_price: ERROR: "
-        f"time_remaining.normalized_time should be greater than zero, not {time_remaining.normalized_time}"
+        f"time_remaining_in_years should be greater than zero, not {time_remaining_in_years}"
     )
-    annualized_time = time_utils.norm_days(time_remaining.days, 365)
-    return (1 - price) / (price * annualized_time)  # r = ((1/p)-1)/t = (1-p)/(pt)
+    return (1 - price) / (price * time_remaining_in_years)  # r = ((1/p)-1)/t = (1-p)/(pt)
 
 
-def calc_spot_price_from_apr(apr_: float, time_remaining: StretchedTime):
-    r"""Returns the current spot price based on the current APR (decimal) and the remaining pool duration
-
-    Parameters
-    ----------
-    apr : float
-        Current fixed APR in decimal units (for example, 5% APR would be 0.05)
-    time_remaining : StretchedTime
-        Time remaining until bond maturity
-
-    Returns
-    -------
-    float
-        Spot price of bonds in terms of base, calculated from the provided parameters
-    """
-    annualized_time = time_utils.norm_days(time_remaining.days, 365)
-    return 1 / (1 + apr_ * annualized_time)  # price = 1 / (1 + r * t)
+def calc_spot_price_from_apr(apr_: float, time_remaining_in_years):
+    """Returns the current spot price based on the current APR (decimal) and the remaining pool duration"""
+    return 1 / (1 + apr_ * time_remaining_in_years)  # price = 1 / (1 + r * t)
 
 
 def open_short(
@@ -723,29 +678,19 @@ def close_short(
         )
         trade_amount = simulation_state_.market_state.bond_reserves
 
-    # Compute the time remaining given the mint time.
-    years_remaining = time_utils.get_years_remaining(
-        market_time=simulation_state_.time,
-        mint_time=mint_time,
-        position_duration_years=simulation_state_.position_duration.days / 365,
-    )  # all args in units of years
-    time_remaining = StretchedTime(
-        days=years_remaining * 365,  # converting years to days
-        time_stretch=simulation_state_.position_duration.time_stretch,
-        normalizing_constant=simulation_state_.position_duration.normalizing_constant,
-    )
+    time_remaining_in_years = simulation_state_.term_length_in_years - (simulation_state.time - mint_time)
 
     # Perform the trade.
     trade_quantity = Quantity(amount=trade_amount, unit=TokenType.PT)
     simulation_state_.pricing_model.check_input_assertions(
         quantity=trade_quantity,
         market_state=simulation_state_.market_state,
-        time_remaining=time_remaining,
+        time_remaining_in_years=time_remaining_in_years,
     )
     trade_result = simulation_state_.pricing_model.calc_in_given_out(
         out=trade_quantity,
         market_state=simulation_state_.market_state,
-        time_remaining=time_remaining,
+        time_remaining_in_years=time_remaining_in_years,
     )
     simulation_state_.pricing_model.check_output_assertions(trade_result=trade_result)
     # Return the market and wallet deltas.
@@ -822,30 +767,19 @@ def close_long(
     compute wallet update spec with specific details
     will be conditional on the pricing model
     """
-
-    # Compute the time remaining given the mint time.
-    years_remaining = time_utils.get_years_remaining(
-        market_time=simulation_state_.time,
-        mint_time=mint_time,
-        position_duration_years=simulation_state_.position_duration.days / 365,
-    )  # all args in units of years
-    time_remaining = StretchedTime(
-        days=years_remaining * 365,  # converting years to days
-        time_stretch=simulation_state_.position_duration.time_stretch,
-        normalizing_constant=simulation_state_.position_duration.normalizing_constant,
-    )
+    time_remaining_in_years = simulation_state_.term_length_in_years - (simulation_state.time - mint_time)
 
     # Perform the trade.
     trade_quantity = Quantity(amount=trade_amount, unit=TokenType.PT)
     simulation_state_.pricing_model.check_input_assertions(
         quantity=trade_quantity,
         market_state=simulation_state_.market_state,
-        time_remaining=time_remaining,
+        time_remaining_in_years=time_remaining_in_years,
     )
     trade_result = simulation_state_.pricing_model.calc_out_given_in(
         in_=trade_quantity,
         market_state=simulation_state_.market_state,
-        time_remaining=time_remaining,
+        time_remaining_in_years=time_remaining_in_years,
     )
     simulation_state_.pricing_model.check_output_assertions(trade_result=trade_result)
     # Return the market and wallet deltas.
@@ -988,17 +922,15 @@ def log_market_step_string(simulation_state_) -> None:
 
 def init_market_state(market_state_, config, pricing_model, init_target_liquidity: float = 1):
     """Calculate reserves required to hit init targets and assign them to market_state"""
-    position_duration = StretchedTime(
-        days=config.num_position_days,
-        time_stretch=pricing_model.calc_time_stretch(config.target_pool_apr),
-        normalizing_constant=config.num_position_days,
-    )
+    term_length_in_years = config.num_position_days / 365
+    time_stretch = pricing_model.calc_time_stretch(config.target_pool_apr)
     adjusted_target_apr = config.target_pool_apr * config.num_position_days / 365
     share_reserves_direct, bond_reserves_direct = pricing_model.calc_liquidity(
         market_state=market_state_,
         target_liquidity=init_target_liquidity,
         target_apr=adjusted_target_apr,
-        position_duration=position_duration,
+        term_length_in_years=term_length_in_years,
+        time_stretch=time_stretch,
     )
     market_state_.share_reserves = share_reserves_direct
     market_state_.bond_reserves = bond_reserves_direct

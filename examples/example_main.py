@@ -9,7 +9,7 @@ from typing import Any
 from stochastic.processes import GeometricBrownianMotion
 
 # elfpy core repo
-from elfpy import Agent, Config, MarketActionType, SimulationState  # pylint: disable=no-name-in-module
+from elfpy import Agent, Config, MarketActionType, SimulationState
 import elfpy.utils.outputs as output_utils
 
 

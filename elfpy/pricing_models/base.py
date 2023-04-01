@@ -5,19 +5,7 @@ from abc import ABC
 import decimal
 from decimal import Decimal
 
-from elfpy import (
-    MAX_RESERVES_DIFFERENCE,
-    WEI,
-)
-from elfpy.types import (
-    Quantity,
-    MarketState,
-    StretchedTime,
-    TokenType,
-    TradeResult,
-)
-import elfpy.utils.price as price_utils
-import elfpy.utils.time as time_utils
+import elfpy
 
 # Set the Decimal precision to be higher than the default of 28. This ensures
 # that the pricing models can safely a lowest possible input of 1e-18 with an
@@ -33,19 +21,21 @@ class PricingModel(ABC):
 
     def calc_in_given_out(
         self,
-        out: Quantity,
-        market_state: MarketState,
-        time_remaining: StretchedTime,
-    ) -> TradeResult:
+        out: elfpy.Quantity,
+        market_state: elfpy.MarketState,
+        time_remaining_in_years: float,
+        time_stretch: float,
+    ) -> elfpy.TradeResult:
         """Calculate fees and asset quantity adjustments"""
         raise NotImplementedError
 
     def calc_out_given_in(
         self,
-        in_: Quantity,
-        market_state: MarketState,
-        time_remaining: StretchedTime,
-    ) -> TradeResult:
+        in_: elfpy.Quantity,
+        market_state: elfpy.MarketState,
+        time_remaining_in_years: float,
+        time_stretch: float,
+    ) -> elfpy.TradeResult:
         """Calculate fees and asset quantity adjustments"""
         raise NotImplementedError
 
@@ -53,8 +43,9 @@ class PricingModel(ABC):
         self,
         d_base: float,
         rate: float,
-        market_state: MarketState,
-        time_remaining: StretchedTime,
+        market_state: elfpy.MarketState,
+        time_remaining_in_years: float,
+        time_stretch: float,
     ) -> tuple[float, float, float]:
         """Computes the amount of LP tokens to be minted for a given amount of base asset"""
         raise NotImplementedError
@@ -63,8 +54,9 @@ class PricingModel(ABC):
         self,
         d_base: float,
         rate: float,
-        market_state: MarketState,
-        time_remaining: StretchedTime,
+        market_state: elfpy.MarketState,
+        time_remaining_in_years: float,
+        time_stretch: float,
     ) -> tuple[float, float, float]:
         """Computes the amount of LP tokens to be minted for a given amount of base asset"""
         raise NotImplementedError
@@ -73,8 +65,9 @@ class PricingModel(ABC):
         self,
         lp_in: float,
         rate: float,
-        market_state: MarketState,
-        time_remaining: StretchedTime,
+        market_state: elfpy.MarketState,
+        time_remaining_in_years: float,
+        time_stretch: float,
     ) -> tuple[float, float, float]:
         """Calculate how many tokens should be returned for a given lp addition"""
         raise NotImplementedError
@@ -87,15 +80,21 @@ class PricingModel(ABC):
         """Unique identifier given to the model, should be lower snake_cased name"""
         raise NotImplementedError
 
-    def _calc_k_const(self, market_state: MarketState, time_remaining: StretchedTime) -> Decimal:
+    def _calc_k_const(
+        self,
+        market_state: elfpy.MarketState,
+        time_remaining_in_years: float,
+        time_stretch: float,
+    ) -> Decimal:
         """Returns the 'k' constant variable for trade mathematics"""
         raise NotImplementedError
 
     def calc_bond_reserves(
         self,
         target_apr: float,
-        time_remaining: StretchedTime,
-        market_state: MarketState,
+        time_remaining_in_years: float,
+        time_stretch: float,
+        simulation_state_: elfpy.SimulationState,
     ) -> float:
         """Returns the assumed bond (i.e. token asset) reserve amounts given
         the share (i.e. base asset) reserves and APR
@@ -106,14 +105,8 @@ class PricingModel(ABC):
             Target fixed APR in decimal units (for example, 5% APR would be 0.05)
         time_remaining : StretchedTime
             Amount of time left until bond maturity
-        market_state : MarketState
-            MarketState object; the following attributes are used:
-                share_reserves : float
-                    Base asset reserves in the pool
-                init_share_price : float
-                    Original share price when the pool started
-                share_price : float
-                    Current share price
+        simulation_state_: SimulationState
+            Simulation state
 
         Returns
         -------
@@ -124,9 +117,11 @@ class PricingModel(ABC):
         """
         # Only want to renormalize time for APR ("annual", so hard coded to 365)
         # Don't want to renormalize stretched time
-        annualized_time = time_utils.norm_days(time_remaining.days, 365)
+        annualized_time = simulation_state_.time_in_years
+        market_state = simulation_state_.market_state
         bond_reserves = (market_state.share_reserves / 2) * (
-            market_state.init_share_price * (1 + target_apr * annualized_time) ** (1 / time_remaining.stretched_time)
+            market_state.init_share_price
+            * (1 + target_apr * annualized_time) ** (1 / (time_remaining_in_years / time_stretch))
             - market_state.share_price
         )  # y = z/2 * (mu * (1 + rt)**(1/tau) - c)
         return bond_reserves
@@ -135,7 +130,8 @@ class PricingModel(ABC):
         self,
         target_apr: float,
         bond_reserves: float,
-        time_remaining: StretchedTime,
+        time_remaining_in_years: float,
+        time_stretch: float,
         init_share_price: float = 1,
     ):
         """Returns the assumed share (i.e. base asset) reserve amounts given
@@ -168,12 +164,12 @@ class PricingModel(ABC):
         # z = (2 * y) / (mu * (1 + rt)**(1/tau) - c)
         # Only want to renormalize time for APR ("annual", so hard coded to 365)
         # Don't want to renormalize stretched time
-        annualized_time = time_utils.norm_days(time_remaining.days, 365)
         share_reserves = (
             2
             * bond_reserves
             / (
-                init_share_price * (1 - target_apr * annualized_time) ** (1 / time_remaining.stretched_time)
+                init_share_price
+                * (1 - target_apr * time_remaining_in_years) ** (1 / (time_remaining_in_years / time_stretch))
                 - init_share_price
             )
         )
@@ -184,38 +180,11 @@ class PricingModel(ABC):
         self,
         target_apr: float,
         bond: float,
-        position_duration: StretchedTime,
+        term_length_in_years: float,
         share_price: float = 1.0,
     ) -> float:
-        """Returns the base required to buy the given bonds at the target APR
-        For a long, this is maximum amount of base in required to get the given bonds out.
-        For a short, this is the minimum amount of base out for the given bonds in.
-
-        Parameters
-        ----------
-        target_apr : float
-            Target fixed APR in decimal units (for example, 5% APR would be 0.05)
-        bond_out: float
-            The amount of bonds to purchase
-        position_duration: StretchedTime
-            The term length of the bond
-        share_price : float
-            The current share price
-
-        Returns
-        -------
-        float
-            The base amount for a given bond at the target_apr.
-        """
-
-        # delta_z / delta_y = p = 1 - r
-        # delta_z = delta_y * (1 - r)
-        # delta_x = c * delta_y * (1 - r)
-
-        # Only want to renormalize time for APR ("annual", so hard coded to 365)
-        # Don't want to renormalize stretched time
-        annualized_time = time_utils.norm_days(position_duration.days, 365)
-        base = share_price * bond * (1 - target_apr * annualized_time)
+        """Returns the base for a given target APR."""
+        base = share_price * bond * (1 - target_apr * term_length_in_years)
 
         assert base >= 0, "base value negative"
         return base
@@ -224,51 +193,25 @@ class PricingModel(ABC):
         self,
         target_apr: float,
         base: float,
-        position_duration: StretchedTime,
+        term_length_in_years,
         share_price: float = 1.0,
     ) -> float:
-        """Returns the bonds for a given base at the target APR.
-        For a long this is the minimum amount of bonds out for a given base in.
-        For a short this is the maximum amount of base in for a given base out.
-
-        Parameters
-        ----------
-        target_apr : float
-            Target fixed APR in decimal units (for example, 5% APR would be 0.05)
-        bond_out: float
-            The amount of bonds to purchase
-        position_duration: StretchedTime
-            The term length of the bond
-        share_price : float
-            The current share price
-
-        Returns
-        -------
-        float
-            The bond amount for a given base in at the target APR
-        """
-
-        # delta_z / delta_y = p = 1 - r
-        # delta_y = delta_z / (1 - r)
-        # delta_y = (delta_x / c) / (1 - r)
-
-        # Only want to renormalize time for APR ("annual", so hard coded to 365)
-        # Don't want to renormalize stretched time
-        annualized_time = time_utils.norm_days(position_duration.days, 365)
-        bond = (base / share_price) / (1 - target_apr * annualized_time)
+        """Calculates the bond for a given target APR."""
+        bond = (base / share_price) / (1 - target_apr * term_length_in_years)
 
         assert bond >= 0, "bond value negative"
         return bond
 
     def calc_liquidity(
         self,
-        market_state: MarketState,
+        simulation_state_: elfpy.SimulationState,
         target_liquidity: float,
         target_apr: float,
         # TODO: Fields like position_duration and fee_percent could arguably be
         # wrapped up into a "MarketContext" value that includes the state as
         # one of its fields.
-        position_duration: StretchedTime,
+        term_length_in_years: float,
+        time_stretch: float,
     ) -> tuple[float, float]:
         """Returns the reserve volumes and total supply
 
@@ -280,8 +223,8 @@ class PricingModel(ABC):
 
         Parameters
         ----------
-        market_state : MarketState
-            The state of the market
+        simulation_state_ : SimulationState
+            The simulation state
         target_liquidity_usd : float
             Amount of liquidity that the simulation is trying to achieve in a given market
         target_apr : float
@@ -295,19 +238,17 @@ class PricingModel(ABC):
             Tuple that contains (share_reserves, bond_reserves)
             calculated from the provided parameters
         """
+        market_state = simulation_state_.market_state
         share_reserves = target_liquidity / market_state.share_price
         # guarantees only that it hits target_apr
         bond_reserves = self.calc_bond_reserves(
             target_apr=target_apr,
-            time_remaining=position_duration,
-            market_state=MarketState(
-                share_reserves=share_reserves,
-                init_share_price=market_state.init_share_price,
-                share_price=market_state.share_price,
-            ),
+            time_remaining_in_years=term_length_in_years,
+            time_stretch=time_stretch,
+            simulation_state_=simulation_state_,
         )
         total_liquidity = self.calc_total_liquidity_from_reserves_and_price(
-            MarketState(
+            elfpy.MarketState(
                 share_reserves=share_reserves,
                 bond_reserves=bond_reserves,
                 base_buffer=market_state.base_buffer,
@@ -325,7 +266,9 @@ class PricingModel(ABC):
         share_reserves = share_reserves * scaling_factor
         return share_reserves, bond_reserves
 
-    def calc_total_liquidity_from_reserves_and_price(self, market_state: MarketState, share_price: float) -> float:
+    def calc_total_liquidity_from_reserves_and_price(
+        self, market_state: elfpy.MarketState, share_price: float
+    ) -> float:
         """Returns the total liquidity in the pool in terms of base
 
         Parameters
@@ -350,8 +293,9 @@ class PricingModel(ABC):
 
     def calc_spot_price_from_reserves(
         self,
-        market_state: MarketState,
-        time_remaining: StretchedTime,
+        market_state: elfpy.MarketState,
+        time_remaining_in_years: float,
+        time_stretch: float,
     ) -> float:
         r"""
         Calculates the spot price of base in terms of bonds.
@@ -376,13 +320,16 @@ class PricingModel(ABC):
             The spot price of principal tokens.
         """
         return float(
-            self._calc_spot_price_from_reserves_high_precision(market_state=market_state, time_remaining=time_remaining)
+            self._calc_spot_price_from_reserves_high_precision(
+                market_state=market_state, time_remaining_in_years=time_remaining_in_years, time_stretch=time_stretch
+            )
         )
 
     def _calc_spot_price_from_reserves_high_precision(
         self,
-        market_state: MarketState,
-        time_remaining: StretchedTime,
+        market_state: elfpy.MarketState,
+        time_remaining_in_years: float,
+        time_stretch: float,
     ) -> Decimal:
         r"""
         Calculates the current market spot price of base in terms of bonds.
@@ -417,34 +364,14 @@ class PricingModel(ABC):
         spot_price = (
             (Decimal(market_state.bond_reserves) + total_reserves)
             / (Decimal(market_state.init_share_price) * Decimal(market_state.share_reserves))
-        ) ** Decimal(-time_remaining.stretched_time)
+        ) ** Decimal(-time_remaining_in_years / time_stretch)
         return spot_price
-
-    def calc_apr_from_reserves(
-        self,
-        market_state: MarketState,
-        time_remaining: StretchedTime,
-    ) -> float:
-        r"""Returns the apr given reserve amounts
-
-        Parameters
-        ----------
-        market_state : MarketState
-            The reserves and share prices of the pool
-        time_remaining : StretchedTime
-            The expiry time for the asset
-        """
-        spot_price = self.calc_spot_price_from_reserves(
-            market_state,
-            time_remaining,
-        )
-        apr = price_utils.calc_apr_from_spot_price(spot_price, time_remaining)
-        return apr
 
     def get_max_long(
         self,
-        market_state: MarketState,
-        time_remaining: StretchedTime,
+        market_state: elfpy.MarketState,
+        time_remaining_in_years: float,
+        time_stretch: float,
     ) -> tuple[float, float]:
         r"""
         Calculates the maximum long the market can support
@@ -472,21 +399,24 @@ class PricingModel(ABC):
             The maximum amount of bonds that can be purchased.
         """
         base = self.calc_in_given_out(
-            out=Quantity(market_state.bond_reserves - market_state.bond_buffer, unit=TokenType.PT),
+            out=elfpy.Quantity(market_state.bond_reserves - market_state.bond_buffer, unit=elfpy.TokenType.PT),
             market_state=market_state,
-            time_remaining=time_remaining,
+            time_remaining_in_years=time_remaining_in_years,
+            time_stretch=time_stretch,
         ).breakdown.with_fee
         bonds = self.calc_out_given_in(
-            in_=Quantity(amount=base, unit=TokenType.BASE),
+            in_=elfpy.Quantity(amount=base, unit=elfpy.TokenType.BASE),
             market_state=market_state,
-            time_remaining=time_remaining,
+            time_remaining_in_years=time_remaining_in_years,
+            time_stretch=time_stretch,
         ).breakdown.with_fee
         return (base, bonds)
 
     def get_max_short(
         self,
-        market_state: MarketState,
-        time_remaining: StretchedTime,
+        market_state: elfpy.MarketState,
+        time_remaining_in_years: float,
+        time_stretch: float,
     ) -> tuple[float, float]:
         r"""
         Calculates the maximum short the market can support using the bisection
@@ -513,16 +443,19 @@ class PricingModel(ABC):
             The maximum amount of bonds that can be shorted.
         """
         bonds = self.calc_in_given_out(
-            out=Quantity(
-                market_state.share_reserves - market_state.base_buffer / market_state.share_price, unit=TokenType.PT
+            out=elfpy.Quantity(
+                market_state.share_reserves - market_state.base_buffer / market_state.share_price,
+                unit=elfpy.TokenType.PT,
             ),
             market_state=market_state,
-            time_remaining=time_remaining,
+            time_remaining_in_years=time_remaining_in_years,
+            time_stretch=time_stretch,
         ).breakdown.with_fee
         base = self.calc_out_given_in(
-            in_=Quantity(amount=bonds, unit=TokenType.PT),
+            in_=elfpy.Quantity(amount=bonds, unit=elfpy.TokenType.PT),
             market_state=market_state,
-            time_remaining=time_remaining,
+            time_remaining_in_years=time_remaining_in_years,
+            time_stretch=time_stretch,
         ).breakdown.with_fee
         return (base, bonds)
 
@@ -533,23 +466,24 @@ class PricingModel(ABC):
 
     def check_input_assertions(
         self,
-        quantity: Quantity,
-        market_state: MarketState,
-        time_remaining: StretchedTime,
+        quantity: elfpy.Quantity,
+        market_state: elfpy.MarketState,
+        time_remaining_in_years: float,
+        time_stretch: float,
     ):
         """Applies a set of assertions to the input of a trading function."""
 
-        assert quantity.amount >= WEI, (
+        assert quantity.amount >= elfpy.WEI, (
             "pricing_models.check_input_assertions: ERROR: "
-            f"expected quantity.amount >= {WEI}, not {quantity.amount}!"
+            f"expected quantity.amount >= {elfpy.WEI}, not {quantity.amount}!"
         )
         assert market_state.share_reserves >= 0, (
             "pricing_models.check_input_assertions: ERROR: "
-            f"expected share_reserves >= {WEI}, not {market_state.share_reserves}!"
+            f"expected share_reserves >= {elfpy.WEI}, not {market_state.share_reserves}!"
         )
         assert market_state.bond_reserves >= 0, (
             "pricing_models.check_input_assertions: ERROR: "
-            f"expected bond_reserves >= {WEI} or bond_reserves == 0, not {market_state.bond_reserves}!"
+            f"expected bond_reserves >= {elfpy.WEI} or bond_reserves == 0, not {market_state.bond_reserves}!"
         )
         assert market_state.share_price >= market_state.init_share_price, (
             f"pricing_models.check_input_assertions: ERROR: "
@@ -560,9 +494,9 @@ class PricingModel(ABC):
             f"expected init_share_price >= 1, not share_price={market_state.init_share_price}"
         )
         reserves_difference = abs(market_state.share_reserves * market_state.share_price - market_state.bond_reserves)
-        assert reserves_difference < MAX_RESERVES_DIFFERENCE, (
+        assert reserves_difference < elfpy.MAX_RESERVES_DIFFERENCE, (
             "pricing_models.check_input_assertions: ERROR: "
-            f"expected reserves_difference < {MAX_RESERVES_DIFFERENCE}, not {reserves_difference}!"
+            f"expected reserves_difference < {elfpy.MAX_RESERVES_DIFFERENCE}, not {reserves_difference}!"
         )
         assert 1 >= market_state.trade_fee_percent >= 0, (
             "pricing_models.check_input_assertions: ERROR: "
@@ -572,20 +506,20 @@ class PricingModel(ABC):
             "pricing_models.check_input_assertions: ERROR: "
             f"expected 1 >= redemption_fee_percent >= 0, not {market_state.redemption_fee_percent}!"
         )
-        assert 1 >= time_remaining.stretched_time >= 0, (
+        assert 1 >= time_remaining_in_years / time_stretch >= 0, (
             "pricing_models.check_input_assertions: ERROR: "
-            f"expected 1 > time_remaining.stretched_time >= 0, not {time_remaining.stretched_time}!"
+            f"expected 1 > time_remaining_in_years / time_stretch >= 0, not {time_remaining_in_years / time_stretch}!"
         )
-        assert 1 >= time_remaining.normalized_time >= 0, (
+        assert 1 >= time_remaining_in_years >= 0, (
             "pricing_models.check_input_assertions: ERROR: "
-            f"expected 1 > time_remaining >= 0, not {time_remaining.normalized_time}!"
+            f"expected 1 > time_remaining_in_years >= 0, not {time_remaining_in_years}!"
         )
 
     # TODO: Add checks for TradeResult's other outputs.
     # issue #57
     def check_output_assertions(
         self,
-        trade_result: TradeResult,
+        trade_result: elfpy.TradeResult,
     ):
         """Applies a set of assertions to a trade result."""
 

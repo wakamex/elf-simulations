@@ -10,7 +10,6 @@ from elfpy.main import SimulationState, Wallet, MarketAction, MarketActionType, 
 
 if TYPE_CHECKING:
     from typing import Optional, Iterable
-    from elfpy.markets import Market
 
 
 class Agent:

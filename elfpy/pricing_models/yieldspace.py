@@ -4,21 +4,10 @@ from __future__ import annotations  # types will be strings by default in 3.11
 from decimal import Decimal
 import logging
 
-from elfpy.pricing_models.base import PricingModel
-import elfpy.utils.time as time_utils
-from elfpy.types import (
-    MarketTradeResult,
-    Quantity,
-    MarketState,
-    StretchedTime,
-    TokenType,
-    TradeBreakdown,
-    TradeResult,
-    AgentTradeResult,
-)
+import elfpy
 
 
-class YieldSpacePricingModel(PricingModel):
+class YieldSpacePricingModel(elfpy.PricingModel):
     """
     YieldSpace Pricing Model
 
@@ -42,8 +31,9 @@ class YieldSpacePricingModel(PricingModel):
         self,
         d_base: float,
         rate: float,
-        market_state: MarketState,
-        time_remaining: StretchedTime,
+        market_state: elfpy.MarketState,
+        time_remaining_in_years: float,
+        time_stretch: float,
     ) -> tuple[float, float, float]:
         r"""
         Computes the amount of LP tokens to be minted for a given amount of base asset
@@ -62,7 +52,7 @@ class YieldSpacePricingModel(PricingModel):
         # TODO: Move this calculation to a helper function.
         d_bonds = (market_state.share_reserves + d_shares) / 2 * (
             market_state.init_share_price
-            * (1 + rate * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
+            * (1 + rate * time_remaining_in_years) ** (1 / (time_remaining_in_years / time_stretch))
             - market_state.share_price
         ) - market_state.bond_reserves
         logging.debug(
@@ -71,7 +61,7 @@ class YieldSpacePricingModel(PricingModel):
                 "bond_reserves=%d, base_buffer=%g, "
                 "init_share_price=%g, share_price=%g, "
                 "lp_reserves=%g, rate=%g, "
-                "time_remaining=%g, stretched_time_remaining=%g"
+                "time_remaining_in_years=%g, time_stretch=%g"
                 "\nd_shares=%g (d_base / share_price = %g / %g)"
                 "\nlp_out=%g\n"
                 "(d_share_reserves * lp_reserves / (share_reserves - base_buffer / share_price) = "
@@ -90,8 +80,8 @@ class YieldSpacePricingModel(PricingModel):
             market_state.share_price,
             market_state.lp_reserves,
             rate,
-            time_remaining.normalized_time,
-            time_remaining.stretched_time,
+            time_remaining_in_years,
+            time_stretch,
             d_shares,
             d_base,
             market_state.share_price,
@@ -106,8 +96,8 @@ class YieldSpacePricingModel(PricingModel):
             d_shares,
             market_state.init_share_price,
             rate,
-            time_remaining.normalized_time,
-            time_remaining.stretched_time,
+            time_remaining_in_years,
+            time_remaining_in_years / time_stretch,
             market_state.share_price,
             market_state.bond_reserves,
         )
@@ -118,8 +108,9 @@ class YieldSpacePricingModel(PricingModel):
         self,
         d_base: float,
         rate: float,
-        market_state: MarketState,
-        time_remaining: StretchedTime,
+        market_state: elfpy.MarketState,
+        time_remaining_in_years: float,
+        time_stretch: float,
     ) -> tuple[float, float, float]:
         r"""
         Computes the amount of LP tokens to be minted for a given amount of base asset
@@ -135,7 +126,7 @@ class YieldSpacePricingModel(PricingModel):
         # TODO: Move this calculation to a helper function.
         d_bonds = (market_state.share_reserves - d_shares) / 2 * (
             market_state.init_share_price
-            * (1 + rate * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
+            * (1 + rate * time_remaining_in_years) ** (1 / (time_remaining_in_years / time_stretch))
             - market_state.share_price
         ) - market_state.bond_reserves
         return lp_in, d_base, d_bonds
@@ -144,8 +135,9 @@ class YieldSpacePricingModel(PricingModel):
         self,
         lp_in: float,
         rate: float,
-        market_state: MarketState,
-        time_remaining: StretchedTime,
+        market_state: elfpy.MarketState,
+        time_remaining_in_years: float,
+        time_stretch: float,
     ) -> tuple[float, float, float]:
         """Calculate how many tokens should be returned for a given lp addition
 
@@ -160,9 +152,9 @@ class YieldSpacePricingModel(PricingModel):
         d_shares = d_base / market_state.share_price
         # TODO: Move this calculation to a helper function.
         # rate is an APR, which is annual, so we normalize time by 365 to correct for units
-        annualized_time = time_utils.norm_days(time_remaining.days, 365)
         d_bonds = (market_state.share_reserves - d_shares) / 2 * (
-            market_state.init_share_price * (1 + rate * annualized_time) ** (1 / time_remaining.stretched_time)
+            market_state.init_share_price
+            * (1 + rate * time_remaining_in_years) ** (1 / (time_remaining_in_years / time_stretch))
             - market_state.share_price
         ) - market_state.bond_reserves
         logging.debug(
@@ -186,8 +178,8 @@ class YieldSpacePricingModel(PricingModel):
             market_state.share_price,
             market_state.lp_reserves,
             rate,
-            time_remaining.normalized_time,
-            time_remaining.stretched_time,
+            time_remaining_in_years,
+            (time_remaining_in_years / time_stretch),
             d_shares,
             d_base,
             market_state.share_price,
@@ -196,8 +188,8 @@ class YieldSpacePricingModel(PricingModel):
             d_shares,
             market_state.init_share_price,
             rate,
-            annualized_time,
-            time_remaining.stretched_time,
+            time_remaining_in_years,
+            (time_remaining_in_years / time_stretch),
             market_state.share_price,
             market_state.bond_reserves,
             d_bonds,
@@ -206,10 +198,11 @@ class YieldSpacePricingModel(PricingModel):
 
     def calc_in_given_out(
         self,
-        out: Quantity,
-        market_state: MarketState,
-        time_remaining: StretchedTime,
-    ) -> TradeResult:
+        out: elfpy.Quantity,
+        market_state: elfpy.MarketState,
+        time_remaining_in_years: float,
+        time_stretch: float,
+    ) -> elfpy.TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a
         specified amount of the other asset given the current AMM reserves.
@@ -278,7 +271,7 @@ class YieldSpacePricingModel(PricingModel):
             base.
         """
         # Calculate some common values up front
-        time_elapsed = 1 - Decimal(time_remaining.stretched_time)
+        time_elapsed = 1 - Decimal((time_remaining_in_years / time_stretch))
         init_share_price = Decimal(market_state.init_share_price)
         share_price = Decimal(market_state.share_price)
         scale = share_price / init_share_price
@@ -286,8 +279,9 @@ class YieldSpacePricingModel(PricingModel):
         bond_reserves = Decimal(market_state.bond_reserves)
         total_reserves = share_price * share_reserves + bond_reserves
         spot_price = self._calc_spot_price_from_reserves_high_precision(
-            market_state,
-            time_remaining,
+            market_state=market_state,
+            time_remaining_in_years=time_remaining_in_years,
+            time_stretch=time_stretch,
         )
         out_amount = Decimal(out.amount)
         trade_fee_percent = Decimal(market_state.trade_fee_percent)
@@ -295,8 +289,8 @@ class YieldSpacePricingModel(PricingModel):
         # share price:
         #
         # k = (c / mu) * (mu * z)**(1 - tau) + (2y + cz)**(1 - tau)
-        k = self._calc_k_const(market_state, time_remaining)
-        if out.unit == TokenType.BASE:
+        k = self._calc_k_const(market_state, time_remaining_in_years, time_stretch)
+        if out.unit == elfpy.TokenType.BASE:
             in_reserves = bond_reserves + total_reserves
             out_reserves = share_reserves
             d_shares = out_amount / share_price
@@ -346,15 +340,15 @@ class YieldSpacePricingModel(PricingModel):
             # indicates that the fees are working correctly.
             with_fee = without_fee + fee
             # Create the user and market trade results.
-            user_result = AgentTradeResult(
-                d_base=out.amount,
-                d_bonds=float(-with_fee),
+            user_result = elfpy.Wallet(
+                base=out.amount,
+                bonds=float(-with_fee),
             )
-            market_result = MarketTradeResult(
-                d_base=-out.amount,
-                d_bonds=float(with_fee),
+            market_result = elfpy.Wallet(
+                base=-out.amount,
+                bonds=float(with_fee),
             )
-        elif out.unit == TokenType.PT:
+        elif out.unit == elfpy.TokenType.PT:
             in_reserves = share_reserves
             out_reserves = bond_reserves + total_reserves
             d_bonds = out_amount
@@ -402,23 +396,23 @@ class YieldSpacePricingModel(PricingModel):
             # indicates that the fees are working correctly.
             with_fee = without_fee + fee
             # Create the user and market trade results.
-            user_result = AgentTradeResult(
-                d_base=float(-with_fee),
-                d_bonds=out.amount,
+            user_result = elfpy.Wallet(
+                base=float(-with_fee),
+                bonds=out.amount,
             )
-            market_result = MarketTradeResult(
-                d_base=float(with_fee),
-                d_bonds=-out.amount,
+            market_result = elfpy.Wallet(
+                base=float(with_fee),
+                bonds=-out.amount,
             )
         else:
             raise AssertionError(
                 # pylint: disable-next=line-too-long
-                f"pricing_models.calc_in_given_out: ERROR: expected out.unit to be {TokenType.BASE} or {TokenType.PT}, not {out.unit}!"
+                f"pricing_models.calc_in_given_out: ERROR: expected out.unit to be {elfpy.TokenType.BASE} or {elfpy.TokenType.PT}, not {out.unit}!"
             )
-        return TradeResult(
+        return elfpy.TradeResult(
             user_result=user_result,
             market_result=market_result,
-            breakdown=TradeBreakdown(
+            breakdown=elfpy.TradeBreakdown(
                 without_fee_or_slippage=float(without_fee_or_slippage),
                 with_fee=float(with_fee),
                 without_fee=float(without_fee),
@@ -431,10 +425,11 @@ class YieldSpacePricingModel(PricingModel):
     # consider more when thinking about the use of a time stretch parameter.
     def calc_out_given_in(
         self,
-        in_: Quantity,
-        market_state: MarketState,
-        time_remaining: StretchedTime,
-    ) -> TradeResult:
+        in_: elfpy.Quantity,
+        market_state: elfpy.MarketState,
+        time_remaining_in_years: float,
+        time_stretch: float,
+    ) -> elfpy.TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a
         specified amount of the other asset given the current AMM reserves.
@@ -502,7 +497,7 @@ class YieldSpacePricingModel(PricingModel):
             base.
         """
         # Calculate some common values up front
-        time_elapsed = 1 - Decimal(time_remaining.stretched_time)
+        time_elapsed = 1 - Decimal((time_remaining_in_years / time_stretch))
         init_share_price = Decimal(market_state.init_share_price)
         share_price = Decimal(market_state.share_price)
         scale = share_price / init_share_price
@@ -510,8 +505,9 @@ class YieldSpacePricingModel(PricingModel):
         bond_reserves = Decimal(market_state.bond_reserves)
         total_reserves = share_price * share_reserves + bond_reserves
         spot_price = self._calc_spot_price_from_reserves_high_precision(
-            market_state,
-            time_remaining,
+            market_state=market_state,
+            time_remaining_in_years=time_remaining_in_years,
+            time_stretch=time_stretch,
         )
         in_amount = Decimal(in_.amount)
         trade_fee_percent = Decimal(market_state.trade_fee_percent)
@@ -519,8 +515,8 @@ class YieldSpacePricingModel(PricingModel):
         # share price:
         #
         # k = (c / mu) * (mu * z)**(1 - tau) + (2y + cz)**(1 - tau)
-        k = self._calc_k_const(market_state, time_remaining)
-        if in_.unit == TokenType.BASE:
+        k = self._calc_k_const(market_state, time_remaining_in_years, time_stretch)
+        if in_.unit == elfpy.TokenType.BASE:
             d_shares = in_amount / share_price  # convert from base_asset to z (x=cz)
             in_reserves = share_reserves
             out_reserves = bond_reserves + total_reserves
@@ -555,15 +551,15 @@ class YieldSpacePricingModel(PricingModel):
             # tokens received, which indicates that the fees are working correctly.
             with_fee = without_fee - fee
             # Create the user and market trade results.
-            user_result = AgentTradeResult(
-                d_base=-in_.amount,
-                d_bonds=float(with_fee),
+            user_result = elfpy.Wallet(
+                base=-in_.amount,
+                bonds=float(with_fee),
             )
-            market_result = MarketTradeResult(
-                d_base=in_.amount,
-                d_bonds=float(-with_fee),
+            market_result = elfpy.Wallet(
+                base=in_.amount,
+                bonds=float(-with_fee),
             )
-        elif in_.unit == TokenType.PT:
+        elif in_.unit == elfpy.TokenType.PT:
             d_bonds = in_amount
             in_reserves = bond_reserves + total_reserves
             out_reserves = share_reserves
@@ -604,23 +600,23 @@ class YieldSpacePricingModel(PricingModel):
             # tokens received, which indicates that the fees are working correctly.
             with_fee = without_fee - fee
             # Create the user and market trade results.
-            user_result = AgentTradeResult(
-                d_base=float(with_fee),
-                d_bonds=-in_.amount,
+            user_result = elfpy.Wallet(
+                base=float(with_fee),
+                bonds=-in_.amount,
             )
-            market_result = MarketTradeResult(
-                d_base=float(-with_fee),
-                d_bonds=in_.amount,
+            market_result = elfpy.Wallet(
+                base=float(-with_fee),
+                bonds=in_.amount,
             )
         else:
             raise AssertionError(
                 f"pricing_models.calc_out_given_in: ERROR: expected in_.unit"
-                f" to be {TokenType.BASE} or {TokenType.PT}, not {in_.unit}!"
+                f" to be {elfpy.TokenType.BASE} or {elfpy.TokenType.PT}, not {in_.unit}!"
             )
-        return TradeResult(
+        return elfpy.TradeResult(
             user_result=user_result,
             market_result=market_result,
-            breakdown=TradeBreakdown(
+            breakdown=elfpy.TradeBreakdown(
                 without_fee_or_slippage=float(without_fee_or_slippage),
                 with_fee=float(with_fee),
                 without_fee=float(without_fee),
@@ -628,7 +624,9 @@ class YieldSpacePricingModel(PricingModel):
             ),
         )
 
-    def _calc_k_const(self, market_state: MarketState, time_remaining: StretchedTime) -> Decimal:
+    def _calc_k_const(
+        self, market_state: elfpy.MarketState, time_remaining_in_years: float, time_stretch: float
+    ) -> Decimal:
         """
         Returns the 'k' constant variable for trade mathematics
 
@@ -651,7 +649,7 @@ class YieldSpacePricingModel(PricingModel):
         total_reserves = Decimal(market_state.bond_reserves) + Decimal(market_state.share_price) * Decimal(
             market_state.share_reserves
         )
-        time_elapsed = Decimal(1) - Decimal(time_remaining.stretched_time)
+        time_elapsed = Decimal(1) - Decimal((time_remaining_in_years / time_stretch))
         return (
             scale * (Decimal(market_state.init_share_price) * Decimal(market_state.share_reserves)) ** time_elapsed
             + (Decimal(market_state.bond_reserves) + Decimal(total_reserves)) ** time_elapsed
