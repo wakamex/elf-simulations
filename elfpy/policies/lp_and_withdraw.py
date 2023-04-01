@@ -1,7 +1,6 @@
 """User strategy that adds liquidity and then removes it when enough time has passed"""
 from elfpy.agent import Agent
-from elfpy.markets import Market
-from elfpy.types import MarketActionType
+from elfpy.main import MarketActionType, SimulationState
 
 # pylint: disable=duplicate-code
 
@@ -18,23 +17,21 @@ class Policy(Agent):
         self.amount_to_lp = 100
         super().__init__(wallet_address, budget)
 
-    def action(self, market: Market):
+    def action(self, simulation_state_: SimulationState):
         """
         implement user strategy
         LP if you can, but only do it once
         """
         # pylint disable=unused-argument
         action_list = []
-        has_lp = self.wallet.lp_tokens > 0
+        has_lp = self.wallet.lp > 0
         can_lp = self.wallet.base >= self.amount_to_lp
         if not has_lp and can_lp:
             action_list.append(
                 self.create_agent_action(action_type=MarketActionType.ADD_LIQUIDITY, trade_amount=self.amount_to_lp)
             )
         elif has_lp:
-            enough_time_has_passed = market.time > self.time_to_withdraw
+            enough_time_has_passed = simulation_state_.time > self.time_to_withdraw
             if enough_time_has_passed:
-                self.create_agent_action(
-                    action_type=MarketActionType.REMOVE_LIQUIDITY, trade_amount=self.wallet.lp_tokens
-                )
+                self.create_agent_action(action_type=MarketActionType.REMOVE_LIQUIDITY, trade_amount=self.wallet.lp)
         return action_list

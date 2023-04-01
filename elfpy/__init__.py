@@ -5,6 +5,10 @@ import logging
 
 import matplotlib as mpl
 
+# import agent.py and main.py to make them available to users
+from elfpy.agent import Agent
+from elfpy.main import MarketActionType, SimulationState, Config
+
 # Setup barebones logging without a handler for users to adapt to their needs.
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 

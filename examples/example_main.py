@@ -9,11 +9,7 @@ from typing import Any
 from stochastic.processes import GeometricBrownianMotion
 
 # elfpy core repo
-import elfpy
-from elfpy.agent import Agent
-from elfpy.markets import Market
-from elfpy.types import MarketActionType, Config
-from elfpy.utils import sim_utils  # utilities for setting up a simulation
+from elfpy import Agent, Config, MarketActionType, SimulationState  # pylint: disable=no-name-in-module
 import elfpy.utils.outputs as output_utils
 
 
@@ -30,22 +26,22 @@ class CustomShorter(Agent):
         self.pt_to_short = 1_000
         super().__init__(wallet_address, budget)
 
-    def action(self, market: Market) -> list[Any]:
+    def action(self, simulation_state_: SimulationState) -> list[Any]:
         """Implement a custom user strategy"""
         shorts = list(self.wallet.shorts.values())
         has_opened_short = bool(any((short.balance > 0 for short in shorts)))
-        can_open_short = self.get_max_short(market) >= self.pt_to_short
-        vault_apr = market.market_state.vault_apr
+        can_open_short = self.get_max_short(simulation_state_) >= self.pt_to_short
+        vault_apr = simulation_state_.market_state.variable_rate
         action_list = []
         if can_open_short:
-            if vault_apr > market.apr:
+            if vault_apr > simulation_state_.market_state.apr:
                 action_list.append(
                     self.create_agent_action(
                         action_type=MarketActionType.OPEN_SHORT,
                         trade_amount=self.pt_to_short,
                     )
                 )
-            elif vault_apr < market.apr:
+            elif vault_apr < simulation_state_.market_state.apr:
                 if has_opened_short:
                     action_list.append(
                         self.create_agent_action(
@@ -132,7 +128,7 @@ if __name__ == "__main__":
     output_utils.setup_logging(log_filename=config.log_filename, max_bytes=args.max_bytes, log_level=config.log_level)
 
     # Initialize the simulator.
-    simulator = sim_utils.get_simulator(config, get_example_agents(new_agents=args.num_agents, existing_agents=1))
+    simulation_state = SimulationState()
 
     # Run the simulation.
-    simulator.run_simulation()
+    elfpy.main.run_simulation(simulation_state_=simulation_state)

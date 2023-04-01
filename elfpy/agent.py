@@ -6,8 +6,7 @@ import logging
 
 import numpy as np
 
-from elfpy.wallet import Long, Short, Wallet
-from elfpy.types import MarketAction, MarketActionType, Quantity, TokenType
+from elfpy.main import SimulationState, Wallet, MarketAction, MarketActionType, Quantity, TokenType, Position
 
 if TYPE_CHECKING:
     from typing import Optional, Iterable
@@ -82,15 +81,10 @@ class Agent:
         )
         return agent_action
 
-    def action(self, market: Market) -> list[MarketAction]:
+    def action(self, simulation_state_: SimulationState) -> list[MarketAction]:
         r"""Abstract method meant to be implemented by the specific policy
 
         Specify action from the policy
-
-        Parameters
-        ----------
-        market : Market
-            The market on which this agent will be executing trades (MarketActions)
 
         Returns
         -------
@@ -190,7 +184,7 @@ class Agent:
 
         return last_maybe_max_short
 
-    def get_trades(self, market: Market) -> list:
+    def get_trades(self, simulation_state_: SimulationState) -> list:
         """Helper function for computing a agent trade
 
         direction is chosen based on this logic:
@@ -214,10 +208,10 @@ class Agent:
         list
             List of MarketAction objects that represent the trades to be made by this agent
         """
-        actions = self.action(market)  # get the action list from the policy
+        actions = self.action(simulation_state_=simulation_state_)  # get the action list from the policy
         for action in actions:  # edit each action in place
             if action.mint_time is None:
-                action.mint_time = market.time
+                action.mint_time = simulation_state_.time
         # TODO: Add safety checks
         # e.g. if trade amount > 0, whether there is enough money in the account
         # agent wallet Long and Short balances should not be able to be negative
@@ -245,10 +239,10 @@ class Agent:
         for key, value_or_dict in wallet_deltas.__dict__.items():
             if value_or_dict is None:
                 continue
-            if key in ["fees_paid", "address"]:
+            if key in ["address"]:
                 continue
             # handle updating a value
-            if key in ["base", "lp_tokens", "fees_paid"]:
+            if key in ["base", "lp"]:
                 logging.debug(
                     "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
                     self.wallet.address,
@@ -266,7 +260,7 @@ class Agent:
             else:
                 raise ValueError(f"wallet_key={key} is not allowed.")
 
-    def _update_longs(self, longs: Iterable[tuple[float, Long]]) -> None:
+    def _update_longs(self, longs: Iterable[tuple[float, Position]]) -> None:
         """Helper internal function that updates the data about Longs contained in the Agent's Wallet object
 
         Parameters
@@ -292,7 +286,7 @@ class Agent:
                 # Remove the empty long from the wallet.
                 del self.wallet.longs[mint_time]
 
-    def _update_shorts(self, shorts: Iterable[tuple[float, Short]]) -> None:
+    def _update_shorts(self, shorts: Iterable[tuple[float, Position]]) -> None:
         """Helper internal function that updates the data about Shortscontained in the Agent's Wallet object
 
         Parameters
@@ -364,12 +358,12 @@ class Agent:
                         mint_time=mint_time,
                     )
                 )
-        if self.wallet.lp_tokens > 0:
-            logging.debug("evaluating closing lp: mint_time=%g, position=%s", market.time, self.wallet.lp_tokens)
+        if self.wallet.lp > 0:
+            logging.debug("evaluating closing lp: mint_time=%g, position=%s", market.time, self.wallet.lp)
             action_list.append(
                 self.create_agent_action(
                     action_type=MarketActionType.REMOVE_LIQUIDITY,
-                    trade_amount=self.wallet.lp_tokens,
+                    trade_amount=self.wallet.lp,
                     mint_time=market.time,
                 )
             )
@@ -378,10 +372,9 @@ class Agent:
     def log_status_report(self) -> None:
         """Logs the current user state"""
         logging.debug(
-            "agent #%g base = %1g and fees_paid = %1g",
+            "agent #%g base = %1g",
             self.wallet.address,
             self.wallet.base,
-            self.wallet.fees_paid if self.wallet.fees_paid else 0,
         )
 
     def log_final_report(self, market: Market) -> None:

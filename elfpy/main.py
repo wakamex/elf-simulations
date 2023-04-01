@@ -318,7 +318,7 @@ class Wallet:
     # dataclasses can have many attributes
 
     # agent identifier
-    address: Optional[int] = field(default=None)
+    address: int = field(default=0)
 
     # reserves
     base: float = 0
@@ -340,42 +340,53 @@ class Wallet:
         setattr(self, key, value)
 
 
-def get_state(wallet_, market_state_: MarketState) -> dict:
+def get_state(wallet_, simulation_state_: SimulationState) -> dict:
     r"""The wallet's current state of public variables
     .. todo:: TODO: return a dataclass instead of dict to avoid having to check keys & the get_state_keys func
     """
     lp_token_value = 0
-    if wallet_.lp_tokens > 0 and market_state_.lp > 0:  # check if LP, and avoid divide by zero
-        share_of_pool = wallet_.lp_tokens / market_state_.lp
+    if wallet_.lp_tokens > 0 and simulation_state_.market_state.lp > 0:  # check if LP, and avoid divide by zero
+        share_of_pool = wallet_.lp_tokens / simulation_state_.market_state.lp
         pool_value = (
-            market_state_.bond_reserves * market_state_.spot_price  # in base
-            + market_state_.share_reserves * market_state_.share_price  # in base
+            simulation_state_.market_state.bond_reserves * simulation_state_.market_state.spot_price  # in base
+            + simulation_state_.market_state.share_reserves * simulation_state_.market_state.share_price  # in base
         )
         lp_token_value = pool_value * share_of_pool  # in base
-    share_reserves = market_state_.share_reserves
+    share_reserves = simulation_state_.market_state.share_reserves
     # compute long values in units of base
     longs_value = 0
     longs_value_no_mock = 0
     for mint_time, long in wallet_.longs.items():
         base = (
-            market.close_long(wallet_.address, long.balance, mint_time)[1].base
+            close_long(
+                mint_time=mint_time,
+                wallet_address=wallet_.address,
+                simulation_state_=simulation_state_,
+                trade_amount=long.balance,
+            )[1].base
             if long.balance > 0 and share_reserves
             else 0.0
         )
         longs_value += base
-        base_no_mock = long.balance * market.spot_price
+        base_no_mock = long.balance * simulation_state_.market_state.spot_price
         longs_value_no_mock += base_no_mock
     # compute short values in units of base
     shorts_value = 0
     shorts_value_no_mock = 0
     for mint_time, short in wallet_.shorts.items():
         base = (
-            market.close_short(wallet_.address, short.open_share_price, short.balance, mint_time)[1].base
+            close_short(
+                simulation_state_=simulation_state_,
+                wallet_address=wallet_.address,
+                open_share_price=short.open_share_price,
+                trade_amount=short.balance,
+                mint_time=mint_time,
+            )[1].base
             if short.balance > 0 and share_reserves
             else 0.0
         )
         shorts_value += base
-        base_no_mock = short.balance * (1 - market.spot_price)
+        base_no_mock = short.balance * (1 - simulation_state_.market_state.spot_price)
         shorts_value_no_mock += base_no_mock
     return {
         f"agent_{wallet_.address}_base": wallet_.base,
@@ -387,20 +398,6 @@ def get_state(wallet_, market_state_: MarketState) -> dict:
         f"agent_{wallet_.address}_total_longs_no_mock": longs_value_no_mock,
         f"agent_{wallet_.address}_total_shorts_no_mock": shorts_value_no_mock,
     }
-
-
-def get_state_keys(self) -> list:
-    """Get state keys for a wallet."""
-    return [
-        f"agent_{self.address}_base",
-        f"agent_{self.address}_lp_tokens",
-        f"agent_{self.address}_num_longs",
-        f"agent_{self.address}_num_shorts",
-        f"agent_{self.address}_total_longs",
-        f"agent_{self.address}_total_shorts",
-        f"agent_{self.address}_total_longs_no_mock",
-        f"agent_{self.address}_total_shorts_no_mock",
-    ]
 
 
 @freezable(frozen=False, no_new_attribs=True)
@@ -1017,10 +1014,25 @@ class SimulationState:
     agents: dict[int, Agent] = field(default_factory=dict)
 
     # Simulation variables
-    run_number = [0]
-    block_number = [0]
+    run_number = 0
+    block_number = 0
     seconds_in_a_day = 86400
-    run_trade_number = [0]
+    run_trade_number = 0
+
+    @property
+    def time(self) -> float:
+        """Returns the current time in the simulation (in seconds)"""
+        return self.block_number * self.time_between_blocks
+
+    @property
+    def time_in_days(self) -> float:
+        """Returns the current time in the simulation (in days)"""
+        return self.time / self.seconds_in_a_day
+
+    @property
+    def time_in_years(self) -> float:
+        """Returns the current time in the simulation (in years)"""
+        return self.time / self.seconds_in_a_day / 365
 
     def __post_init__(self):
         self.time_between_blocks = self.seconds_in_a_day / self.config.num_blocks_per_day
@@ -1254,13 +1266,57 @@ def update_simulation_state(simulation_state_) -> None:
     simulation_state_.add_dict_entries({f"config.{key}": val for key, val in simulation_state_.config.__dict__.items()})
     simulation_state_.add_dict_entries(simulation_state_.market.market_state.__dict__)
     for agent in simulation_state_.agents.values():
-        simulation_state_.add_dict_entries(agent.wallet.get_state(simulation_state_.market))
+        simulation_state_.add_dict_entries(agent.wallet.get_state(simulation_state_))
     # TODO: This is a HACK to prevent test_sim from failing on market shutdown
     # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
     if simulation_state_.market.market_state.share_reserves > 0:  # there is money in the market
         simulation_state_.spot_price.append(simulation_state_.market.spot_price)
     else:
         simulation_state_.spot_price.append(np.nan)
+
+
+def add_agents(self, agent_list: list[Agent]) -> None:
+    r"""Append the agents and simulation_state member variables
+
+    If trades have already happened (as indicated by self.run_trade_number), then empty wallet states are
+    prepended to the simulation_state for each new agent so that the state can still easily be converted into
+    a pandas dataframe.
+
+    Parameters
+    ----------
+    agent_list : list[Agent]
+        A list of instantiated Agent objects
+    """
+    for agent in agent_list:
+        self.agents.update({agent.wallet.address: agent})
+        for key in agent.wallet.__dict__.keys():
+            setattr(self.simulation_state, key, [None] * self.run_trade_number)
+
+
+def execute_trades(simulation_state_, agent_trades: list[tuple[int, MarketAction]]) -> None:
+    r"""Execute a list of trades associated with agents in the simulator.
+
+    Parameters
+    ----------
+    trades : list[tuple[int, list[MarketAction]]]
+        A list of agent trades. These will be executed in order.
+    """
+    for trade in agent_trades:
+        agent_id, agent_deltas, market_deltas = simulation_state_.market.trade_and_update(trade)
+        simulation_state_.market.update_market(market_deltas)
+        agent = simulation_state_.agents[agent_id]
+        logging.debug(
+            "agent #%g wallet deltas:\n%s",
+            agent.wallet.address,
+            agent_deltas,
+        )
+        agent.update_wallet(agent_deltas, simulation_state_.market)
+        # TODO: Get simulator, market, pricing model, agent state strings and log
+        agent.log_status_report()
+        # TODO: need to log deaggregated trade informaiton, i.e. trade_deltas
+        # issue #215
+        simulation_state_.update_simulation_state()
+        simulation_state_.run_trade_number += 1
 
 
 if __name__ == "__main__":
