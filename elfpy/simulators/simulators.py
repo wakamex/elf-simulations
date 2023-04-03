@@ -15,10 +15,8 @@ import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils
-
-if TYPE_CHECKING:
-    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-    from elfpy.agents.agent import Agent
+import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+from elfpy.agents.agent import Agent
 
 
 @dataclass

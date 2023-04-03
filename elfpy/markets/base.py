@@ -9,11 +9,11 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 import numpy as np
 
 import elfpy
+import elfpy.agents.wallet as wallet
 import elfpy.types as types
 
 if TYPE_CHECKING:
     import elfpy.pricing_models.base as base_pm
-    import elfpy.agents.wallet as wallet
     import elfpy.time as time
 
 # all 1subclasses of Market need to pass subclasses of MarketAction, MarketState and MarketDeltas
