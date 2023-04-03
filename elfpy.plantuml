@@ -1,0 +1,332 @@
+@startuml elfpy
+namespace elfpy {
+  namespace agents {
+    namespace agent {}
+    namespace policies {
+      namespace init_lp {}
+      namespace lp_and_withdraw {}
+      namespace no_action {}
+      namespace random_agent {}
+      namespace single_long {}
+      namespace single_lp {}
+      namespace single_short {}
+    }
+    namespace wallet {}
+  }
+  namespace markets {
+    namespace base {}
+    namespace borrow {}
+  }
+  namespace pricing_models {
+    namespace base {}
+    namespace hyperdrive {}
+    namespace yieldspace {}
+    namespace trades {}
+  }
+  namespace simulators.simulators {}
+  namespace time.time {}
+  namespace types {}
+  namespace utils.outputs {}
+}
+class elfpy.agents.agent.Agent {
+  budget: float
+  wallet: Wallet
+  name: None
+  name: None
+}
+class elfpy.agents.agent.AgentTradeResult {
+  d_base: float
+  d_bonds: float
+}
+class elfpy.agents.policies.init_lp.Policy {
+}
+class elfpy.agents.policies.lp_and_withdraw.Policy {
+  time_to_withdraw: None
+  amount_to_lp: None
+}
+class elfpy.agents.policies.no_action.Policy {
+}
+class elfpy.agents.policies.random_agent.Policy {
+  trade_chance: float
+  rng: Generator
+}
+class elfpy.agents.policies.single_long.Policy {
+}
+class elfpy.agents.policies.single_lp.Policy {
+  amount_to_lp: None
+}
+class elfpy.agents.policies.single_short.Policy {
+  amount_to_trade: None
+}
+class elfpy.agents.wallet.Borrow {
+  borrow_token: TokenType
+  borrow_amount: float
+  borrow_shares: float
+  collateral_token: TokenType
+  collateral_amount: float
+  start_time: float
+}
+class elfpy.agents.wallet.Long {
+  balance: float
+}
+class elfpy.agents.wallet.Short {
+  balance: float
+  open_share_price: float
+}
+class elfpy.agents.wallet.Wallet {
+  address: int
+  balance: Quantity
+  lp_tokens: float
+  longs: dict[float, Long]
+  shorts: dict[float, Short]
+  withdraw_shares: float
+  borrows: dict[float, Borrow]
+  fees_paid: float
+}
+class elfpy.markets.base.BaseMarketState {
+}
+class elfpy.markets.base.Market {
+  pricing_model: PricingModel
+  market_state: State
+  block_time: None
+}
+class elfpy.markets.base.MarketAction {
+  action_type: Enum
+  wallet: Wallet
+}
+class elfpy.markets.base.MarketActionResult {
+}
+enum elfpy.markets.base.MarketActionType {
+  NULL_ACTION: null action {static}
+}
+class elfpy.markets.base.MarketDeltas {
+}
+class elfpy.markets.borrow.Market {
+  pricing_model: PricingModel
+  market_state: None
+  block_time: None
+}
+class elfpy.markets.borrow.MarketAction {
+  action_type: MarketActionType
+  collateral: Quantity
+  spot_price: Optional[float]
+}
+enum elfpy.markets.borrow.MarketActionType {
+  OPEN_BORROW: open_borrow {static}
+  CLOSE_BORROW: close_borrow {static}
+}
+class elfpy.markets.borrow.MarketDeltas {
+  d_borrow_shares: float
+  d_collateral: Quantity
+  d_borrow_outstanding: float
+  d_borrow_closed_interest: float
+  d_borrow_share_price: float
+}
+class elfpy.markets.borrow.MarketState {
+  loan_to_value_ratio: Dict[TokenType, float]
+  borrow_shares: float
+  collateral: Dict[TokenType, float]
+  borrow_outstanding: float
+  borrow_closed_interest: float
+  borrow_share_price: float
+  init_borrow_share_price: float
+  collateral_spot_price: Dict[TokenType, float]
+  lending_rate: float
+  spread_ratio: float
+}
+class elfpy.markets.borrow.PricingModel {
+}
+class elfpy.pricing_models.base.PricingModel {
+}
+class elfpy.pricing_models.hyperdrive.HyperdrivePricingModel {
+}
+class elfpy.pricing_models.yieldspace.YieldspacePricingModel {
+}
+class elfpy.pricing_models.trades.TradeBreakdown {
+  without_fee_or_slippage: float
+  with_fee: float
+  without_fee: float
+  curve_fee: float
+  gov_curve_fee: float
+  redemption_fee: float
+  gov_redemption_fee: float
+}
+class elfpy.pricing_models.trades.TradeResult {
+  user_result: AgentTradeResult
+  market_result: MarketActionResult
+  breakdown: TradeBreakdown
+}
+class elfpy.simulators.simulators.BlockSimVariables {
+  run_number: int
+  day: int
+  block_number: int
+  time: float
+}
+class elfpy.simulators.simulators.Config {
+  do_dataframe_states: bool
+  target_liquidity: float
+  target_volume: float
+  init_vault_age: float
+  variable_apr: list[float]
+  init_share_price: float
+  pricing_model_name: str
+  trade_fee_percent: float
+  redemption_fee_percent: float
+  governance_fee_percent: float
+  target_fixed_apr: float
+  floor_fee: float
+  title: str
+  num_trading_days: int
+  num_blocks_per_day: int
+  num_position_days: int
+  shuffle_users: bool
+  agent_policies: list
+  init_lp: bool
+  compound_variable_apr: bool
+  log_level: int
+  log_filename: str
+  precision: int
+  random_seed: int
+  rng: Generator
+  scratch: dict
+}
+class elfpy.simulators.simulators.DaySimVariables {
+  run_number: int
+  day: int
+  variable_apr: float
+  share_price: float
+}
+class elfpy.simulators.simulators.NewSimulationState {
+}
+class elfpy.simulators.simulators.RunSimVariables {
+  run_number: int
+  config: Config
+  agent_init: list[Wallet]
+  market_init: MarketState
+  time_step: float
+  position_duration: StretchedTime
+}
+class elfpy.simulators.simulators.SimulationState {
+  model_name: list[str]
+  run_number: list[int]
+  day: list[int]
+  block_number: list[int]
+  daily_block_number: list[int]
+  current_time: list[float]
+  trade_number: list[int]
+  time_step_size: list[float]
+  position_duration: list[StretchedTime]
+  current_variable_apr: list[float]
+  fixed_apr: list[float]
+  spot_price: list[float]
+}
+class elfpy.simulators.simulators.Simulator {
+  config: None
+  market: Market
+  block_time: BlockTime
+  agents: dict[int, Agent]
+  run_number: None
+  day: None
+  block_number: None
+  daily_block_number: None
+  time_between_blocks: None
+  trade_number: None
+  new_simulation_state: None
+  simulation_state: None
+}
+class elfpy.simulators.simulators.TradeSimVariables {
+  run_number: int
+  day: int
+  block_number: int
+  trade_number: int
+  fixed_apr: float
+  spot_price: float
+  trade_action: Trade
+  market_deltas: MarketDeltas
+  agent_address: int
+  agent_deltas: Wallet
+}
+class elfpy.time.time.BlockTime {
+  time: float
+  block_number: float
+  step_size: float
+}
+class elfpy.time.time.StretchedTime {
+  days: float
+  time_stretch: float
+  normalizing_constant: float
+}
+enum elfpy.types.MarketType {
+  HYPERDRIVE: hyperdrive {static}
+  BORROW: borrow {static}
+}
+class elfpy.types.Quantity {
+  amount: float
+  unit: TokenType
+}
+enum elfpy.types.TokenType {
+  BASE: base {static}
+  PT: pt {static}
+  LP_SHARE: lp_share {static}
+}
+class elfpy.types.Trade {
+  market: MarketType
+  trade: Any
+}
+class elfpy.utils.outputs.CustomEncoder {
+}
+elfpy.agents.agent.Agent *-- elfpy.agents.wallet.Wallet
+elfpy.agents.agent.AgentTradeResult <|-- elfpy.agents.agent.AgentTradeResult
+elfpy.agents.agent.Agent <|-- elfpy.agents.policies.init_lp.Policy
+elfpy.agents.agent.Agent <|-- elfpy.agents.policies.lp_and_withdraw.Policy
+elfpy.agents.agent.Agent <|-- elfpy.agents.policies.no_action.Policy
+elfpy.agents.agent.Agent <|-- elfpy.agents.policies.random_agent.Policy
+elfpy.agents.agent.Agent <|-- elfpy.agents.policies.single_long.Policy
+elfpy.agents.agent.Agent <|-- elfpy.agents.policies.single_lp.Policy
+elfpy.agents.agent.Agent <|-- elfpy.agents.policies.single_short.Policy
+elfpy.agents.wallet.Borrow *-- elfpy.types.TokenType
+elfpy.agents.wallet.Wallet *-- elfpy.types.Quantity
+elfpy.agents.wallet.Wallet *-- elfpy.agents.wallet.Long
+elfpy.agents.wallet.Wallet *-- elfpy.agents.wallet.Short
+elfpy.agents.wallet.Wallet *-- elfpy.agents.wallet.Borrow
+elfpy.markets.base.BaseMarketState <|-- elfpy.markets.base.BaseMarketState
+elfpy.markets.base.Market *-- elfpy.markets.base.PricingModel
+elfpy.markets.base.Market *-- elfpy.markets.base.State
+elfpy.markets.base.MarketAction *-- elfpy.agents.wallet.Wallet
+elfpy.markets.base.MarketAction <|-- elfpy.markets.base.MarketAction
+elfpy.markets.base.MarketActionResult <|-- elfpy.markets.base.MarketActionResult
+elfpy.markets.base.MarketDeltas <|-- elfpy.markets.base.MarketDeltas
+elfpy.markets.borrow.Market *-- elfpy.markets.borrow.PricingModel
+elfpy.markets.base.Market <|-- elfpy.markets.borrow.Market
+elfpy.markets.borrow.MarketAction *-- elfpy.markets.borrow.MarketActionType
+elfpy.markets.borrow.MarketAction *-- elfpy.types.Quantity
+elfpy.markets.borrow.MarketAction <|-- elfpy.markets.borrow.MarketAction
+elfpy.markets.borrow.MarketDeltas *-- elfpy.types.Quantity
+elfpy.markets.borrow.MarketDeltas <|-- elfpy.markets.borrow.MarketDeltas
+elfpy.markets.borrow.MarketState *-- elfpy.types.TokenType
+elfpy.markets.borrow.MarketState <|-- elfpy.markets.borrow.MarketState
+elfpy.pricing_models.base.PricingModel <|-- elfpy.markets.borrow.PricingModel
+elfpy.pricing_models.yieldspace.YieldspacePricingModel <|-- elfpy.pricing_models.hyperdrive.HyperdrivePricingModel
+elfpy.pricing_models.base.PricingModel <|-- elfpy.pricing_models.yieldspace.YieldspacePricingModel
+elfpy.pricing_models.trades.TradeBreakdown <|-- elfpy.pricing_models.trades.TradeBreakdown
+elfpy.pricing_models.trades.TradeResult *-- elfpy.agents.agent.AgentTradeResult
+elfpy.pricing_models.trades.TradeResult *-- elfpy.markets.hyperdrive.hyperdrive_actions.MarketActionResult
+elfpy.pricing_models.trades.TradeResult *-- elfpy.pricing_models.trades.TradeBreakdown
+elfpy.pricing_models.trades.TradeResult <|-- elfpy.pricing_models.trades.TradeResult
+elfpy.simulators.simulators.Config <|-- elfpy.simulators.simulators.Config
+elfpy.simulators.simulators.RunSimVariables *-- elfpy.simulators.simulators.Config
+elfpy.simulators.simulators.RunSimVariables *-- elfpy.agents.wallet.Wallet
+elfpy.simulators.simulators.RunSimVariables *-- elfpy.markets.hyperdrive.hyperdrive_market.MarketState
+elfpy.simulators.simulators.RunSimVariables *-- elfpy.time.time.StretchedTime
+elfpy.simulators.simulators.SimulationState *-- elfpy.time.time.StretchedTime
+elfpy.simulators.simulators.Simulator *-- elfpy.markets.hyperdrive.hyperdrive_market.Market
+elfpy.simulators.simulators.Simulator *-- elfpy.time.time.BlockTime
+elfpy.simulators.simulators.Simulator *-- elfpy.agents.agent.Agent
+elfpy.simulators.simulators.TradeSimVariables *-- elfpy.types.Trade
+elfpy.simulators.simulators.TradeSimVariables *-- elfpy.markets.hyperdrive.hyperdrive_actions.MarketDeltas
+elfpy.simulators.simulators.TradeSimVariables *-- elfpy.agents.wallet.Wallet
+elfpy.time.time.StretchedTime <|-- elfpy.time.time.StretchedTime
+elfpy.types.Quantity *-- elfpy.types.TokenType
+elfpy.types.Trade *-- elfpy.types.MarketType
+footer Generated by //py2puml//
+@enduml
