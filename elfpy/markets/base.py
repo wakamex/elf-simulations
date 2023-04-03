@@ -11,10 +11,10 @@ import numpy as np
 import elfpy
 import elfpy.agents.wallet as wallet
 import elfpy.types as types
+import elfpy.time as time
 
 if TYPE_CHECKING:
     import elfpy.pricing_models.base as base_pm
-    import elfpy.time as time
 
 # all 1subclasses of Market need to pass subclasses of MarketAction, MarketState and MarketDeltas
 Action = TypeVar("Action", bound="MarketAction")
@@ -98,15 +98,13 @@ class Market(Generic[State, Deltas, PricingModel]):
     It also has some helper variables for assessing pricing model values given market conditions.
     """
 
-    def __init__(
-        self,
-        pricing_model: PricingModel,
-        market_state: State,
-        block_time: time.BlockTime,
-    ):
-        self.pricing_model = pricing_model
-        self.market_state = market_state
-        self.block_time = block_time
+    pricing_model: PricingModel
+    market_state: State
+    block_time: time.BlockTime
+
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     @property
     def latest_checkpoint_time(self) -> float:
