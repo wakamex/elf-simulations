@@ -86,9 +86,9 @@ class elfpy.agents.wallet.Wallet {
 class elfpy.markets.base.BaseMarketState {
 }
 class elfpy.markets.base.Market {
-  pricing_model: PricingModel
-  market_state: State
-  block_time: None
+  pricing_model: PricingModel {static}
+  market_state: State {static}
+  block_time: BlockTime {static}
 }
 class elfpy.markets.base.MarketAction {
   action_type: Enum
@@ -102,9 +102,6 @@ enum elfpy.markets.base.MarketActionType {
 class elfpy.markets.base.MarketDeltas {
 }
 class elfpy.markets.borrow.Market {
-  pricing_model: PricingModel
-  market_state: None
-  block_time: None
 }
 class elfpy.markets.borrow.MarketAction {
   action_type: MarketActionType
@@ -292,11 +289,11 @@ elfpy.agents.wallet.Wallet *-- elfpy.agents.wallet.Borrow
 elfpy.markets.base.BaseMarketState <|-- elfpy.markets.base.BaseMarketState
 elfpy.markets.base.Market *-- elfpy.markets.base.PricingModel
 elfpy.markets.base.Market *-- elfpy.markets.base.State
+elfpy.markets.base.Market *-- elfpy.time.time.BlockTime
 elfpy.markets.base.MarketAction *-- elfpy.agents.wallet.Wallet
 elfpy.markets.base.MarketAction <|-- elfpy.markets.base.MarketAction
 elfpy.markets.base.MarketActionResult <|-- elfpy.markets.base.MarketActionResult
 elfpy.markets.base.MarketDeltas <|-- elfpy.markets.base.MarketDeltas
-elfpy.markets.borrow.Market *-- elfpy.markets.borrow.PricingModel
 elfpy.markets.base.Market <|-- elfpy.markets.borrow.Market
 elfpy.markets.borrow.MarketAction *-- elfpy.markets.borrow.MarketActionType
 elfpy.markets.borrow.MarketAction *-- elfpy.types.Quantity
