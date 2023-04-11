@@ -1,11 +1,12 @@
+import numpy as np
+
+
 def fmt(value, precision=3, min_digits=0, debug=False):
     # sourcery skip: assign-if-exp, inline-immediately-returned-variable
     """
     Format a float to a string with a given precision
     this follows the significant figure behavior, irrepective of number size
     """
-    # TODO: Include more specific error handling in the except statement
-    # pylint: disable=broad-except
     if debug:
         print(f"value: {value}, type: {type(value)}, precision: {precision}, min_digits: {min_digits}")
     if np.isinf(value):
