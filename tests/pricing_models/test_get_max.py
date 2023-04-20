@@ -6,12 +6,10 @@ import logging
 import unittest
 from dataclasses import dataclass
 
-from elfpy.markets.hyperdrive import hyperdrive_actions
-from elfpy.markets.hyperdrive import hyperdrive_market
-from elfpy.pricing_models import trades
-from elfpy import time
-from elfpy import types
 import elfpy.utils.outputs as output_utils
+from elfpy import time, types
+from elfpy.markets.hyperdrive import hyperdrive_actions, hyperdrive_market
+from elfpy.pricing_models import trades
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldspacePricingModel

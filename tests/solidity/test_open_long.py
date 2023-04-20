@@ -1,11 +1,10 @@
 """Open long market trade tests that match those being executed in the solidity repo."""
 import unittest
 
+import elfpy.pricing_models.hyperdrive as hyperdrive_pm
+from elfpy import time, types
 from elfpy.agents import agent
 from elfpy.markets.hyperdrive import hyperdrive_market
-import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-from elfpy import time
-from elfpy import types
 
 # pylint: disable=too-many-arguments
 # pylint: disable=duplicate-code

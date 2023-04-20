@@ -4,12 +4,11 @@ from decimal import Decimal
 
 import numpy as np
 
-from elfpy.agents import agent
-from elfpy.markets.hyperdrive import hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.yieldspace as yieldspace_pm
-from elfpy import time
-from elfpy import types
+from elfpy import time, types
+from elfpy.agents import agent
+from elfpy.markets.hyperdrive import hyperdrive_market
 from elfpy.time.time import StretchedTime
 
 # pylint: disable=too-many-arguments

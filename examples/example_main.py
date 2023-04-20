@@ -10,11 +10,10 @@ from stochastic.processes import GeometricBrownianMotion
 
 # elfpy core repo
 import elfpy
+import elfpy.utils.outputs as output_utils
+from elfpy import simulators, types
 from elfpy.agents import agent
 from elfpy.markets.hyperdrive import hyperdrive_actions
-from elfpy import simulators
-from elfpy import types
-import elfpy.utils.outputs as output_utils
 from elfpy.utils import sim_utils
 
 if TYPE_CHECKING:

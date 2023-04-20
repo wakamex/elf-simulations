@@ -14,13 +14,12 @@ from calc_test_dataclasses import (
     CalcInGivenOutSuccessTestResult,
 )
 
-from elfpy.errors import errors
-from elfpy.markets.hyperdrive import hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.yieldspace as yieldspace_pm
-from elfpy import time
-from elfpy import types
 import elfpy.utils.outputs as output_utils
+from elfpy import time, types
+from elfpy.errors import errors
+from elfpy.markets.hyperdrive import hyperdrive_market
 from elfpy.utils.math import FixedPoint
 
 if TYPE_CHECKING:

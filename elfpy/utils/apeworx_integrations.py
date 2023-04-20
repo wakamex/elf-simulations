@@ -14,7 +14,9 @@ from elfpy.markets.hyperdrive import hyperdrive_assets
 
 if TYPE_CHECKING:
     from ape.api.accounts import AccountAPI  # type: ignore[reportMissingImports]
-    from ape.contracts.base import ContractInstance  # type: ignore[reportMissingImports]
+    from ape.contracts.base import (
+        ContractInstance,  # type: ignore[reportMissingImports]
+    )
     from ape.types import ContractLog  # type: ignore[reportMissingImports]
     from ape_ethereum.transactions import Receipt  # type: ignore[reportMissingImports]
 

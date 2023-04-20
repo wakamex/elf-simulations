@@ -5,9 +5,9 @@ import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from elfpy import types
 from elfpy.agents import wallet
 from elfpy.markets.hyperdrive import hyperdrive_actions
-from elfpy import types
 
 if TYPE_CHECKING:
     import elfpy.markets.base as base_market

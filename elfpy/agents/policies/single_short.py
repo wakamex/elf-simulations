@@ -1,8 +1,7 @@
 """User strategy that opens a single short and doesn't close until liquidation."""
-from elfpy.agents import agent
-from elfpy.markets.hyperdrive import hyperdrive_actions
-from elfpy.markets.hyperdrive import hyperdrive_market
 from elfpy import types
+from elfpy.agents import agent
+from elfpy.markets.hyperdrive import hyperdrive_actions, hyperdrive_market
 
 # pylint: disable=duplicate-code
 

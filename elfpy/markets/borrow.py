@@ -6,10 +6,10 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, Optional
 
-from elfpy.agents import wallet
 import elfpy.markets.base as base_market
 import elfpy.pricing_models.base as base_pm
 from elfpy import types
+from elfpy.agents import wallet
 
 # TODO: for now...
 # pylint: disable=duplicate-code

@@ -9,12 +9,11 @@ import numpy as np
 import pandas as pd
 from numpy.random import RandomState
 
-from elfpy.agents import wallet
-from elfpy.markets.hyperdrive import hyperdrive_actions
-from elfpy.markets.hyperdrive import hyperdrive_market
-from elfpy.simulators import simulators
-from elfpy import types
 import elfpy.utils.outputs as output_utils
+from elfpy import types
+from elfpy.agents import wallet
+from elfpy.markets.hyperdrive import hyperdrive_actions, hyperdrive_market
+from elfpy.simulators import simulators
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
 
 

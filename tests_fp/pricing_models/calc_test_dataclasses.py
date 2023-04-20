@@ -5,9 +5,8 @@ import builtins
 from dataclasses import dataclass
 from typing import Optional, Type
 
+from elfpy import time, types
 from elfpy.markets.hyperdrive import hyperdrive_market
-from elfpy import time
-from elfpy import types
 from elfpy.utils.math import FixedPoint
 
 # TODO: remove this after FixedPoint PRs are finished

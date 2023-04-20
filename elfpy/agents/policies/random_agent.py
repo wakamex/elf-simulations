@@ -5,10 +5,9 @@ import numpy as np
 from numpy.random._generator import Generator as numpyGenerator
 
 import elfpy
-from elfpy.agents import agent
-from elfpy.markets.hyperdrive import hyperdrive_actions
-from elfpy.markets.hyperdrive import hyperdrive_market
 from elfpy import types
+from elfpy.agents import agent
+from elfpy.markets.hyperdrive import hyperdrive_actions, hyperdrive_market
 
 # pylint: disable=too-many-arguments
 # pylint: disable=duplicate-code

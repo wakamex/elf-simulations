@@ -2,11 +2,10 @@
 
 import unittest
 
-from elfpy.agents import agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_markets
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-from elfpy import time
-from elfpy import types
+from elfpy import time, types
+from elfpy.agents import agent
 from elfpy.errors import errors
 
 # TODO: refactor solidity tests as a separate PR to consolidate setUps

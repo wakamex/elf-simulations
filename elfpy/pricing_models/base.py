@@ -7,10 +7,9 @@ from decimal import Decimal, getcontext
 from typing import TYPE_CHECKING
 
 import elfpy
-from elfpy.pricing_models import trades
-from elfpy import time
-from elfpy import types
 import elfpy.utils.price as price_utils
+from elfpy import time, types
+from elfpy.pricing_models import trades
 from elfpy.utils.math import FixedPoint
 
 if TYPE_CHECKING:

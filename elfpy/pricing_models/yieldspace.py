@@ -5,12 +5,11 @@ import logging
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
+import elfpy.pricing_models.base as base_pm
+from elfpy import time, types
 from elfpy.agents import agent
 from elfpy.markets.hyperdrive import hyperdrive_actions
-import elfpy.pricing_models.base as base_pm
 from elfpy.pricing_models import trades
-from elfpy import time
-from elfpy import types
 from elfpy.utils.math import FixedPoint
 
 if TYPE_CHECKING:

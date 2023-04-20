@@ -8,10 +8,9 @@ from typing import TYPE_CHECKING, Literal, Optional
 
 import numpy as np
 
-from elfpy.agents import wallet
 import elfpy.markets.base as base_market
-from elfpy import time
-from elfpy import types
+from elfpy import time, types
+from elfpy.agents import wallet
 from elfpy.utils.math import FixedPoint
 from elfpy.utils.math.update_weighted_average import update_weighted_average
 

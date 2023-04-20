@@ -4,11 +4,10 @@ from typing import Optional, Tuple
 
 import pytest
 
+import elfpy.pricing_models.hyperdrive as hyperdrive_pm
+from elfpy import time, types
 from elfpy.agents import agent
 from elfpy.markets.hyperdrive import hyperdrive_market
-import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-from elfpy import time
-from elfpy import types
 
 # pylint: disable=duplicate-code
 

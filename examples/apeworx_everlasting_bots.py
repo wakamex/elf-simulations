@@ -19,15 +19,15 @@ from numpy.random._generator import Generator as NumpyGenerator
 # elfpy core repo
 import elfpy
 import elfpy.agents.agent as agentlib
-from elfpy.markets.hyperdrive import hyperdrive_actions
-from elfpy.markets.hyperdrive import hyperdrive_assets
-from elfpy.markets.hyperdrive import hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-from elfpy import simulators
-from elfpy import time
-from elfpy import types
 import elfpy.utils.apeworx_integrations as ape_utils
 import elfpy.utils.outputs as output_utils
+from elfpy import simulators, time, types
+from elfpy.markets.hyperdrive import (
+    hyperdrive_actions,
+    hyperdrive_assets,
+    hyperdrive_market,
+)
 from elfpy.utils import sim_utils
 
 

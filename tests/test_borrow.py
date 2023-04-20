@@ -7,9 +7,8 @@ import unittest
 import numpy as np
 
 import elfpy.markets.borrow as borrow_market
-from elfpy import time
-from elfpy import types
 import elfpy.utils.outputs as output_utils
+from elfpy import time, types
 
 
 class TestBorrow(unittest.TestCase):

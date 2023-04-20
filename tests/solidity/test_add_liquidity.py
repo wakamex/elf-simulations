@@ -2,11 +2,11 @@
 
 import unittest
 
-from elfpy.agents import agent
-from elfpy.markets.hyperdrive import hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_markets
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 from elfpy import time
+from elfpy.agents import agent
+from elfpy.markets.hyperdrive import hyperdrive_actions
 
 
 class TestAddLiquidity(unittest.TestCase):

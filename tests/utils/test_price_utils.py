@@ -5,8 +5,8 @@ import unittest
 
 import numpy as np
 
-from elfpy import time
 import elfpy.utils.price as price_utils
+from elfpy import time
 
 
 class BasePriceTest(unittest.TestCase):

@@ -8,14 +8,11 @@ from os import path, walk
 
 import numpy as np
 
-from elfpy.agents import agent
-from elfpy.agents import policies
-from elfpy.agents import wallet
-from elfpy.markets.hyperdrive import hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-from elfpy import time
-from elfpy import types
+from elfpy import time, types
+from elfpy.agents import agent, policies, wallet
 from elfpy.agents.get_wallet_state import get_wallet_state
+from elfpy.markets.hyperdrive import hyperdrive_market
 
 
 class TestPolicy(agent.Agent):

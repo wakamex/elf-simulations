@@ -4,12 +4,11 @@ from __future__ import annotations  # types will be strings by default in 3.11
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
+import elfpy.pricing_models.yieldspace as yieldspace_pm
+from elfpy import time, types
 from elfpy.agents import agent
 from elfpy.markets.hyperdrive import hyperdrive_actions
 from elfpy.pricing_models import trades
-import elfpy.pricing_models.yieldspace as yieldspace_pm
-from elfpy import time
-from elfpy import types
 from elfpy.utils.math import FixedPoint
 
 if TYPE_CHECKING:
