@@ -24,7 +24,7 @@ import elfpy.utils.outputs as output_utils
 class TestNotebook(unittest.TestCase):
     """Test functions for Jupyter notebooks."""
 
-    def test_notebook_execution(self):
+    def test_notebook_execution(self):  # noqa: PLR0912 PLR0915
         """Tests notebooks in the `examples/notebooks` folder to ensure that they run without error."""
         # pylint: disable=too-many-locals
         # pylint: disable=too-many-branches

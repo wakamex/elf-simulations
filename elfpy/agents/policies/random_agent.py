@@ -175,6 +175,7 @@ class Policy(agent.Agent):
         action_list : list[MarketAction]
         """
         # pylint: disable=too-many-return-statements
+        # ruff: noqa: PLR0911
         # check if the agent will trade this block or not
         if not self.rng.choice([True, False], p=[self.trade_chance, 1 - self.trade_chance]):
             return []

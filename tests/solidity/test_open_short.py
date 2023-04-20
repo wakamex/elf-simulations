@@ -47,7 +47,7 @@ class TestOpenShort(unittest.TestCase):
         _, agent_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, 0.05)
         self.alice.wallet.update(agent_deltas)
 
-    def verify_open_short(
+    def verify_open_short(  # noqa: PLR0913
         self,
         user: agent.Agent,
         market_state_before: hyperdrive_market.MarketState,

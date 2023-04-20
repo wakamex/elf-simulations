@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from elfpy.markets.hyperdrive import hyperdrive_market
 
 # pylint: disable=too-many-arguments
+# ruff: noqa: PLR0913
 
 # TODO: remove this after FixedPoint PRs are finished
 # pylint: disable=too-many-lines

@@ -375,7 +375,7 @@ def clear_axes(axes: list[Axes], spines: str = "none") -> list:
     return axes
 
 
-def format_axis(
+def format_axis(  # noqa: PLR0913
     axis_handle, xlabel="", fontsize=18, linestyle="--", linewidth="1", color="grey", which="both", axis="y"
 ):
     r"""Formats the axis."""

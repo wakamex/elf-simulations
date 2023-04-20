@@ -48,7 +48,7 @@ class TestCloseLong(unittest.TestCase):
         _, wallet_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, 0.05)
         self.alice.wallet.update(wallet_deltas)
 
-    def verify_close_long(
+    def verify_close_long(  # noqa: PLR0913
         self,
         example_agent: agent.Agent,
         market_state_before: hyperdrive_market.MarketState,

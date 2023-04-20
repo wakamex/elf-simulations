@@ -36,7 +36,7 @@ class FixedFrida(agentlib.Agent):
 
     # pylint: disable=too-many-arguments
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self, rng: NumpyGenerator, trade_chance: float, risk_threshold: float, wallet_address: int, budget: int = 10_000
     ) -> None:
         """Add custom stuff then call basic policy init."""
@@ -116,7 +116,7 @@ class LongLouie(agentlib.Agent):
 
     # pylint: disable=too-many-arguments
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self, rng: NumpyGenerator, trade_chance: float, risk_threshold: float, wallet_address: int, budget: int = 10_000
     ) -> None:
         """Add custom stuff then call basic policy init."""
