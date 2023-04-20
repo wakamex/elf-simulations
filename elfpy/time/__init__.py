@@ -1,2 +1,2 @@
-"""Time and time related utilities"""
+"""Time and time related utilities."""
 from .time import *

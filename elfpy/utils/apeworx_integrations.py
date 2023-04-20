@@ -1,4 +1,4 @@
-"""Helper functions for integrating the sim repo with solidity contracts via Apeworx"""
+"""Helper functions for integrating the sim repo with solidity contracts via Apeworx."""
 
 from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Optional
@@ -20,15 +20,15 @@ if TYPE_CHECKING:
 
 
 def get_transfer_single_event(tx_receipt: Receipt) -> ContractLog:
-    r"""Parse the transaction receipt to get the "transfer single" trade event
+    r"""Parse the transaction receipt to get the "transfer single" trade event.
 
-    Arguments
+    Arguments:
     ---------
     tx_receipt: ape_ethereum.transactions.Receipt
         `Ape transaction receipt
         <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
 
-    Returns
+    Returns:
     -------
     ape.types.ContractLog
         The primary emitted trade (a "TransferSingle" `ContractLog
@@ -51,15 +51,14 @@ def get_transfer_single_event(tx_receipt: Receipt) -> ContractLog:
 
 
 def get_pool_state(tx_receipt: Receipt, hyperdrive_contract: ContractInstance):
-    """
-    Aftering opening or closing a position, we query the smart contract for its updated pool info.
+    """Aftering opening or closing a position, we query the smart contract for its updated pool info.
     We return everything returned by getPoolInfo in the smart contracts, along with:
         token_id: the id of the TransferSingle event (that isn't mint or burn), returned by get_transfer_single_event
         block_number_: the block number of the transaction
         prefix_: the prefix of the trade (LP, long, or short)
-        maturity_timestamp: the maturity time of the trade
+        maturity_timestamp: the maturity time of the trade.
 
-    Arguments
+    Arguments:
     ---------
     tx_receipt: ape_ethereum.transactions.Receipt
         `Ape transaction receipt
@@ -69,7 +68,7 @@ def get_pool_state(tx_receipt: Receipt, hyperdrive_contract: ContractInstance):
         <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         wrapped around the initialized MockHyperdriveTestnet smart contract.
 
-    Returns
+    Returns:
     -------
     dict[str, Any]
         An update dictionary for the Hyperdrive pool state
@@ -95,7 +94,7 @@ def ape_open_position(
 ) -> tuple[dict[str, Any], Receipt]:
     r"""Open a long trade on the Hyperdrive Solidity contract using apeworx.
 
-    Arguments
+    Arguments:
     ---------
     trade_prefix: hyperdrive_assets.AssetIdPrefix
         IntEnum specifying whether the trade is a LP (0), long (1), or short (2).
@@ -110,7 +109,7 @@ def ape_open_position(
     base_amount: int
         Unsigned int-256 representation of the base amount that the agent wishes to provide.
 
-    Returns
+    Returns:
     -------
     Tuple[dict[str, Any], ape_ethereum.transactions.Receipt]
         A tuple containing an update dictionary for the Hyperdrive pool state
@@ -159,7 +158,7 @@ def ape_close_position(
 ) -> tuple[dict[str, Any], Receipt]:
     r"""Close a long or short position on the Hyperdrive Solidity contract using apeworx.
 
-    Arguments
+    Arguments:
     ---------
     trade_prefix: hyperdrive_assets.AssetIdPrefix
         IntEnum specifying whether the trade is an LP (0), long (1), or short (2).
@@ -178,7 +177,7 @@ def ape_close_position(
         This is equal to the pool position duration plus the checkpoint time that is
         closest to (but before) the corresponding open trade.
 
-    Returns
+    Returns:
     -------
     Tuple[dict[str, Any], ape_ethereum.transactions.Receipt]
         A tuple containing an update dictionary for the Hyperdrive pool state

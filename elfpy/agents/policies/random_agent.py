@@ -1,4 +1,4 @@
-"""User strategy that opens or closes a random position with a random allowed amount"""
+"""User strategy that opens or closes a random position with a random allowed amount."""
 from __future__ import annotations
 
 import numpy as np
@@ -15,10 +15,10 @@ import elfpy.types as types
 
 
 class Policy(agent.Agent):
-    """Random agent"""
+    """Random agent."""
 
     def __init__(self, rng: numpyGenerator, trade_chance: float, wallet_address: int, budget: int = 10_000) -> None:
-        """Adds custom attributes"""
+        """Adds custom attributes."""
         self.trade_chance = trade_chance
         self.rng = rng
         super().__init__(wallet_address, budget)
@@ -27,7 +27,7 @@ class Policy(agent.Agent):
         self,
         disallowed_actions: list[hyperdrive_actions.MarketActionType] | None = None,
     ) -> list[hyperdrive_actions.MarketActionType]:
-        """Get all available actions, excluding those listed in disallowed_actions"""
+        """Get all available actions, excluding those listed in disallowed_actions."""
         # prevent accidental override
         if disallowed_actions is None:
             disallowed_actions = []
@@ -47,7 +47,7 @@ class Policy(agent.Agent):
         return [action for action in all_available_actions if action not in disallowed_actions]
 
     def open_short_with_random_amount(self, market) -> list[types.Trade]:
-        """Open a short with a random allowable amount"""
+        """Open a short with a random allowable amount."""
         initial_trade_amount = self.rng.normal(loc=self.budget * 0.1, scale=self.budget * 0.01)
         max_short = self.get_max_short(market)
         if max_short < elfpy.WEI:  # no short is possible
@@ -67,7 +67,7 @@ class Policy(agent.Agent):
         ]
 
     def open_long_with_random_amount(self, market) -> list[types.Trade]:
-        """Open a long with a random allowable amount"""
+        """Open a long with a random allowable amount."""
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = self.rng.normal(loc=self.budget * 0.1, scale=self.budget * 0.01)
         # get the maximum amount that can be traded, based on the budget & market reserve levels
@@ -89,7 +89,7 @@ class Policy(agent.Agent):
         ]
 
     def add_liquidity_with_random_amount(self) -> list[types.Trade]:
-        """Add liquidity with a random allowable amount"""
+        """Add liquidity with a random allowable amount."""
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = self.rng.normal(loc=self.budget * 0.1, scale=self.budget * 0.01)
         # WEI <= trade_amount
@@ -107,7 +107,7 @@ class Policy(agent.Agent):
         ]
 
     def remove_liquidity_with_random_amount(self) -> list[types.Trade]:
-        """Remove liquidity with a random allowable amount"""
+        """Remove liquidity with a random allowable amount."""
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = self.rng.normal(loc=self.budget * 0.1, scale=self.budget * 0.01)
         # WEI <= trade_amount <= lp_tokens
@@ -125,7 +125,7 @@ class Policy(agent.Agent):
         ]
 
     def close_random_short(self) -> list[types.Trade]:
-        """Fully close the short balance for a random mint time"""
+        """Fully close the short balance for a random mint time."""
         short_time = self.rng.choice(list(self.wallet.shorts)).item()  # choose a random short time to close
         trade_amount = self.wallet.shorts[short_time].balance  # close the full trade
         return [
@@ -141,7 +141,7 @@ class Policy(agent.Agent):
         ]
 
     def close_random_long(self) -> list[types.Trade]:
-        """Fully close the long balance for a random mint time"""
+        """Fully close the long balance for a random mint time."""
         long_time = self.rng.choice(list(self.wallet.longs)).item()  # choose a random long time to close
         trade_amount = self.wallet.longs[long_time].balance  # close the full trade
         return [
@@ -157,7 +157,7 @@ class Policy(agent.Agent):
         ]
 
     def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
-        """Implement a random user strategy
+        """Implement a random user strategy.
 
         The agent performs one of four possible trades:
             [OPEN_LONG, OPEN_SHORT, CLOSE_LONG, CLOSE_SHORT]

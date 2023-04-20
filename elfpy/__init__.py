@@ -1,4 +1,4 @@
-"""Elfpy package"""
+"""Elfpy package."""
 
 import logging
 import shutil
@@ -181,8 +181,7 @@ mpl.rcParams.update(rc_params)
 
 
 def check_non_zero(data) -> None:
-    r"""
-    Performs a general non-zero check on a dictionary or class that has a __dict__ attribute.
+    r"""Performs a general non-zero check on a dictionary or class that has a __dict__ attribute.
     Non-zero values are checked to be greater than -PRECISION_THRESHOLD.
     If they are negative and within PRECISION_THRESHOLD of zero, they are set to zero.
     If they are negative and greater than -PRECISION_THRESHOLD, an AssertionError is raised.

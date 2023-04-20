@@ -1,4 +1,4 @@
-"""Trade related classes and functions"""
+"""Trade related classes and functions."""
 from dataclasses import dataclass
 
 import elfpy.agents.agent as agent

@@ -1,2 +1,2 @@
-"""Autonomous agent related objects and functions"""
+"""Autonomous agent related objects and functions."""
 # from .agent import *

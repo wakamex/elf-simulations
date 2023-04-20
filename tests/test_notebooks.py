@@ -1,4 +1,4 @@
-"""Testing for example notebooks"""
+"""Testing for example notebooks."""
 import matplotlib
 
 matplotlib.use("Agg")  # headless backend so that plots won't render
@@ -22,10 +22,10 @@ import elfpy.utils.outputs as output_utils
 
 
 class TestNotebook(unittest.TestCase):
-    """Test functions for Jupyter notebooks"""
+    """Test functions for Jupyter notebooks."""
 
     def test_notebook_execution(self):
-        """Tests notebooks in the `examples/notebooks` folder to ensure that they run without error"""
+        """Tests notebooks in the `examples/notebooks` folder to ensure that they run without error."""
         # pylint: disable=too-many-locals
         # pylint: disable=too-many-branches
         # pylint: disable=too-many-statements

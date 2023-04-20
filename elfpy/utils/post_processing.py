@@ -1,4 +1,4 @@
-"""Helper functions for post-processing simulation outputs"""
+"""Helper functions for post-processing simulation outputs."""
 from __future__ import annotations  # types will be strings by default in 3.11
 
 from typing import TYPE_CHECKING
@@ -16,7 +16,9 @@ def aggregate_agent_and_market_states(combined_trades_df: pd.DataFrame) -> pd.Da
     We want this function to loop over every trade and construct the market state by applying each delta.
     We can also compute the PNL values in the loop. This should be able to take advantage of multi-threading,
     since the delta values are fixed & we don't have to worry about trades changing what they would be.
+
     Example:
+    -------
         market_state = hyperdrive.MarketState(
             lp_total_supply=combined_trades_df.market_init.iloc[0].lp_total_supply,
             share_reserves=combined_trades_df.market_init.iloc[0].share_reserves,
@@ -40,7 +42,7 @@ def aggregate_agent_and_market_states(combined_trades_df: pd.DataFrame) -> pd.Da
 
 
 def get_simulation_state_df(simulator: Simulator) -> pd.DataFrame:
-    r"""Converts the simulator output dictionary to a pandas dataframe
+    r"""Converts the simulator output dictionary to a pandas dataframe.
 
     Parameters
     ----------
@@ -61,7 +63,7 @@ def get_simulation_state_df(simulator: Simulator) -> pd.DataFrame:
 
 
 def compute_derived_variables(simulator: Simulator) -> pd.DataFrame:
-    r"""Converts the simulator output dictionary to a pandas dataframe and computes derived variables
+    r"""Converts the simulator output dictionary to a pandas dataframe and computes derived variables.
 
     Parameters
     ----------
@@ -115,7 +117,7 @@ def compute_derived_variables(simulator: Simulator) -> pd.DataFrame:
 
 
 def add_pnl_columns(trades_df: pd.DataFrame) -> None:
-    """Adds Profit and Loss Column for every agent to the dataframe that is passed in"""
+    """Adds Profit and Loss Column for every agent to the dataframe that is passed in."""
     num_agents = len([col for col in trades_df if str(col).startswith("agent") and str(col).endswith("base")])
     for agent_id in range(num_agents):
         wallet_values_in_base = [
@@ -135,7 +137,7 @@ def add_pnl_columns(trades_df: pd.DataFrame) -> None:
 
 
 def aggregate_trade_data(trades: pd.DataFrame) -> pd.DataFrame:
-    r"""Aggregate trades dataframe by computing means
+    r"""Aggregate trades dataframe by computing means.
 
     Parameters
     ----------

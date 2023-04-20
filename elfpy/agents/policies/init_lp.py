@@ -1,4 +1,4 @@
-"""Initializer agent
+"""Initializer agent.
 
 Special reserved user strategy that is used to initialize a market with a desired amount of share & bond reserves
 """
@@ -11,12 +11,10 @@ import elfpy.types as types
 
 
 class Policy(agent.Agent):
-    """Adds a large LP"""
+    """Adds a large LP."""
 
     def action(self, market: hyperdrive_market.Market) -> "list[types.Trade]":
-        """
-        User strategy adds liquidity and then takes no additional actions
-        """
+        """User strategy adds liquidity and then takes no additional actions."""
         if self.wallet.lp_tokens > 0:  # has already opened the lp
             return []
         return [

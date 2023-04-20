@@ -1,4 +1,4 @@
-"""Testing for price utilities found in elfpy/utils/price.py"""
+"""Testing for price utilities found in elfpy/utils/price.py."""
 from __future__ import annotations  # types are strings by default in 3.11
 
 import unittest
@@ -9,13 +9,12 @@ import elfpy.utils.price as price_utils
 
 
 class BasePriceTest(unittest.TestCase):
-    """Unit tests for price utilities"""
+    """Unit tests for price utilities."""
 
     # ### Spot Price and APR ###
 
     def run_calc_apr_from_spot_price_test(self):
-        """Unit tests for the calc_apr_from_spot_price function"""
-
+        """Unit tests for the calc_apr_from_spot_price function."""
         test_cases = [
             # test 1: 0.95 price; 6mo remaining;
             {
@@ -154,8 +153,7 @@ class BasePriceTest(unittest.TestCase):
                 np.testing.assert_almost_equal(apr, test_case["expected_result"], err_msg="unexpected apr")
 
     def run_calc_spot_price_from_apr_test(self):
-        """Unit tests for the calc_spot_price_from_apr function"""
-
+        """Unit tests for the calc_spot_price_from_apr function."""
         test_cases = [
             # test 1: 10% apr; 6mo remaining;
             {
@@ -264,12 +262,12 @@ class BasePriceTest(unittest.TestCase):
 
 
 class TestPriceUtils(BasePriceTest):
-    """Test calculations for each of the price utility functions"""
+    """Test calculations for each of the price utility functions."""
 
     def test_calc_apr_from_spot_price(self):
-        """Execute the test"""
+        """Execute the test."""
         self.run_calc_apr_from_spot_price_test()
 
     def test_calc_spot_price_from_apr(self):
-        """Execute the test"""
+        """Execute the test."""
         self.run_calc_spot_price_from_apr_test()

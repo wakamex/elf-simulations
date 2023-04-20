@@ -1,4 +1,4 @@
-"""Implements abstract classes that control agent behavior"""
+"""Implements abstract classes that control agent behavior."""
 from __future__ import annotations  # types will be strings by default in 3.11
 
 import logging
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class AgentTradeResult:
-    r"""The result to a user of performing a trade"""
+    r"""The result to a user of performing a trade."""
 
     d_base: float
     d_bonds: float
@@ -27,14 +27,14 @@ class AgentTradeResult:
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class AgentTradeResultFP:
-    r"""The result to a user of performing a trade"""
+    r"""The result to a user of performing a trade."""
 
     d_base: FixedPoint
     d_bonds: FixedPoint
 
 
 class Agent:
-    r"""Agent class for conducting trades on the market
+    r"""Agent class for conducting trades on the market.
 
     Implements a class that controls agent behavior agent has a budget that is a dict, keyed with a
     date value is an inte with how many tokens they have for that date.
@@ -58,7 +58,7 @@ class Agent:
     """
 
     def __init__(self, wallet_address: int, budget: float):
-        """Set up initial conditions"""
+        """Set up initial conditions."""
         self.budget: float = budget
         self.wallet: wallet.Wallet = wallet.Wallet(
             address=wallet_address, balance=types.Quantity(amount=budget, unit=types.TokenType.BASE)
@@ -72,7 +72,7 @@ class Agent:
             self.name = name.rsplit(".", maxsplit=1)[-1].split("'")[0]
 
     def action(self, market: base_market.Market) -> list[types.Trade]:
-        r"""Abstract method meant to be implemented by the specific policy
+        r"""Abstract method meant to be implemented by the specific policy.
 
         Specify action from the policy
 
@@ -92,7 +92,7 @@ class Agent:
     # market fixed rate below the APR when opening the long
     # issue #213
     def get_max_long(self, market: hyperdrive_market.Market) -> float:
-        """Gets an approximation of the maximum amount of base the agent can use
+        """Gets an approximation of the maximum amount of base the agent can use.
 
         Typically would be called to determine how much to enter into a long position.
 
@@ -179,7 +179,7 @@ class Agent:
         return last_maybe_max_short
 
     def get_trades(self, market: base_market.Market) -> list[types.Trade]:
-        """Helper function for computing a agent trade
+        """Helper function for computing a agent trade.
 
         direction is chosen based on this logic:
             when entering a trade (open long or short),
@@ -213,7 +213,7 @@ class Agent:
         return actions
 
     def get_liquidation_trades(self, market: hyperdrive_market.Market) -> list[types.Trade]:
-        """Get final trades for liquidating positions
+        """Get final trades for liquidating positions.
 
         Parameters
         ----------
@@ -272,7 +272,7 @@ class Agent:
         return action_list
 
     def log_status_report(self) -> None:
-        """Logs the current user state"""
+        """Logs the current user state."""
         logging.debug(
             "agent #%g balance = %1g and fees_paid = %1g",
             self.wallet.address,
@@ -281,7 +281,7 @@ class Agent:
         )
 
     def log_final_report(self, market: hyperdrive_market.Market) -> None:
-        """Logs a report of the agent's state
+        """Logs a report of the agent's state.
 
         Parameters
         ----------

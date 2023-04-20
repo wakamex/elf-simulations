@@ -1,4 +1,4 @@
-"""Close long market trade tests that match those being executed in the solidity repo"""
+"""Close long market trade tests that match those being executed in the solidity repo."""
 import unittest
 
 import elfpy.agents.agent as agent
@@ -12,7 +12,7 @@ import elfpy.types as types
 
 
 class TestCloseLong(unittest.TestCase):
-    """Test opening a long in hyperdrive"""
+    """Test opening a long in hyperdrive."""
 
     contribution: float = 500_000_000
     target_apr: float = 0.05
@@ -57,7 +57,7 @@ class TestCloseLong(unittest.TestCase):
         bond_amount: float,
         maturity_time: float,
     ):
-        """Close a long then make sure the market state is correct"""
+        """Close a long then make sure the market state is correct."""
         # verify that all of Bob's bonds were burned
         self.assertFalse(
             example_agent.wallet.longs
@@ -205,7 +205,7 @@ class TestCloseLong(unittest.TestCase):
             )
 
     def test_close_long_immediately_with_regular_amount(self):
-        """Open a position, close it, and then verify that the close long updates were correct"""
+        """Open a position, close it, and then verify that the close long updates were correct."""
         base_amount = 10
         self.bob.budget = base_amount
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
@@ -229,7 +229,7 @@ class TestCloseLong(unittest.TestCase):
         )
 
     def test_close_long_immediately_with_small_amount(self):
-        """Open a small position, close it, and then verify that the close long updates were correct"""
+        """Open a small position, close it, and then verify that the close long updates were correct."""
         base_amount = 0.01
         self.bob.budget = base_amount
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
@@ -257,7 +257,7 @@ class TestCloseLong(unittest.TestCase):
         )
 
     def test_close_long_halfway_through_term_zero_variable_interest(self):
-        """Close a long halfway through the term and check the apr realized was the target apr"""
+        """Close a long halfway through the term and check the apr realized was the target apr."""
         # Bob opens a long
         base_amount = 10  # how much base the agent is using to open a long
         self.bob.budget = base_amount
@@ -311,7 +311,7 @@ class TestCloseLong(unittest.TestCase):
         )
 
     def test_close_long_redeem_at_maturity_zero_variable_interest(self):
-        """Close long at the end of term"""
+        """Close long at the end of term."""
         # Bob opens a long
         base_amount = 10  # how much base the agent is using to open a long
         self.bob.budget = base_amount
@@ -397,7 +397,7 @@ class TestCloseLong(unittest.TestCase):
 
     @unittest.skip("Negative interest is not implemented yet")
     def test_close_long_half_through_term_negative_variable_interest(self):
-        """Close a long when the interest rate was negative halfway through the term
+        """Close a long when the interest rate was negative halfway through the term.
 
         .. todo:: This test only verifies that a long can be closed with a negative interest rate.
             There is a commented assert on the accounting that should pass after withdrawl shares are implemented.

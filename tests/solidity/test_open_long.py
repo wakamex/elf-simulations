@@ -1,4 +1,4 @@
-"""Open long market trade tests that match those being executed in the solidity repo"""
+"""Open long market trade tests that match those being executed in the solidity repo."""
 import unittest
 
 import elfpy.agents.agent as agent
@@ -12,7 +12,7 @@ import elfpy.time as time
 
 
 class TestOpenLong(unittest.TestCase):
-    """Test opening a long in hyperdrive"""
+    """Test opening a long in hyperdrive."""
 
     contribution: float = 500_000_000
     target_apr: float = 0.05
@@ -56,7 +56,7 @@ class TestOpenLong(unittest.TestCase):
         maturity_time: float,
         apr_before: float,
     ):
-        """Open a long then make sure the market state is correct"""
+        """Open a long then make sure the market state is correct."""
         # verify the base transfers
         self.assertEqual(
             user.wallet.balance.amount,
@@ -134,18 +134,18 @@ class TestOpenLong(unittest.TestCase):
         # self.hyperdrive.market_state.short_base_volume_checkpoints(checkpoint_time),
 
     def test_open_long_failure_zero_amount(self):
-        """Purchasing bonds with zero base fails"""
+        """Purchasing bonds with zero base fails."""
         with self.assertRaises(AssertionError):
             self.hyperdrive.open_long(self.bob.wallet, 0)
 
     def test_open_long_failure_extreme_amount(self):
-        """Purchasing more bonds than exist fails"""
+        """Purchasing more bonds than exist fails."""
         base_amount = self.hyperdrive.market_state.bond_reserves
         with self.assertRaises(AssertionError):
             self.hyperdrive.open_long(self.bob.wallet, base_amount)
 
     def test_open_long(self):
-        """Open a long & check that accounting is done correctly"""
+        """Open a long & check that accounting is done correctly."""
         base_amount = 10
         self.bob.budget = base_amount
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
@@ -163,7 +163,7 @@ class TestOpenLong(unittest.TestCase):
         )
 
     def test_open_long_with_small_amount(self):
-        """Open a tiny long & check that accounting is done correctly"""
+        """Open a tiny long & check that accounting is done correctly."""
         base_amount = 0.01
         self.bob.budget = base_amount
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)

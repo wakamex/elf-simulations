@@ -1,4 +1,4 @@
-"""Implements abstract classes that control user behavior"""
+"""Implements abstract classes that control user behavior."""
 from __future__ import annotations  # types will be strings by default in 3.11
 
 import copy
@@ -46,7 +46,7 @@ class Short:
 
 @dataclass
 class Borrow:
-    r"""An open borrow position
+    r"""An open borrow position.
 
     Parameters
     ----------
@@ -61,6 +61,7 @@ class Borrow:
     start_time : float
     .. todo: add explanation
     """
+
     borrow_token: types.TokenType
     borrow_amount: float
     borrow_shares: float
@@ -71,7 +72,7 @@ class Borrow:
 
 @dataclass()
 class Wallet:
-    r"""Stores what is in the agent's wallet
+    r"""Stores what is in the agent's wallet.
 
     Parameters
     ----------
@@ -117,11 +118,11 @@ class Wallet:
         setattr(self, key, value)
 
     def copy(self) -> Wallet:
-        """Returns a new copy of self"""
+        """Returns a new copy of self."""
         return Wallet(**copy.deepcopy(self.__dict__))
 
     def update(self, wallet_deltas: Wallet) -> None:
-        """Update the agent's wallet
+        """Update the agent's wallet.
 
         Parameters
         ----------
@@ -185,7 +186,7 @@ class Wallet:
                 del self.borrows[borrow_summary.start_time]
 
     def _update_longs(self, longs: Iterable[tuple[float, Long]]) -> None:
-        """Helper internal function that updates the data about Longs contained in the Agent's Wallet object
+        """Helper internal function that updates the data about Longs contained in the Agent's Wallet object.
 
         Parameters
         ----------
@@ -214,7 +215,7 @@ class Wallet:
                 raise AssertionError(f"ERROR: Wallet balance should be >= 0, not {self.longs[mint_time]}.")
 
     def _update_shorts(self, shorts: Iterable[tuple[float, Short]]) -> None:
-        """Helper internal function that updates the data about Shortscontained in the Agent's Wallet object
+        """Helper internal function that updates the data about Shortscontained in the Agent's Wallet object.
 
         Parameters
         ----------

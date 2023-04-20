@@ -1,2 +1,2 @@
-"""trading and simulation modules"""
+"""trading and simulation modules."""
 from .simulators import *

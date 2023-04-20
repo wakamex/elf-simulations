@@ -1,4 +1,4 @@
-"""Remove liquidity market trade tests that match those being executed in the solidity repo"""
+"""Remove liquidity market trade tests that match those being executed in the solidity repo."""
 import unittest
 
 import numpy as np
@@ -13,7 +13,7 @@ import elfpy.time as time
 
 
 class TestRemoveLiquidity(unittest.TestCase):
-    """Test opening a long in hyperdrive"""
+    """Test opening a long in hyperdrive."""
 
     contribution: float = 500_000_000
     target_apr: float = 0.05
@@ -51,18 +51,17 @@ class TestRemoveLiquidity(unittest.TestCase):
         self.alice.wallet.update(wallet_deltas)
 
     def test_remove_liquidity_fail_zero_amount(self):
-        """Should fail to remove zero liquidity"""
+        """Should fail to remove zero liquidity."""
         with self.assertRaises(AssertionError):
             self.hyperdrive.remove_liquidity(self.alice.wallet, 0)
 
     def test_remove_liquidity_fail_insufficient_shares(self):
-        """Should fail to remove more liquidity than the agent has"""
+        """Should fail to remove more liquidity than the agent has."""
         with self.assertRaises(AssertionError):
             self.hyperdrive.remove_liquidity(self.alice.wallet, self.alice.wallet.lp_tokens + 1)
 
     def test_remove_liquidity_no_trades(self):
-        """Should remove liquidity if there are no open trades"""
-
+        """Should remove liquidity if there are no open trades."""
         # advance time and let interest accrue
         self.block_time.set_time(1)
 
@@ -86,7 +85,7 @@ class TestRemoveLiquidity(unittest.TestCase):
         self.assertEqual(self.alice.wallet.withdraw_shares, 0)
 
     def test_remove_liquidity_long_trade(self):
-        """Should remove liquidity if there are open longs"""
+        """Should remove liquidity if there are open longs."""
         market_state = self.hyperdrive.market_state
 
         # advance time and let interest accrue
@@ -125,7 +124,7 @@ class TestRemoveLiquidity(unittest.TestCase):
         self.assertEqual(self.alice.wallet.withdraw_shares, withdraw_shares_expected)
 
     def test_remove_liquidity_short_trade(self):
-        """Should remove liquidity if there are open shorts"""
+        """Should remove liquidity if there are open shorts."""
         market_state = self.hyperdrive.market_state
 
         # advance time and let interest accrue

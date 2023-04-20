@@ -1,4 +1,4 @@
-"""Testing for the calc_out_given_in of the pricing models"""
+"""Testing for the calc_out_given_in of the pricing models."""
 from __future__ import annotations
 
 import decimal
@@ -27,11 +27,11 @@ from elfpy.markets.hyperdrive.hyperdrive_market import MarketState
 
 
 class TestCalcOutGivenIn(unittest.TestCase):
-    """Unit tests for the calc_out_given_in function"""
+    """Unit tests for the calc_out_given_in function."""
 
     # TODO: Add tests for the full TradeResult object.
     def test_calc_out_given_in_success(self):
-        """Success tests for calc_out_given_in"""
+        """Success tests for calc_out_given_in."""
         pricing_models: list[PricingModel] = [YieldspacePricingModel(), HyperdrivePricingModel()]
 
         # Test cases where token_out = TokenType.PT indicating that bonds are being
@@ -1359,8 +1359,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     raise AssertionError(f'Expected model_name to be "YieldSpace", not {model_name}')
 
     def test_calc_out_given_in_precision(self):
-        """
-        This test ensures that the pricing model can handle very extreme inputs
+        """This test ensures that the pricing model can handle very extreme inputs
         such as extremely small inputs with extremely large reserves.
         """
         pricing_models: list[PricingModel] = [YieldspacePricingModel(), HyperdrivePricingModel()]
@@ -1412,7 +1411,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
 
     # TODO: This should be refactored to be a test for check_input_assertions and check_output_assertions
     def test_calc_out_given_in_failure(self):
-        """Failure tests for calc_out_given_in"""
+        """Failure tests for calc_out_given_in."""
         output_utils.setup_logging("test_calc_out_given_in")
         pricing_models: list[PricingModel] = [YieldspacePricingModel(), HyperdrivePricingModel()]
 

@@ -47,11 +47,11 @@ exclude = ["hyperdrive_solidity"]
 # We add flake8-builtins (A), pydocstyle (D), isort (I),
 # pep8-naming (N), flake8-unused-arguments (ARG), and pylint (PL).
 # select = ["A", "D", "E", "F", "I", "N", "ARG", "PL"]
-select = ["A"]
+select = ["D"]
 ignore = []
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.
-fixable = ["A"]
+fixable = ["D"]
 # fixable = [
 #     "A",   # flake8-builtins
 #     "B",   # flake8-bugbear

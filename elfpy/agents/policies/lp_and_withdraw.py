@@ -1,4 +1,4 @@
-"""User strategy that adds liquidity and then removes it when enough time has passed"""
+"""User strategy that adds liquidity and then removes it when enough time has passed."""
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.agents.agent as agent
@@ -8,21 +8,19 @@ import elfpy.types as types
 
 
 class Policy(agent.Agent):
-    """
-    simple LP
-    only has one LP open at a time
+    """simple LP
+    only has one LP open at a time.
     """
 
     def __init__(self, wallet_address, budget=1000):
-        """call basic policy init then add custom stuff"""
+        """Call basic policy init then add custom stuff."""
         self.time_to_withdraw = 1.0
         self.amount_to_lp = 100
         super().__init__(wallet_address, budget)
 
     def action(self, market: hyperdrive_market.Market) -> "list[types.Trade]":
-        """
-        implement user strategy
-        LP if you can, but only do it once
+        """Implement user strategy
+        LP if you can, but only do it once.
         """
         # pylint disable=unused-argument
         action_list = []

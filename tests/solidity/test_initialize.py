@@ -1,4 +1,4 @@
-"""Market initialization tests that match those being executed in the solidity repo"""
+"""Market initialization tests that match those being executed in the solidity repo."""
 import unittest
 
 import elfpy.agents.agent as agent
@@ -9,7 +9,7 @@ from elfpy.time.time import BlockTime
 
 
 class TestInitialize(unittest.TestCase):
-    """Test case for initializing the market
+    """Test case for initializing the market.
 
     .. todo: this is a mirror of the tests in test_markets.py; need to unify
     """
@@ -30,9 +30,7 @@ class TestInitialize(unittest.TestCase):
     pricing_model: hyperdrive_pm.HyperdrivePricingModel
 
     def __init__(self, contribution: float = 1_000, target_apr: float = 0.5, position_duration: int = 180, **kwargs):
-        """
-        Set up agent, pricing model, & market for the subsequent tests.
-        """
+        """Set up agent, pricing model, & market for the subsequent tests."""
         self.contribution = contribution
         self.target_apr = target_apr
         self.position_duration = position_duration
@@ -63,7 +61,8 @@ class TestInitialize(unittest.TestCase):
 
 def test_initialize_failure():
     """Markets should not be able to be initialized twice.
-    Since setUp initializes it, we can check the assert by trying again here."""
+    Since setUp initializes it, we can check the assert by trying again here.
+    """
     test = TestInitialize()
     with test.assertRaises(AssertionError):
         _ = test.hyperdrive.initialize(
@@ -74,7 +73,7 @@ def test_initialize_failure():
 
 
 def test_initialize_success():
-    """Verify that the initialized market has the correct APR & reserve levels"""
+    """Verify that the initialized market has the correct APR & reserve levels."""
     test = TestInitialize()
     init_apr = test.pricing_model.calc_apr_from_reserves(
         market_state=test.hyperdrive.market_state,
@@ -91,7 +90,7 @@ def test_initialize_success():
 
 
 def test_initialize_bots_on_solidity_success():
-    """Numerical test to ensure exact same outcome as Solidity, using params from bots_on_solidity.ipynb"""
+    """Numerical test to ensure exact same outcome as Solidity, using params from bots_on_solidity.ipynb."""
     test = TestInitialize(contribution=500_000_000, target_apr=0.05, position_duration=365)
     init_apr = test.pricing_model.calc_apr_from_reserves(
         market_state=test.hyperdrive.market_state,

@@ -1,4 +1,4 @@
-"""Testing for time utilities found in elfpy/utils/time.py"""
+"""Testing for time utilities found in elfpy/utils/time.py."""
 from __future__ import annotations  # types are strings by default in 3.11
 
 import unittest
@@ -8,11 +8,10 @@ import elfpy.time as time
 
 
 class TestTimeUtils(unittest.TestCase):
-    """Unit tests for the parse_simulation_config function"""
+    """Unit tests for the parse_simulation_config function."""
 
     def test_get_year_remaining(self):
-        """Unit tests for the get_year_remaining function"""
-
+        """Unit tests for the get_year_remaining function."""
         test_cases = [
             # test 1: 6mo duration, minted at term start
             {
@@ -63,8 +62,7 @@ class TestTimeUtils(unittest.TestCase):
                 )
 
     def test_norm_days(self):
-        """Unit tests for the norm_days function"""
-
+        """Unit tests for the norm_days function."""
         test_cases = [
             # test 1
             {"days": 0, "normalizing_constant": 365, "expected_result": 0},  # 1 year scale
@@ -82,8 +80,7 @@ class TestTimeUtils(unittest.TestCase):
             )
 
     def test_days_to_time_remaining(self):
-        """Unit tests for the days_to_time_remaining function"""
-
+        """Unit tests for the days_to_time_remaining function."""
         test_cases = [
             # test 1: 6mo remaining; 1 year scale; stretched to 20 years
             {
@@ -118,8 +115,7 @@ class TestTimeUtils(unittest.TestCase):
             )
 
     def test_time_to_days_remaining(self):
-        """Unit tests for the time_to_days_remaining function"""
-
+        """Unit tests for the time_to_days_remaining function."""
         test_cases = [
             # test 1: 0.025 stretched time remaining; 1 year scale; stretched to 20 years
             {

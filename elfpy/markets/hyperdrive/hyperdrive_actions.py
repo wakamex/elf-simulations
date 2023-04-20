@@ -27,7 +27,8 @@ if TYPE_CHECKING:
 
 
 class MarketActionType(Enum):
-    r"""The descriptor of an action in a market"""
+    r"""The descriptor of an action in a market."""
+
     INITIALIZE_MARKET = "initialize_market"
 
     ADD_LIQUIDITY = "add_liquidity"
@@ -43,7 +44,8 @@ class MarketActionType(Enum):
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class MarketDeltas(base_market.MarketDeltas):
-    r"""Specifies changes to values in the market"""
+    r"""Specifies changes to values in the market."""
+
     # pylint: disable=too-many-instance-attributes
     d_base_asset: float = 0
     d_bond_asset: float = 0
@@ -70,7 +72,8 @@ class MarketDeltas(base_market.MarketDeltas):
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class MarketDeltasFP(base_market.MarketDeltas):
-    r"""Specifies changes to values in the market"""
+    r"""Specifies changes to values in the market."""
+
     # pylint: disable=too-many-instance-attributes
     d_base_asset: FixedPoint = FixedPoint(0)
     d_bond_asset: FixedPoint = FixedPoint(0)
@@ -105,7 +108,8 @@ class MarketDeltasFP(base_market.MarketDeltas):
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class MarketActionResult(base_market.MarketActionResult):
-    r"""The result to a market of performing a trade"""
+    r"""The result to a market of performing a trade."""
+
     d_base: float
     d_bonds: float
 
@@ -113,7 +117,8 @@ class MarketActionResult(base_market.MarketActionResult):
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class MarketActionResultFP(base_market.MarketActionResultFP):
-    r"""The result to a market of performing a trade"""
+    r"""The result to a market of performing a trade."""
+
     d_base: FixedPoint
     d_bonds: FixedPoint
 
@@ -121,7 +126,8 @@ class MarketActionResultFP(base_market.MarketActionResultFP):
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
 class MarketAction(base_market.MarketAction):
-    r"""Market action specification"""
+    r"""Market action specification."""
+
     # these two variables are required to be set by the strategy
     action_type: MarketActionType
     # amount to supply for the action
@@ -135,7 +141,7 @@ class MarketAction(base_market.MarketAction):
 
 
 def check_action(agent_action: MarketAction) -> None:
-    r"""Ensure that the agent action is an allowed action for this market
+    r"""Ensure that the agent action is an allowed action for this market.
 
     Parameters
     ----------
@@ -196,7 +202,7 @@ def calculate_short_adjustment(
     position_duration: time.StretchedTime,
     market_time: float,
 ) -> float:
-    """Calculates an adjustment amount for lp shares based on the amount of shorts outstanding
+    """Calculates an adjustment amount for lp shares based on the amount of shorts outstanding.
 
     Parameters
     ----------
@@ -232,7 +238,7 @@ def calculate_long_adjustment(
     position_duration: time.StretchedTime,
     market_time: float,
 ) -> float:
-    """Calculates an adjustment amount for lp shares based on the amount of longs outstanding
+    """Calculates an adjustment amount for lp shares based on the amount of longs outstanding.
 
     Parameters
     ----------
@@ -270,7 +276,7 @@ def calc_lp_out_given_tokens_in(
     market_time: float,
     position_duration: time.StretchedTime,
 ) -> tuple[float, float, float]:
-    r"""Computes the amount of LP tokens to be minted for a given amount of base asset
+    r"""Computes the amount of LP tokens to be minted for a given amount of base asset.
 
     .. math::
         \Delta l = \frac{l \cdot \Delta z}{z + a_s - a_l}
@@ -352,7 +358,7 @@ def calculate_base_volume(base_amount: float, bond_amount: float, normalized_tim
 def calc_checkpoint_deltas(
     market: hyperdrive_market.Market, checkpoint_time: float, bond_amount: float, position: Literal["short", "long"]
 ) -> tuple[float, defaultdict[float, float], float]:
-    """Compute deltas to close any outstanding positions at the checkpoint_time
+    """Compute deltas to close any outstanding positions at the checkpoint_time.
 
     Parameters
     ----------
@@ -411,7 +417,7 @@ def calc_open_short(
     This guarantees that bonds in the system are always fully backed by an equal amount of base.
 
     Parameters
-    ---------
+    ----------
     wallet_address: int
         The address of the agent's wallet.
     bond_amount: float
@@ -512,16 +518,15 @@ def calc_close_short(
     mint_time: float,
     open_share_price: float,
 ) -> tuple[MarketDeltas, wallet.Wallet]:
-    """
-    when closing a short, the number of bonds being closed out, at face value, give us the total margin returned
+    """When closing a short, the number of bonds being closed out, at face value, give us the total margin returned
     the worst case scenario of the short is reduced by that amount, so they no longer need margin for it
     at the same time, margin in their account is drained to pay for the bonds being bought back
     so the amount returned to their wallet is trade_amount minus the cost of buying back the bonds
     that is, d_base = trade_amount (# of bonds) + trade_result.user_result.d_base (a negative amount, in base))
-    for more on short accounting, see the open short method
+    for more on short accounting, see the open short method.
 
     Parameters
-    ---------
+    ----------
     wallet_address: int
         The address of the agent's wallet.
     bond_amount: float
@@ -648,8 +653,7 @@ def calc_open_long(
     base_amount: float,
     market: hyperdrive_market.Market,
 ) -> tuple[MarketDeltas, wallet.Wallet]:
-    """
-    When a trader opens a long, they put up base and are given long tokens. As time passes, an amount of the longs
+    """When a trader opens a long, they put up base and are given long tokens. As time passes, an amount of the longs
     proportional to the time that has passed are considered to be “mature” and can be redeemed one-to-one.
     The remaining amount of longs are sold on the internal AMM. The trader doesn’t receive any variable interest
     from their long positions, so the only money they make on closing is from the long maturing and the fixed
@@ -732,7 +736,7 @@ def calc_close_long(
     This function takes the trade spec & turn it into trade details.
 
     Parameters
-    ---------
+    ----------
     wallet_address: int
         The address of the agent's wallet.
     bond_amount: float

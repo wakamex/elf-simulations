@@ -1,4 +1,4 @@
-"""Testing for the get_max_long function of the pricing models"""
+"""Testing for the get_max_long function of the pricing models."""
 from __future__ import annotations
 
 import copy
@@ -21,7 +21,7 @@ from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 
 @dataclass
 class TestCaseGetMax:
-    """Dataclass for get_max_long test cases"""
+    """Dataclass for get_max_long test cases."""
 
     market_state: hyperdrive_market.MarketState
     time_remaining: time.StretchedTime
@@ -33,11 +33,10 @@ class TestGetMax(unittest.TestCase):
     """Tests get_max_short and get_max_long functions within the pricing model."""
 
     def test_get_max(self):
-        """
-        Tests that get_max_long and get_max_short are safe, by checking
-            apr >= 0
-            share_price * market_state.share_reserves >= base_buffer
-            bond_reserves >= bond_buffer
+        """Tests that get_max_long and get_max_short are safe, by checking
+        apr >= 0
+        share_price * market_state.share_reserves >= base_buffer
+        bond_reserves >= bond_buffer.
         """
         output_utils.setup_logging(log_filename="test_get_max")
         pricing_models: list[PricingModel] = [HyperdrivePricingModel(), YieldspacePricingModel()]

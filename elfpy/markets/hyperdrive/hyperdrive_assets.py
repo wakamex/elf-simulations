@@ -1,10 +1,11 @@
-"""Hyperdrive AssetId classes and methods"""
+"""Hyperdrive AssetId classes and methods."""
 from enum import IntEnum
 from typing import Tuple
 
 
 class AssetIdPrefix(IntEnum):
-    r"""The asset ID is used to encode the trade type in a transaction receipt"""
+    r"""The asset ID is used to encode the trade type in a transaction receipt."""
+
     LP = 0
     LONG = 1
     SHORT = 2
@@ -46,12 +47,12 @@ def decode_asset_id(asset_id: int) -> Tuple[int, int]:
     Then apply this mask to the input ID using the bitwise-and operator `&` to extract
     the lower 248 bits as the timestamp.
 
-    Arguments
+    Arguments:
     ---------
     asset_id: int
         Encoded ID from a transaction. It is a concatenation, [identifier: 8 bits][timestamp: 248 bits]
 
-    Returns
+    Returns:
     -------
     tuple[int, int]
         identifier, timestamp

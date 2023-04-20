@@ -1,4 +1,4 @@
-"""Testing the Borrow Market"""
+"""Testing the Borrow Market."""
 
 import itertools
 import logging
@@ -13,10 +13,10 @@ import elfpy.utils.outputs as output_utils
 
 
 class TestBorrow(unittest.TestCase):
-    """Testing the Borrow Market"""
+    """Testing the Borrow Market."""
 
     def test_open_borrow(self, delete_logs=True):
-        """Borrow 100 BASE"""
+        """Borrow 100 BASE."""
         output_utils.setup_logging(log_filename=".logging/test_borrow.log", log_level=logging.DEBUG)
         for loan_to_value, collateral_exponent, collateral_token in itertools.product(
             range(1, 100, 5), range(0, 8, 2), [types.TokenType.BASE, types.TokenType.PT]
@@ -56,8 +56,7 @@ class TestBorrow(unittest.TestCase):
                     output_utils.close_logging()
 
     def test_close_borrow(self):
-        """Borrow 100 BASE"""
-
+        """Borrow 100 BASE."""
         # TODO: add more test cases
         collateral_amount = 100
         collateral = types.Quantity(unit=types.TokenType.BASE, amount=collateral_amount)

@@ -1,4 +1,4 @@
-"""The base pricing model"""
+"""The base pricing model."""
 from __future__ import annotations  # types will be strings by default in 3.11
 
 import logging
@@ -24,7 +24,7 @@ getcontext().prec = 30
 
 
 class PricingModel(ABC):
-    """Contains functions for calculating AMM variables
+    """Contains functions for calculating AMM variables.
 
     Base class should not be instantiated on its own; it is assumed that a user will instantiate a child class
     """
@@ -35,7 +35,7 @@ class PricingModel(ABC):
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
-        """Calculate fees and asset quantity adjustments"""
+        """Calculate fees and asset quantity adjustments."""
         raise NotImplementedError
 
     def calc_out_given_in(
@@ -44,7 +44,7 @@ class PricingModel(ABC):
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
-        """Calculate fees and asset quantity adjustments"""
+        """Calculate fees and asset quantity adjustments."""
         raise NotImplementedError
 
     def calc_lp_out_given_tokens_in(
@@ -54,7 +54,7 @@ class PricingModel(ABC):
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
     ) -> tuple[float, float, float]:
-        """Computes the amount of LP tokens to be minted for a given amount of base asset"""
+        """Computes the amount of LP tokens to be minted for a given amount of base asset."""
         raise NotImplementedError
 
     def calc_tokens_out_given_lp_in(
@@ -62,15 +62,15 @@ class PricingModel(ABC):
         lp_in: float,
         market_state: hyperdrive_market.MarketState,
     ) -> tuple[float, float, float]:
-        """Calculate how many tokens should be returned for a given lp addition"""
+        """Calculate how many tokens should be returned for a given lp addition."""
         raise NotImplementedError
 
     def model_name(self) -> str:
-        """Unique name given to the model, can be based on member variable states"""
+        """Unique name given to the model, can be based on member variable states."""
         raise NotImplementedError
 
     def model_type(self) -> str:
-        """Unique identifier given to the model, should be lower snake_cased name"""
+        """Unique identifier given to the model, should be lower snake_cased name."""
         raise NotImplementedError
 
     def calc_initial_bond_reserves(
@@ -80,7 +80,7 @@ class PricingModel(ABC):
         market_state: hyperdrive_market.MarketState,
     ) -> float:
         """Returns the assumed bond (i.e. token asset) reserve amounts given
-        the share (i.e. base asset) reserves and APR for an initialized market
+        the share (i.e. base asset) reserves and APR for an initialized market.
 
         Parameters
         ----------
@@ -120,7 +120,7 @@ class PricingModel(ABC):
         market_state: hyperdrive_market.MarketState,
     ) -> float:
         """Returns the assumed bond (i.e. token asset) reserve amounts given
-        the share (i.e. base asset) reserves and APR
+        the share (i.e. base asset) reserves and APR.
 
         Parameters
         ----------
@@ -220,7 +220,7 @@ class PricingModel(ABC):
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
     ) -> float:
-        r"""Returns the apr given reserve amounts
+        r"""Returns the apr given reserve amounts.
 
         Parameters
         ----------
@@ -240,8 +240,7 @@ class PricingModel(ABC):
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
     ) -> tuple[float, float]:
-        r"""
-        Calculates the maximum long the market can support
+        r"""Calculates the maximum long the market can support.
 
         .. math::
             \Delta z' = \mu^{-1} \cdot (\frac{\mu}{c} \cdot (k-(y+c \cdot z)^{1-\tau(d)}))^{\frac{1}{1-\tau(d)}}
@@ -278,8 +277,7 @@ class PricingModel(ABC):
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
     ) -> tuple[float, float]:
-        r"""
-        Calculates the maximum short the market can support using the bisection
+        r"""Calculates the maximum short the market can support using the bisection
         method.
 
         .. math::
@@ -315,7 +313,7 @@ class PricingModel(ABC):
         return base, bonds
 
     def calc_time_stretch(self, apr: float) -> float:
-        """Returns fixed time-stretch value based on current apr (as a decimal)"""
+        """Returns fixed time-stretch value based on current apr (as a decimal)."""
         apr_percent = apr * 100  # bounded between 0 and 100
         return 3.09396 / (0.02789 * apr_percent)  # bounded between ~1.109 (apr=1) and inf (apr=0)
 
@@ -399,7 +397,7 @@ class PricingModel(ABC):
 
 
 class PricingModelFP(ABC):
-    """Contains functions for calculating AMM variables
+    """Contains functions for calculating AMM variables.
 
     Base class should not be instantiated on its own; it is assumed that a user will instantiate a child class
 
@@ -412,7 +410,7 @@ class PricingModelFP(ABC):
         market_state: hyperdrive_market.MarketStateFP,
         time_remaining: time.StretchedTimeFP,
     ) -> trades.TradeResultFP:
-        """Calculate fees and asset quantity adjustments"""
+        """Calculate fees and asset quantity adjustments."""
         raise NotImplementedError
 
     def calc_out_given_in(
@@ -421,7 +419,7 @@ class PricingModelFP(ABC):
         market_state: hyperdrive_market.MarketStateFP,
         time_remaining: time.StretchedTimeFP,
     ) -> trades.TradeResultFP:
-        """Calculate fees and asset quantity adjustments"""
+        """Calculate fees and asset quantity adjustments."""
         raise NotImplementedError
 
     def calc_lp_out_given_tokens_in(
@@ -431,7 +429,7 @@ class PricingModelFP(ABC):
         market_state: hyperdrive_market.MarketStateFP,
         time_remaining: time.StretchedTimeFP,
     ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
-        """Computes the amount of LP tokens to be minted for a given amount of base asset"""
+        """Computes the amount of LP tokens to be minted for a given amount of base asset."""
         raise NotImplementedError
 
     def calc_tokens_out_given_lp_in(
@@ -439,15 +437,15 @@ class PricingModelFP(ABC):
         lp_in: FixedPoint,
         market_state: hyperdrive_market.MarketStateFP,
     ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
-        """Calculate how many tokens should be returned for a given lp addition"""
+        """Calculate how many tokens should be returned for a given lp addition."""
         raise NotImplementedError
 
     def model_name(self) -> str:
-        """Unique name given to the model, can be based on member variable states"""
+        """Unique name given to the model, can be based on member variable states."""
         raise NotImplementedError
 
     def model_type(self) -> str:
-        """Unique identifier given to the model, should be lower snake_cased name"""
+        """Unique identifier given to the model, should be lower snake_cased name."""
         raise NotImplementedError
 
     def calc_initial_bond_reserves(
@@ -457,7 +455,7 @@ class PricingModelFP(ABC):
         market_state: hyperdrive_market.MarketStateFP,
     ) -> FixedPoint:
         """Returns the assumed bond (i.e. token asset) reserve amounts given
-        the share (i.e. base asset) reserves and APR for an initialized market
+        the share (i.e. base asset) reserves and APR for an initialized market.
 
         Parameters
         ----------
@@ -498,7 +496,7 @@ class PricingModelFP(ABC):
         market_state: hyperdrive_market.MarketStateFP,
     ) -> FixedPoint:
         """Returns the assumed bond (i.e. token asset) reserve amounts given
-        the share (i.e. base asset) reserves and APR
+        the share (i.e. base asset) reserves and APR.
 
         Parameters
         ----------
@@ -570,7 +568,7 @@ class PricingModelFP(ABC):
         market_state: hyperdrive_market.MarketStateFP,
         time_remaining: time.StretchedTimeFP,
     ) -> FixedPoint:
-        r"""Returns the apr given reserve amounts
+        r"""Returns the apr given reserve amounts.
 
         Parameters
         ----------
@@ -590,8 +588,7 @@ class PricingModelFP(ABC):
         market_state: hyperdrive_market.MarketStateFP,
         time_remaining: time.StretchedTimeFP,
     ) -> tuple[FixedPoint, FixedPoint]:
-        r"""
-        Calculates the maximum long the market can support
+        r"""Calculates the maximum long the market can support.
 
         .. math::
             \Delta z' = \mu^{-1} \cdot (\frac{\mu}{c} \cdot (k-(y+c \cdot z)^{1-\tau(d)}))^{\frac{1}{1-\tau(d)}}
@@ -628,8 +625,7 @@ class PricingModelFP(ABC):
         market_state: hyperdrive_market.MarketStateFP,
         time_remaining: time.StretchedTimeFP,
     ) -> tuple[FixedPoint, FixedPoint]:
-        r"""
-        Calculates the maximum short the market can support using the bisection
+        r"""Calculates the maximum short the market can support using the bisection
         method.
 
         .. math::
@@ -665,7 +661,7 @@ class PricingModelFP(ABC):
         return base, bonds
 
     def calc_time_stretch(self, apr: FixedPoint) -> FixedPoint:
-        """Returns fixed time-stretch value based on current apr (as a FixedPoint)"""
+        """Returns fixed time-stretch value based on current apr (as a FixedPoint)."""
         apr_percent = apr * FixedPoint("100.0")  # bounded between 0 and 100
         return FixedPoint("3.09396") / (
             FixedPoint("0.02789") * apr_percent

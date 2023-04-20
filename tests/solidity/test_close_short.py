@@ -1,4 +1,4 @@
-"""Close short market trade tests that match those being executed in the solidity repo"""
+"""Close short market trade tests that match those being executed in the solidity repo."""
 import unittest
 from decimal import Decimal
 
@@ -17,13 +17,12 @@ from elfpy.time.time import StretchedTime
 
 
 class TestCloseShort(unittest.TestCase):
-    """
-    Test opening and closing a short in hyperdrive
+    """Test opening and closing a short in hyperdrive
     3 failure cases: zero amount, invalid amount, invalid timestamp
     6 success cases:
         - close immediately, with regular, and small amounts
         - redeem at maturity, with zero interest, and with negative interest (skipped)
-        - close halfway thru term, with zero, and negative interest (both skipped)
+        - close halfway thru term, with zero, and negative interest (both skipped).
     """
 
     contribution: float = 500_000_000
@@ -68,7 +67,7 @@ class TestCloseShort(unittest.TestCase):
         bond_amount: float,
         maturity_time: float,
     ):
-        """Close a short then make sure the market state is correct"""
+        """Close a short then make sure the market state is correct."""
         # verify that all of Bob's bonds were burned
         self.assertFalse(
             example_agent.wallet.shorts
@@ -209,7 +208,7 @@ class TestCloseShort(unittest.TestCase):
             )
 
     def test_close_short_immediately_with_regular_amount(self):
-        """Open a position, close it immediately, with regular amount"""
+        """Open a position, close it immediately, with regular amount."""
         trade_amount = 10  # this will be reflected in BASE in the wallet and PTs in the short
         self.bob.budget = trade_amount
         self.bob.wallet.balance = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
@@ -235,7 +234,7 @@ class TestCloseShort(unittest.TestCase):
         )
 
     def test_close_short_immediately_with_small_amount(self):
-        """Open a small position, close it immediately, with small amount"""
+        """Open a small position, close it immediately, with small amount."""
         trade_amount = 0.01  # this will be reflected in BASE in the wallet and PTs in the short
         self.bob.budget = trade_amount
         self.bob.wallet.balance = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
@@ -261,7 +260,7 @@ class TestCloseShort(unittest.TestCase):
         )
 
     def test_close_short_redeem_at_maturity_zero_variable_interest(self):
-        """Open a position, advance time all the way through the term, close it, receiving zero variable interest"""
+        """Open a position, advance time all the way through the term, close it, receiving zero variable interest."""
         # Bob opens a short
         trade_amount = 10  # this will be reflected in BASE in the wallet and PTs in the short
         self.bob.budget = trade_amount
@@ -297,7 +296,7 @@ class TestCloseShort(unittest.TestCase):
     # TODO: make the below two negative interest tests work, once negative interest is implemented
     @unittest.skip("Negative interest is not implemented yet")
     def test_close_short_redeem_at_maturity_negative_variable_interest(self):
-        """Open a position, advance time all the way through the term, close it, receiving negative variable interest"""
+        """Open a position, advance time all the way through the term, close it, receiving negative variable interest."""
         # Bob opens a short
         trade_amount = 10  # this will be reflected in BASE in the wallet and PTs in the short
         self.bob.budget = trade_amount
@@ -332,7 +331,7 @@ class TestCloseShort(unittest.TestCase):
 
     @unittest.skip("Negative interest is not implemented yet")
     def test_close_short_halfway_through_term_negative_variable_interest(self):
-        """Open a position, advance time halfway through the term, close it, receiving negative variable interest"""
+        """Open a position, advance time halfway through the term, close it, receiving negative variable interest."""
         # Bob opens a short
         trade_amount = 10  # how much base the agent is using to open a short
         self.bob.budget = trade_amount

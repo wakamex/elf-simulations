@@ -1,4 +1,4 @@
-"""Testing for the ElfPy package modules"""
+"""Testing for the ElfPy package modules."""
 from __future__ import annotations
 import builtins  # types are strings by default in 3.11
 
@@ -19,16 +19,16 @@ import elfpy.types as types
 
 
 class TestSimulator(unittest.TestCase):
-    """Test running a simulation using each pricing model type"""
+    """Test running a simulation using each pricing model type."""
 
     @staticmethod
     def setup_logging(log_level=logging.DEBUG):
-        """Setup logging and handlers for the test"""
+        """Setup logging and handlers for the test."""
         log_filename = ".logging/test_sim.log"
         output_utils.setup_logging(log_filename, log_level=log_level)
 
     def test_hyperdrive_sim(self):
-        """Tests hyperdrive simulation"""
+        """Tests hyperdrive simulation."""
         self.setup_logging()
         config = simulators.Config()
         config.pricing_model_name = "Hyperdrive"
@@ -40,7 +40,7 @@ class TestSimulator(unittest.TestCase):
         output_utils.close_logging()
 
     def test_yieldspace_sim(self):
-        """Tests yieldspace simulation"""
+        """Tests yieldspace simulation."""
         self.setup_logging()
         config = simulators.Config()
         config.pricing_model_name = "Yieldspace"
@@ -52,7 +52,7 @@ class TestSimulator(unittest.TestCase):
         output_utils.close_logging()
 
     def test_set_rng(self):
-        """Test error handling & resetting simulator random number generator"""
+        """Test error handling & resetting simulator random number generator."""
         self.setup_logging()
         config = simulators.Config()
         config.num_trading_days = 3
@@ -68,7 +68,7 @@ class TestSimulator(unittest.TestCase):
         output_utils.close_logging()
 
     def test_simulation_state(self):
-        """Test override & initalizaiton of random variables
+        """Test override & initalizaiton of random variables.
 
         Runs a small number of trades, then checks that simulation_state
         has the correct number of logs per category.
@@ -99,7 +99,7 @@ class TestSimulator(unittest.TestCase):
         output_utils.close_logging()
 
     def test_new_simulation_state(self):
-        """Build a fake simulation state and then test it against the sim state aggregator"""
+        """Build a fake simulation state and then test it against the sim state aggregator."""
         # pylint: disable=too-many-locals
         num_runs = 1
         num_days_per_run = 3
@@ -179,7 +179,7 @@ class TestSimulator(unittest.TestCase):
         assert np.all(sim_state.combined_dataframe == all_trades), f"{sim_state.combined_dataframe}\n{all_trades}"
 
     def test_aggregate_agent_and_market_states(self):
-        """Tests tweet aggregation with new dataframe in a simulation"""
+        """Tests tweet aggregation with new dataframe in a simulation."""
         self.setup_logging()
         config = simulators.Config()
         config.num_trading_days = 4

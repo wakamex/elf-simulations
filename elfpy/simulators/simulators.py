@@ -1,4 +1,4 @@
-"""Simulator class wraps the pricing models and markets for experiment tracking and execution"""
+"""Simulator class wraps the pricing models and markets for experiment tracking and execution."""
 from __future__ import annotations  # types will be strings by default in 3.11
 
 import json
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class SimulationState:
-    r"""Simulator state, updated after each trade
+    r"""Simulator state, updated after each trade.
 
     MarketState, Agent, and Config attributes are added dynamically in Simulator.update_simulation_state()
 
@@ -59,7 +59,7 @@ class SimulationState:
     spot_price: list[float] = field(default_factory=list)
 
     def add_dict_entries(self, dictionary: dict) -> None:
-        r"""Adds keys & values of input ditionary to the simulation state
+        r"""Adds keys & values of input ditionary to the simulation state.
 
         The simulation state is an ever-growing list,
         so each item in this dict is appended to the attribute with a corresponding key.
@@ -81,18 +81,18 @@ class SimulationState:
                 setattr(self, key, [val])
 
     def __getitem__(self, key):
-        r"""Get object attribute referenced by `key`"""
+        r"""Get object attribute referenced by `key`."""
         return getattr(self, key)
 
     def __setitem__(self, key, value):
-        r"""Set object attribute referenced by `key` to `value`"""
+        r"""Set object attribute referenced by `key` to `value`."""
         setattr(self, key, value)
 
 
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
 class Config:
-    """Data object for storing user simulation config parameters"""
+    """Data object for storing user simulation config parameters."""
 
     # lots of configs!
     # pylint: disable=too-many-instance-attributes
@@ -171,7 +171,7 @@ class Config:
     scratch: dict = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        r"""init_share_price & rng are a function of other random variables"""
+        r"""init_share_price & rng are a function of other random variables."""
         self.rng = np.random.default_rng(self.random_seed)
         if self.variable_apr == [-1]:  # defaults to [-1] so this should happen right after init
             self.variable_apr = [0.05] * self.num_trading_days
@@ -200,7 +200,7 @@ class Config:
         return json.dumps(self.__dict__, sort_keys=True, indent=2, cls=output_utils.CustomEncoder)
 
     def copy(self) -> Config:
-        """Returns a new copy of self"""
+        """Returns a new copy of self."""
         if hasattr(self, "__dataclass_fields__"):
             # TODO: Not sure why lint is claiming that self has no "__dataclass_fields__" member
             # when we're in the conditional
@@ -209,7 +209,7 @@ class Config:
         raise AttributeError("Config was not instantiated & cannot be copied")
 
     def check_variable_apr(self) -> None:
-        r"""Verify that the variable_apr is the right length"""
+        r"""Verify that the variable_apr is the right length."""
         if not isinstance(self.variable_apr, list):
             raise TypeError(
                 f"ERROR: variable_apr must be of type list, not {type(self.variable_apr)}."
@@ -225,7 +225,7 @@ class Config:
 
 @dataclass
 class RunSimVariables:
-    """Simulation state variables that change by run"""
+    """Simulation state variables that change by run."""
 
     # incremented each time run_simulation is called
     run_number: int
@@ -243,7 +243,7 @@ class RunSimVariables:
 
 @dataclass
 class DaySimVariables:
-    """Simulation state variables that change by day"""
+    """Simulation state variables that change by day."""
 
     # incremented each time run_simulation is called
     run_number: int
@@ -257,7 +257,7 @@ class DaySimVariables:
 
 @dataclass
 class BlockSimVariables:
-    """Simulation state variables that change by block"""
+    """Simulation state variables that change by block."""
 
     # incremented each time run_simulation is called
     run_number: int
@@ -271,7 +271,7 @@ class BlockSimVariables:
 
 @dataclass
 class TradeSimVariables:
-    """Simulation state variables that change by trade"""
+    """Simulation state variables that change by trade."""
 
     # pylint: disable=too-many-instance-attributes
 
@@ -298,7 +298,7 @@ class TradeSimVariables:
 
 
 def simulation_state_aggreagator(constructor):
-    """Returns a dataclass that aggregates simulation state attributes"""
+    """Returns a dataclass that aggregates simulation state attributes."""
     # Wrap the type from the constructor in a list, but keep the name
     attribs = [
         (key, "list[" + val + "]", field(default_factory=list)) for key, val in constructor.__annotations__.items()
@@ -329,11 +329,11 @@ class NewSimulationState:
         run_updates: pd.DataFrame composed of RunSimVariables
         day_updates: pd.DataFrame composed of DaySimVariables
         block_updates: pd.DataFrame composed of BlockSimVariables
-        trade_updates: pd.DataFrame composed of TradeSimVariables
+        trade_updates: pd.DataFrame composed of TradeSimVariables.
     """
 
     def __post_init__(self) -> None:
-        r"""Construct empty dataclasses with appropriate attributes for each state variable type"""
+        r"""Construct empty dataclasses with appropriate attributes for each state variable type."""
         self._run_updates = simulation_state_aggreagator(RunSimVariables)
         self._day_updates = simulation_state_aggreagator(DaySimVariables)
         self._block_updates = simulation_state_aggreagator(BlockSimVariables)
@@ -346,7 +346,7 @@ class NewSimulationState:
         block_vars: Optional[BlockSimVariables] = None,
         trade_vars: Optional[TradeSimVariables] = None,
     ) -> None:
-        r"""Add a row to the state dataframes that contains the latest variables"""
+        r"""Add a row to the state dataframes that contains the latest variables."""
         if run_vars is not None:
             self._run_updates.update(run_vars.__dict__)
         if day_vars is not None:
@@ -358,35 +358,35 @@ class NewSimulationState:
 
     @property
     def run_updates(self) -> pd.DataFrame:
-        r"""Converts internal list of state values into a dataframe"""
+        r"""Converts internal list of state values into a dataframe."""
         return pd.DataFrame.from_dict(self._run_updates.__dict__)
 
     @property
     def day_updates(self) -> pd.DataFrame:
-        r"""Converts internal list of state values into a dataframe"""
+        r"""Converts internal list of state values into a dataframe."""
         return pd.DataFrame.from_dict(self._day_updates.__dict__)
 
     @property
     def block_updates(self) -> pd.DataFrame:
-        r"""Converts internal list of state values into a dataframe"""
+        r"""Converts internal list of state values into a dataframe."""
         return pd.DataFrame.from_dict(self._block_updates.__dict__)
 
     @property
     def trade_updates(self) -> pd.DataFrame:
-        r"""Converts internal list of state values into a dataframe"""
+        r"""Converts internal list of state values into a dataframe."""
         return pd.DataFrame.from_dict(self._trade_updates.__dict__)
 
     @property
     def combined_dataframe(self) -> pd.DataFrame:
         r"""Returns a single dataframe that combines the run, day, block, and trade variables
         The merged dataframe has the same number of rows as self.trade_updates,
-        with entries in the smaller dataframes duplicated accordingly
+        with entries in the smaller dataframes duplicated accordingly.
         """
         return self.trade_updates.merge(self.block_updates.merge(self.day_updates.merge(self.run_updates)))
 
 
 class Simulator:
-    r"""Stores environment variables & market simulation outputs for AMM experimentation
+    r"""Stores environment variables & market simulation outputs for AMM experimentation.
 
     Member variables include input settings, random variable ranges, and simulation outputs.
     To be used in conjunction with the Market and PricingModel classes
@@ -427,7 +427,7 @@ class Simulator:
 
     def set_rng(self, rng: NumpyGenerator) -> None:
         r"""Assign the internal random number generator to a new instantiation
-        This function is useful for forcing identical trade volume and directions across simulation runs
+        This function is useful for forcing identical trade volume and directions across simulation runs.
 
         Parameters
         ----------
@@ -439,7 +439,7 @@ class Simulator:
         self.rng = rng
 
     def get_simulation_state_string(self) -> str:
-        r"""Returns a formatted string containing all of the Simulation class member variables
+        r"""Returns a formatted string containing all of the Simulation class member variables.
 
         Returns
         -------
@@ -457,7 +457,7 @@ class Simulator:
 
     @property
     def time_step(self) -> float:
-        r"""Returns minimum time increment in years
+        r"""Returns minimum time increment in years.
 
         Returns
         -------
@@ -468,7 +468,7 @@ class Simulator:
         return 1 / blocks_per_year
 
     def add_agents(self, agent_list: list[Agent]) -> None:
-        r"""Append the agents and simulation_state member variables
+        r"""Append the agents and simulation_state member variables.
 
         If trades have already happened (as indicated by self.trade_number), then empty wallet states are
         prepended to the simulation_state for each new agent so that the state can still easily be converted into
@@ -485,7 +485,7 @@ class Simulator:
                 setattr(self.simulation_state, key, [None] * self.trade_number)
 
     def collect_and_execute_trades(self, liquidate: bool = False) -> None:
-        r"""Get trades from the agent list, execute them, and update states
+        r"""Get trades from the agent list, execute them, and update states.
 
         Parameters
         ----------
@@ -582,7 +582,7 @@ class Simulator:
             self.trade_number += 1
 
     def run_simulation(self, liquidate_on_end: bool = True) -> None:
-        r"""Run the trade simulation and update the output state dictionary
+        r"""Run the trade simulation and update the output state dictionary.
 
         This helper function advances time and orchestrates trades.
         Typically, the simulation executes as follows:
@@ -665,7 +665,7 @@ class Simulator:
             agent.log_final_report(self.market)
 
     def update_simulation_state(self) -> None:
-        r"""Increment the list for each key in the simulation_state output variable
+        r"""Increment the list for each key in the simulation_state output variable.
 
         .. todo:: This gets duplicated in notebooks when we make the pandas dataframe.
             Instead, the simulation_state should be a dataframe.

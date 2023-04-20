@@ -1,5 +1,4 @@
-"""
-This function is a demo for executing an arbitrary number of trades from a pair of
+"""This function is a demo for executing an arbitrary number of trades from a pair of
 smart bots that track the fixed/variable rates using longs & shorts. It is meant to be
 a temporary demonstration, and will be gradually replaced with utilities in elfpy src.
 As such, we are relaxing some of the lint rules.
@@ -33,21 +32,21 @@ import elfpy.utils.outputs as output_utils
 
 
 class FixedFrida(agentlib.Agent):
-    """Agent that paints & opens fixed rate borrow positions"""
+    """Agent that paints & opens fixed rate borrow positions."""
 
     # pylint: disable=too-many-arguments
 
     def __init__(
         self, rng: NumpyGenerator, trade_chance: float, risk_threshold: float, wallet_address: int, budget: int = 10_000
     ) -> None:
-        """Add custom stuff then call basic policy init"""
+        """Add custom stuff then call basic policy init."""
         self.trade_chance = trade_chance
         self.risk_threshold = risk_threshold
         self.rng = rng
         super().__init__(wallet_address, budget)
 
     def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
-        """Implement a Fixed Frida user strategy
+        """Implement a Fixed Frida user strategy.
 
         I'm an actor with a high risk threshold
         I'm willing to open up a fixed-rate borrow (aka a short) if the fixed rate is ~2% higher than the variable rate
@@ -113,23 +112,21 @@ class FixedFrida(agentlib.Agent):
 
 
 class LongLouie(agentlib.Agent):
-    """
-    Long-nosed agent that opens longs
-    """
+    """Long-nosed agent that opens longs."""
 
     # pylint: disable=too-many-arguments
 
     def __init__(
         self, rng: NumpyGenerator, trade_chance: float, risk_threshold: float, wallet_address: int, budget: int = 10_000
     ) -> None:
-        """Add custom stuff then call basic policy init"""
+        """Add custom stuff then call basic policy init."""
         self.trade_chance = trade_chance
         self.risk_threshold = risk_threshold
         self.rng = rng
         super().__init__(wallet_address, budget)
 
     def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
-        """Implement a Long Louie user strategy
+        """Implement a Long Louie user strategy.
 
         I'm not willing to open a long if it will cause the fixed-rate apr to go below the variable rate
             I simulate the outcome of my trade, and only execute on this condition
@@ -206,7 +203,7 @@ class LongLouie(agentlib.Agent):
 
 
 def get_argparser() -> argparse.ArgumentParser:
-    """Define & parse arguments from stdin"""
+    """Define & parse arguments from stdin."""
     parser = argparse.ArgumentParser(
         prog="ElfMain",
         description="Example execution script for running Elfpy bots on Hyperdrive",
@@ -265,7 +262,7 @@ def get_argparser() -> argparse.ArgumentParser:
 
 
 def get_config() -> simulators.Config:
-    """Set config values for the experiment"""
+    """Set config values for the experiment."""
     args = get_argparser().parse_args()
     _config = simulators.Config()
     _config.log_level = output_utils.text_to_log_level(args.log_level)
@@ -293,7 +290,7 @@ def get_config() -> simulators.Config:
 
 
 def get_agents(_config):
-    """Get python agents & corresponding solidity wallets"""
+    """Get python agents & corresponding solidity wallets."""
     init_agent = sim_utils.get_policy("init_lp")(wallet_address=0, budget=_config.target_liquidity)  # type: ignore
     _sim_agents = [init_agent]
     budget = np.nan
@@ -348,7 +345,7 @@ def get_agents(_config):
 
 
 def get_simulator(_config):
-    """Get a python simulator"""
+    """Get a python simulator."""
     pricing_model = hyperdrive_pm.HyperdrivePricingModel()
     block_time = time.BlockTime()
     market, _, _ = sim_utils.get_initialized_hyperdrive_market(pricing_model, block_time, _config)
@@ -356,20 +353,19 @@ def get_simulator(_config):
 
 
 def to_fixed_point(float_var, decimal_places=18):
-    """Convert floating point argument to fixed point with desired number of decimals"""
+    """Convert floating point argument to fixed point with desired number of decimals."""
     return int(float_var * 10**decimal_places)
 
 
 def to_floating_point(float_var, decimal_places=18):
-    """Convert fixed point argument to floating point with specified number of decimals"""
+    """Convert fixed point argument to floating point with specified number of decimals."""
     return float(float_var / 10**decimal_places)
 
 
 def get_simulation_market_state_from_contract(
     hyperdrive_contract, agent_address, _position_duration_seconds, _checkpoint_duration, variable_apr, _config
 ):
-    """
-    hyperdrive_contract: ape.contracts.base.ContractInstance
+    """hyperdrive_contract: ape.contracts.base.ContractInstance
         Ape project `ContractInstance
         <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         wrapped around the initialized MockHyperdriveTestnet smart contract.
@@ -415,7 +411,7 @@ def get_simulation_market_state_from_contract(
 
 
 def do_trade(_trade):
-    """Execute agent trades on hyperdrive solidity contract"""
+    """Execute agent trades on hyperdrive solidity contract."""
     agent_key = f"agent_{_trade.wallet.address}"
     trade_amount = to_fixed_point(_trade.trade_amount)
     if _trade.action_type.name == "ADD_LIQUIDITY":

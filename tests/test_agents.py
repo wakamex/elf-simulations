@@ -1,4 +1,4 @@
-"""Unit tests for the core Agent API"""
+"""Unit tests for the core Agent API."""
 from __future__ import annotations  # types are strings by default in 3.11
 
 import unittest
@@ -19,10 +19,10 @@ from elfpy.agents.get_wallet_state import get_wallet_state
 
 
 class TestPolicy(agent.Agent):
-    """This class was made for testing purposes. It does not implement the required self.action() method"""
+    """This class was made for testing purposes. It does not implement the required self.action() method."""
 
     def __init__(self, wallet_address, budget=1000):
-        """call basic policy init then add custom stuff"""
+        """Call basic policy init then add custom stuff."""
         super().__init__(wallet_address, budget)
         # TODO: mock up a wallet that has done trades
 
@@ -34,7 +34,7 @@ class TestPolicy(agent.Agent):
 
 @dataclass
 class TestCaseGetMax:
-    """Test case for get_max_long and get_max_short tests"""
+    """Test case for get_max_long and get_max_short tests."""
 
     market_state: hyperdrive_market.MarketState
     time_remaining: time.StretchedTime
@@ -43,10 +43,10 @@ class TestCaseGetMax:
 
 
 class TestAgent(unittest.TestCase):
-    """Unit tests for the core Agent API"""
+    """Unit tests for the core Agent API."""
 
     def setUp(self):
-        """Set up a list of agents for testing"""
+        """Set up a list of agents for testing."""
         # Get a list of all implemented agent policies in elfpy/policies directory
         policies_path = f"{list(policies.__path__)[0]}"
         filenames = next(walk(policies_path), (None, None, []))[2]
@@ -78,14 +78,14 @@ class TestAgent(unittest.TestCase):
         self.market.initialize(wallet_address=0, contribution=1_000_000, target_apr=0.01)
 
     def test_wallet_state_matches_state_keys(self):
-        """Tests that an agent wallet has the right keys"""
+        """Tests that an agent wallet has the right keys."""
         for get_state_key, state_key in zip(
             self.test_agent.wallet.get_state_keys(), get_wallet_state(self.test_agent.wallet, self.market).keys()
         ):
             assert get_state_key == state_key, f"ERROR: {get_state_key=} did not equal {state_key=}"
 
     def test_wallet_copy(self):
-        """Test the wallet ability to deep copy itself"""
+        """Test the wallet ability to deep copy itself."""
         example_wallet = wallet.Wallet(address=0, balance=types.Quantity(amount=100, unit=types.TokenType.BASE))
         wallet_copy = example_wallet.copy()
         assert example_wallet is not wallet_copy  # not the same object
@@ -94,7 +94,7 @@ class TestAgent(unittest.TestCase):
         assert example_wallet != wallet_copy  # now they should have different attribute values
 
     def test_wallet_update(self):
-        """Test that the wallet updates correctly & does not use references to the deltas argument"""
+        """Test that the wallet updates correctly & does not use references to the deltas argument."""
         example_wallet = wallet.Wallet(address=0, balance=types.Quantity(amount=100, unit=types.TokenType.BASE))
         example_deltas = wallet.Wallet(
             address=0,
@@ -126,16 +126,16 @@ class TestAgent(unittest.TestCase):
 
     # Test agent instantiation
     def test_no_action_failure(self):
-        """Tests for Agent instantiation when no action function was defined"""
+        """Tests for Agent instantiation when no action function was defined."""
 
         class TestErrorPolicy(agent.Agent):
-            """This class was made for testing purposes. It does not implement the required self.action() method"""
+            """This class was made for testing purposes. It does not implement the required self.action() method."""
 
             # Purposefully incorrectly implemented
             ### pylint: disable=abstract-method
 
             def __init__(self, wallet_address, budget=1000):
-                """call basic policy init then add custom stuff"""
+                """Call basic policy init then add custom stuff."""
                 super().__init__(wallet_address, budget)
 
             # self.action() method is intentionally not implemented, so we can test error behavior
@@ -149,7 +149,7 @@ class TestAgent(unittest.TestCase):
 
     def test_policy_action(self):
         """Test for calling the action() method on all implemented policies
-        A check to ensure the implemented action() doesn't call for invalid trades
+        A check to ensure the implemented action() doesn't call for invalid trades.
         """
         # instantiate the market
         # Instantiate an agent for each policy, with a variety of budgets

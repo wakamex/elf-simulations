@@ -1,4 +1,4 @@
-"""Testing for logging in the ElfPy package modules"""
+"""Testing for logging in the ElfPy package modules."""
 from __future__ import annotations  # types are strings by default in 3.11
 
 import unittest
@@ -13,10 +13,10 @@ import elfpy.utils.outputs as output_utils  # utilities for setting up a simulat
 
 
 class TestLogging(unittest.TestCase):
-    """Run the logging tests"""
+    """Run the logging tests."""
 
     def test_logging(self):
-        """Tests logging"""
+        """Tests logging."""
         log_dir = ".logging"
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
@@ -56,7 +56,7 @@ class TestLogging(unittest.TestCase):
                 output_utils.delete_log_file()
 
     def test_log_config_variables(self):
-        """Verfies that the config variables are successfully logged"""
+        """Verfies that the config variables are successfully logged."""
         log_filename = ".logging/test_sim.log"
         output_utils.setup_logging(log_filename, log_level=logging.INFO)
         config = simulators.Config()
@@ -65,7 +65,7 @@ class TestLogging(unittest.TestCase):
         output_utils.close_logging()
 
     def test_text_to_logging_level(self):
-        """Test that logging level strings result in the correct integera amounts"""
+        """Test that logging level strings result in the correct integera amounts."""
         # change up case to test .lower()
         logging_levels = ["notset", "debug", "info", "Warning", "Error", "CRITICAL"]
         logging_constants = [0, 10, 20, 30, 40, 50]

@@ -1,4 +1,4 @@
-"""Testing for the ElfPy package market module methods"""
+"""Testing for the ElfPy package market module methods."""
 from __future__ import annotations  # types are strings by default in 3.11
 
 import unittest
@@ -13,14 +13,14 @@ import elfpy.time as time
 
 
 class BaseMarketTest(unittest.TestCase):
-    """Generic Parameter Test class"""
+    """Generic Parameter Test class."""
 
     # TODO: Switching to fixed point or 64 bit float should allow us to increase this to WEI
     # issue #112
     APPROX_EQ: float = 1e-15
 
     def test_position_duration(self):
-        """Test to make sure market init fails when normalizing_constant != days"""
+        """Test to make sure market init fails when normalizing_constant != days."""
         pd_good = time.StretchedTime(
             days=365,
             time_stretch=1,
@@ -47,7 +47,7 @@ class BaseMarketTest(unittest.TestCase):
                 )
 
     def test_market_state_copy(self):
-        """Test the market state ability to deep copy itself"""
+        """Test the market state ability to deep copy itself."""
         market_state = hyperdrive_market.MarketState()
         market_state_copy = market_state.copy()
         assert market_state is not market_state_copy  # not the same object
@@ -56,7 +56,7 @@ class BaseMarketTest(unittest.TestCase):
         assert market_state != market_state_copy  # now they should have different attribute values
 
     def test_initialize(self):
-        """Unit tests for the pricing model calc_liquidity function
+        """Unit tests for the pricing model calc_liquidity function.
 
         Example check for the test:
             test 1: 5M target_liquidity; 5% APR;
@@ -81,7 +81,6 @@ class BaseMarketTest(unittest.TestCase):
             p = ((2 * y + c * z) / (u * z)) ** (-T)  # spot price from reserves
             final_apr = (1 - p) / (p * t)
         """
-
         test_cases = [
             # test 1: 5M target_liquidity; 5% APR;
             #   6mo duration; 22.186877016851916 time_stretch (targets 5% APR);

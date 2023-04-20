@@ -1,4 +1,4 @@
-"""User strategy that opens a single short and doesn't close until liquidation"""
+"""User strategy that opens a single short and doesn't close until liquidation."""
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.agents.agent as agent
@@ -8,10 +8,10 @@ import elfpy.types as types
 
 
 class Policy(agent.Agent):
-    """simple short thatonly has one long open at a time"""
+    """simple short thatonly has one long open at a time."""
 
     def __init__(self, wallet_address, budget=100):
-        """call basic policy init then add custom stuff"""
+        """Call basic policy init then add custom stuff."""
         self.amount_to_trade = budget
         super().__init__(wallet_address, budget)
 

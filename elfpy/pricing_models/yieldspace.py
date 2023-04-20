@@ -1,4 +1,4 @@
-"""The YieldSpace pricing model"""
+"""The YieldSpace pricing model."""
 from __future__ import annotations  # types will be strings by default in 3.11
 
 import logging
@@ -23,8 +23,7 @@ if TYPE_CHECKING:
 
 
 class YieldspacePricingModel(base_pm.PricingModel):
-    """
-    YieldSpace Pricing Model
+    """YieldSpace Pricing Model.
 
     This pricing model uses the YieldSpace invariant with modifications to
     enable the base reserves to be deposited into yield bearing vaults
@@ -49,7 +48,7 @@ class YieldspacePricingModel(base_pm.PricingModel):
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
     ) -> tuple[float, float, float]:
-        r"""Computes the amount of LP tokens to be minted for a given amount of base asset
+        r"""Computes the amount of LP tokens to be minted for a given amount of base asset.
 
         .. math::
             y = \frac{(z + \Delta z)(\mu \cdot (\frac{1}{1 + r \cdot t(d)})^{\frac{1}{\tau(d_b)}} - c)}{2}
@@ -123,8 +122,7 @@ class YieldspacePricingModel(base_pm.PricingModel):
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
-        r"""
-        Calculates the amount of an asset that must be provided to receive a
+        r"""Calculates the amount of an asset that must be provided to receive a
         specified amount of the other asset given the current AMM reserves.
 
         The input is calculated as:
@@ -334,8 +332,7 @@ class YieldspacePricingModel(base_pm.PricingModel):
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
-        r"""
-        Calculates the amount of an asset that must be provided to receive a
+        r"""Calculates the amount of an asset that must be provided to receive a
         specified amount of the other asset given the current AMM reserves.
 
         The output is calculated as:
@@ -588,7 +585,7 @@ class YieldspacePricingModel(base_pm.PricingModel):
         share_price: Decimal,
         init_share_price: Decimal,
     ) -> Decimal:
-        """Calculates the amount of bonds a agent will receive from the pool by providing a specified amount of shares
+        """Calculates the amount of bonds a agent will receive from the pool by providing a specified amount of shares.
 
         Parameters
         ----------
@@ -720,7 +717,7 @@ class YieldspacePricingModel(base_pm.PricingModel):
         share_price: Decimal,
         init_share_price: Decimal,
     ) -> Decimal:
-        r"""Helper function to derive invariant constant K
+        r"""Helper function to derive invariant constant K.
 
         .. math::
             k = \frac{c}{\mu} (\mu z)^{1 - \tau} + (y + s)^{1 - \tau}
@@ -754,8 +751,7 @@ class YieldspacePricingModel(base_pm.PricingModel):
     def calc_tokens_out_given_lp_in(
         self, lp_in: float, market_state: hyperdrive_market.MarketState
     ) -> tuple[float, float]:
-        """
-        Calculates the amount of base shares and bonds released from burning a a specified amount of
+        """Calculates the amount of base shares and bonds released from burning a a specified amount of
         LP shares from the pool.
 
         Parameters
@@ -788,8 +784,7 @@ class YieldspacePricingModel(base_pm.PricingModel):
 
 
 class YieldspacePricingModelFP(base_pm.PricingModelFP):
-    """
-    YieldSpace Pricing Model
+    """YieldSpace Pricing Model.
 
     This pricing model uses the YieldSpace invariant with modifications to
     enable the base reserves to be deposited into yield bearing vaults
@@ -814,7 +809,7 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
         market_state: hyperdrive_market.MarketStateFP,
         time_remaining: time.StretchedTimeFP,
     ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
-        r"""Computes the amount of LP tokens to be minted for a given amount of base asset
+        r"""Computes the amount of LP tokens to be minted for a given amount of base asset.
 
         .. math::
             y = \frac{(z + \Delta z)(\mu \cdot (\frac{1}{1 + r \cdot t(d)})^{\frac{1}{\tau(d_b)}} - c)}{2}
@@ -889,8 +884,7 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
         market_state: hyperdrive_market.MarketStateFP,
         time_remaining: time.StretchedTimeFP,
     ) -> trades.TradeResultFP:
-        r"""
-        Calculates the amount of an asset that must be provided to receive a
+        r"""Calculates the amount of an asset that must be provided to receive a
         specified amount of the other asset given the current AMM reserves.
 
         The input is calculated as:
@@ -1092,8 +1086,7 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
         market_state: hyperdrive_market.MarketStateFP,
         time_remaining: time.StretchedTimeFP,
     ) -> trades.TradeResultFP:
-        r"""
-        Calculates the amount of an asset that must be provided to receive a
+        r"""Calculates the amount of an asset that must be provided to receive a
         specified amount of the other asset given the current AMM reserves.
 
         The output is calculated as:
@@ -1337,7 +1330,7 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
         share_price: FixedPoint,
         init_share_price: FixedPoint,
     ) -> FixedPoint:
-        """Calculates the amount of bonds a agent will receive from the pool by providing a specified amount of shares
+        """Calculates the amount of bonds a agent will receive from the pool by providing a specified amount of shares.
 
         Parameters
         ----------
@@ -1474,7 +1467,7 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
         share_price: FixedPoint,
         init_share_price: FixedPoint,
     ) -> FixedPoint:
-        r"""Helper function to derive invariant constant K
+        r"""Helper function to derive invariant constant K.
 
         .. math::
             k = \frac{c}{\mu} (\mu z)^{1 - \tau} + (y + s)^{1 - \tau}
@@ -1508,8 +1501,7 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
     def calc_tokens_out_given_lp_in(
         self, lp_in: FixedPoint, market_state: hyperdrive_market.MarketStateFP
     ) -> tuple[FixedPoint, FixedPoint]:
-        """
-        Calculates the amount of base shares and bonds released from burning a a specified amount of
+        """Calculates the amount of base shares and bonds released from burning a a specified amount of
         LP shares from the pool.
 
         Parameters

@@ -1,4 +1,4 @@
-"""Example main.py file for illustrating a simulator workflow"""
+"""Example main.py file for illustrating a simulator workflow."""
 from __future__ import annotations  # types will be strings by default in 3.11
 
 # stdlib
@@ -25,17 +25,15 @@ if TYPE_CHECKING:
 
 
 class CustomShorter(agent.Agent):
-    """
-    Agent that is trying to optimize on a rising vault APR via shorts
-    """
+    """Agent that is trying to optimize on a rising vault APR via shorts."""
 
     def __init__(self, wallet_address: int, budget: int = 10_000) -> None:
-        """Add custom stuff then call basic policy init"""
+        """Add custom stuff then call basic policy init."""
         self.pt_to_short = 1_000
         super().__init__(wallet_address, budget)
 
     def action(self, market: hyperdrive_market.Market) -> "list[Any]":
-        """Implement a custom user strategy"""
+        """Implement a custom user strategy."""
         shorts = list(self.wallet.shorts.values())
         has_opened_short = bool(any((short.balance > 0 for short in shorts)))
         can_open_short = self.get_max_short(market) >= self.pt_to_short
@@ -70,7 +68,7 @@ class CustomShorter(agent.Agent):
 
 
 def get_example_agents(new_agents: int, existing_agents: int = 0) -> list[agent.Agent]:
-    """Instantiate a set of custom agents"""
+    """Instantiate a set of custom agents."""
     agents = []
     for address in range(existing_agents, existing_agents + new_agents):
         example_agent = CustomShorter(address)
@@ -80,7 +78,7 @@ def get_example_agents(new_agents: int, existing_agents: int = 0) -> list[agent.
 
 
 def get_argparser() -> argparse.ArgumentParser:
-    """Define & parse arguments from stdin"""
+    """Define & parse arguments from stdin."""
     parser = argparse.ArgumentParser(
         prog="ElfMain",
         description="Example execution script for running simulations using Elfpy",

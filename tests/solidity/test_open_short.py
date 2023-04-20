@@ -1,4 +1,4 @@
-"""Test opening a short in hyperdrive"""
+"""Test opening a short in hyperdrive."""
 import decimal
 import unittest
 
@@ -10,14 +10,13 @@ import elfpy.types as types
 
 
 class TestOpenShort(unittest.TestCase):
-    """
-    Test opening a short in hyperdrive, with the following cases:
-        success cases:
-            open a short of of 10 bonds
-            open a short of of 0.01 bonds
-        failure cases:
-            open a short of 0 size
-            open a short of extreme size
+    """Test opening a short in hyperdrive, with the following cases:
+    success cases:
+    open a short of of 10 bonds
+    open a short of of 0.01 bonds
+    failure cases:
+    open a short of 0 size
+    open a short of extreme size.
     """
 
     contribution: float = 500_000_000
@@ -58,15 +57,14 @@ class TestOpenShort(unittest.TestCase):
         maturity_time: int,  # maturity of the opened short
         apr_before: float,
     ):  # pylint: disable=too-many-arguments
-        """
-        Verify that the market state is updated correctly after opening a short.
+        """Verify that the market state is updated correctly after opening a short.
         Contains the following checks:
         - Hyperdrive received the max loss and that Bob received the short tokens
         - initializing the pool to the target APR worked
         - opening a short doesn't make the APR go down
         - reserves are updated correctly for: shares, bonds, LP tokens, share price
             longs_outstanding, long_average_maturity_time, long_base_volume, long_base_volume_checkpoints,
-            shorts_outstanding, short_average_maturity_time, short_base_volume, short_base_volume_checkpoints
+            shorts_outstanding, short_average_maturity_time, short_base_volume, short_base_volume_checkpoints.
         """
         # TODO: this can be enabled if we add a metric that measures total TVL deposited into the smart contract
         # Total amount of base tokens locked in Hyperdrive
@@ -145,19 +143,19 @@ class TestOpenShort(unittest.TestCase):
         # self.hyperdrive.market_state.short_base_volume_checkpoints(checkpoint_time),
 
     def test_open_short_failure_zero_amount(self):
-        """shorting bonds with zero base fails"""
+        """Shorting bonds with zero base fails."""
         with self.assertRaises(AssertionError):
             self.hyperdrive.open_short(self.bob.wallet, 0)
 
     def test_open_short_failure_extreme_amount(self):
-        """shorting more bonds than there is base in the market fails"""
+        """Shorting more bonds than there is base in the market fails."""
         # The max amount of base does not equal the amount of bonds, it is the result of base_pm.get_max_long
         bond_amount = self.hyperdrive.market_state.share_reserves * 2
         with self.assertRaises(decimal.InvalidOperation):
             self.hyperdrive.open_short(self.bob.wallet, bond_amount)
 
     def test_open_short(self):
-        """Open a short & check that accounting is done correctly"""
+        """Open a short & check that accounting is done correctly."""
         bond_amount = 10
         self.bob.budget = bond_amount
         self.bob.wallet.balance = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
@@ -176,7 +174,7 @@ class TestOpenShort(unittest.TestCase):
         )
 
     def test_open_short_with_small_amount(self):
-        """Open a tiny short & check that accounting is done correctly"""
+        """Open a tiny short & check that accounting is done correctly."""
         bond_amount = 0.01
         self.bob.budget = bond_amount
         self.bob.wallet.balance = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)

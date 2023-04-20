@@ -1,4 +1,4 @@
-"""Core types used across the repo"""
+"""Core types used across the repo."""
 from __future__ import annotations  # types will be strings by default in 3.11
 
 from dataclasses import asdict, dataclass, is_dataclass, replace
@@ -10,7 +10,7 @@ from elfpy.utils.math import FixedPoint
 
 
 def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
-    r"""A wrapper that allows classes to be frozen, such that existing member attributes cannot be changed"""
+    r"""A wrapper that allows classes to be frozen, such that existing member attributes cannot be changed."""
 
     def decorator(cls: Type) -> Type:
         # this decorator should only be placed atop a dataclass
@@ -19,7 +19,7 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
 
         @wraps(wrapped=cls, updated=())
         class FrozenClass(cls):
-            """Subclass cls to enable freezing of attributes
+            """Subclass cls to enable freezing of attributes.
 
             .. todo:: resolve why pyright cannot access member "freeze" when instantiated_class.freeze() is called
             """
@@ -39,15 +39,15 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
                 super().__setattr__(attrib, value)
 
             def freeze(self) -> None:
-                """disallows changing existing members"""
+                """Disallows changing existing members."""
                 super().__setattr__("frozen", True)
 
             def disable_new_attribs(self) -> None:
-                """disallows adding new members"""
+                """Disallows adding new members."""
                 super().__setattr__("no_new_attribs", True)
 
             def astype(self, new_type):
-                """Cast all member attributes to a new type"""
+                """Cast all member attributes to a new type."""
                 new_data = {}
                 for attr_name, attr_value in asdict(self).items():
                     try:
@@ -61,7 +61,7 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
 
             @property
             def dtypes(self) -> dict[str, type]:
-                """Return a dict listing name & type of each member variable"""
+                """Return a dict listing name & type of each member variable."""
                 dtypes_dict: dict[str, type] = {}
                 for attr_name, attr_value in asdict(self).items():
                     dtypes_dict[attr_name] = type(attr_value)
@@ -75,14 +75,14 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
 
 
 class MarketType(Enum):
-    r"""A type of market"""
+    r"""A type of market."""
 
     HYPERDRIVE = "hyperdrive"
     BORROW = "borrow"
 
 
 class TokenType(Enum):
-    r"""A type of token"""
+    r"""A type of token."""
 
     BASE = "base"
     PT = "pt"
@@ -91,7 +91,7 @@ class TokenType(Enum):
 
 @dataclass
 class Quantity:
-    r"""An amount with a unit"""
+    r"""An amount with a unit."""
 
     amount: float
     unit: TokenType
@@ -102,7 +102,7 @@ class Quantity:
 
 @dataclass
 class QuantityFP:
-    r"""An amount with a unit"""
+    r"""An amount with a unit."""
 
     amount: FixedPoint
     unit: TokenType
@@ -113,7 +113,7 @@ class QuantityFP:
 
 @dataclass
 class Trade:
-    r"""A trade for a market"""
+    r"""A trade for a market."""
 
     market: MarketType
     trade: Any  # TODO: How to specify the type as a generic market action?

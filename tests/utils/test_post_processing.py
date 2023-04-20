@@ -1,4 +1,4 @@
-"""Testing for functions in elfpy/utils/post_processing.py"""
+"""Testing for functions in elfpy/utils/post_processing.py."""
 
 import unittest
 import pandas as pd
@@ -7,10 +7,10 @@ import elfpy.utils.post_processing as post_processing
 
 
 class PostProcessingTests(unittest.TestCase):
-    """Unit tests for dataframe post-processing utilities"""
+    """Unit tests for dataframe post-processing utilities."""
 
     def test_add_pnl_columns(self):
-        """The func add a "pnl" column to the pandas dataframe"""
+        """The func add a "pnl" column to the pandas dataframe."""
         trade_balance = 1
         num_trades = 3
         wallet_values_in_base = {

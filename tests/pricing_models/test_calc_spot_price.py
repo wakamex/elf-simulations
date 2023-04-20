@@ -1,4 +1,4 @@
-"""Testing for spot price calculations in Pricing Models and Price utils"""
+"""Testing for spot price calculations in Pricing Models and Price utils."""
 import unittest
 
 import numpy as np
@@ -13,10 +13,10 @@ from elfpy.markets.hyperdrive.hyperdrive_market import MarketState
 
 
 class TestSpotPriceCalculations(unittest.TestCase):
-    """Test spot price calculation in base pricing model & price utils"""
+    """Test spot price calculation in base pricing model & price utils."""
 
     def test_calc_spot_price_from_reserves(self):
-        """Test base pricing model calculation
+        """Test base pricing model calculation.
 
         .. todo:: write failure tests
         """
@@ -104,7 +104,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             )
 
     def test_calc_spot_price_from_apr(self):
-        """Test the price utils function for calculating spot price"""
+        """Test the price utils function for calculating spot price."""
         test_cases = [
             # test 1: r = 0.05; d=90
             {
@@ -169,7 +169,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             )
 
     def test_calc_spot_price_consistency(self):
-        """Test consistency of spot price calculations
+        """Test consistency of spot price calculations.
 
         compute spot price from reserves using pricing model
         compute apr from reserves using pricing model

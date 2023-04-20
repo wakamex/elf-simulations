@@ -28,8 +28,7 @@ from elfpy.utils.math import FixedPoint
 
 @dataclass
 class Checkpoint:
-    """
-    Hyperdrive positions are bucketed into checkpoints, which allows us to avoid poking in any
+    """Hyperdrive positions are bucketed into checkpoints, which allows us to avoid poking in any
     period that has LP or trading activity. The checkpoints contain the starting share price from
     the checkpoint as well as aggregate volume values.
     """
@@ -48,8 +47,7 @@ class Checkpoint:
 
 @dataclass
 class CheckpointFP:
-    """
-    Hyperdrive positions are bucketed into checkpoints, which allows us to avoid poking in any
+    """Hyperdrive positions are bucketed into checkpoints, which allows us to avoid poking in any
     period that has LP or trading activity. The checkpoints contain the starting share price from
     the checkpoint as well as aggregate volume values.
     """
@@ -69,7 +67,7 @@ class CheckpointFP:
 @types.freezable(frozen=False, no_new_attribs=False)
 @dataclass
 class MarketState(base_market.BaseMarketState):
-    r"""The state of an AMM
+    r"""The state of an AMM.
 
     Attributes
     ----------
@@ -193,14 +191,14 @@ class MarketState(base_market.BaseMarketState):
             self.total_supply_shorts[mint_time] += delta_supply
 
     def copy(self) -> MarketState:
-        """Returns a new copy of self"""
+        """Returns a new copy of self."""
         return MarketState(**copy.deepcopy(self.__dict__))
 
 
 @types.freezable(frozen=False, no_new_attribs=False)
 @dataclass
 class MarketStateFP(base_market.BaseMarketState):
-    r"""The state of an AMM
+    r"""The state of an AMM.
 
     Attributes
     ----------
@@ -328,7 +326,7 @@ class MarketStateFP(base_market.BaseMarketState):
             self.total_supply_shorts[mint_time] += delta_supply
 
     def copy(self) -> MarketStateFP:
-        """Returns a new copy of self"""
+        """Returns a new copy of self."""
         return MarketStateFP(**copy.deepcopy(self.__dict__))
 
 
@@ -339,7 +337,7 @@ class Market(
         hyperdrive_pm.HyperdrivePricingModel,
     ]
 ):
-    r"""Market state simulator
+    r"""Market state simulator.
 
     Holds state variables for market simulation and executes trades.
     The Market class executes trades by updating market variables according to the given pricing model.
@@ -365,17 +363,17 @@ class Market(
 
     @property
     def time_stretch_constant(self) -> float:
-        r"""Returns the market time stretch constant"""
+        r"""Returns the market time stretch constant."""
         return self.position_duration.time_stretch
 
     @property
     def annualized_position_duration(self) -> float:
-        r"""Returns the position duration in years"""
+        r"""Returns the position duration in years."""
         return self.position_duration.days / 365
 
     @property
     def fixed_apr(self) -> float:
-        """Returns the current market apr"""
+        """Returns the current market apr."""
         # calc_apr_from_spot_price will throw an error if share_reserves <= zero
         # TODO: Negative values should never happen, but do because of rounding errors.
         #       Write checks to remedy this in the market.
@@ -387,7 +385,7 @@ class Market(
 
     @property
     def spot_price(self) -> float:
-        """Returns the current market price of the share reserves"""
+        """Returns the current market price of the share reserves."""
         # calc_spot_price_from_reserves will throw an error if share_reserves is zero
         if self.market_state.share_reserves == 0:  # market is empty
             return np.nan
@@ -397,7 +395,7 @@ class Market(
         )
 
     def check_action(self, agent_action: hyperdrive_actions.MarketAction) -> None:
-        r"""Ensure that the agent action is an allowed action for this market
+        r"""Ensure that the agent action is an allowed action for this market.
 
         Parameters
         ----------
@@ -421,7 +419,7 @@ class Market(
     def perform_action(
         self, action_details: tuple[int, hyperdrive_actions.MarketAction]
     ) -> tuple[int, wallet.Wallet, hyperdrive_actions.MarketDeltas]:
-        r"""Execute a trade in the simulated market
+        r"""Execute a trade in the simulated market.
 
         Checks which of 6 action types are being executed, and handles each case:
 
@@ -528,7 +526,7 @@ class Market(
         contribution: float,
         target_apr: float,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
-        """Market Deltas so that an LP can initialize the market"""
+        """Market Deltas so that an LP can initialize the market."""
         if self.market_state.share_reserves > 0 or self.market_state.bond_reserves > 0:
             raise AssertionError("The market appears to already be initialized.")
         share_reserves = contribution / self.market_state.share_price
@@ -558,7 +556,7 @@ class Market(
     def open_short(
         self, agent_wallet: wallet.Wallet, bond_amount: float, max_deposit: float = 2 ^ 32
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
-        """Calculates the deltas from opening a short and then updates the agent wallet & market state"""
+        """Calculates the deltas from opening a short and then updates the agent wallet & market state."""
         # create/update the checkpoint
         self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
         # calc market and agent deltas
@@ -582,7 +580,7 @@ class Market(
         bond_amount: float,
         mint_time: float,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
-        """Calculate the deltas from closing a short and then update the agent wallet & market state"""
+        """Calculate the deltas from closing a short and then update the agent wallet & market state."""
         # create/update the checkpoint
         self.apply_checkpoint(mint_time, self.market_state.share_price)
         # calc market and agent deltas
@@ -603,7 +601,7 @@ class Market(
         agent_wallet: wallet.Wallet,
         base_amount: float,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
-        """Calculate the deltas from opening a long and then update the agent wallet & market state"""
+        """Calculate the deltas from opening a long and then update the agent wallet & market state."""
         # create/update the checkpoint
         self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
         # calc market and agent deltas
@@ -631,7 +629,7 @@ class Market(
     def close_long(
         self, agent_wallet: wallet.Wallet, bond_amount: float, mint_time: float
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
-        """Calculate the deltas from closing a long and then update the agent wallet & market state"""
+        """Calculate the deltas from closing a long and then update the agent wallet & market state."""
         # create/update the checkpoint
         self.apply_checkpoint(mint_time, self.market_state.share_price)
         # calc market and agent deltas
@@ -651,7 +649,7 @@ class Market(
         agent_wallet: wallet.Wallet,
         bond_amount: float,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
-        """Computes new deltas for bond & share reserves after liquidity is added"""
+        """Computes new deltas for bond & share reserves after liquidity is added."""
         self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
         market_deltas, agent_deltas = hyperdrive_actions.calc_add_liquidity(
             wallet_address=agent_wallet.address,
@@ -667,7 +665,7 @@ class Market(
         agent_wallet: wallet.Wallet,
         lp_shares: float,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
-        """Computes new deltas for bond & share reserves after liquidity is removed"""
+        """Computes new deltas for bond & share reserves after liquidity is removed."""
         self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
 
         market_deltas, agent_deltas = hyperdrive_actions.calc_remove_liquidity(
@@ -680,7 +678,7 @@ class Market(
         return market_deltas, agent_deltas
 
     def checkpoint(self, checkpoint_time: float) -> None:
-        """allows anyone to mint a new checkpoint."""
+        """Allows anyone to mint a new checkpoint."""
         # if the checkpoint has already been set, return early.
         if self.market_state.checkpoints[checkpoint_time].share_price != 0:
             return
@@ -786,7 +784,6 @@ class Market(
         float
             The amount of base the LP received.
         """
-
         # create a new checkpoint if necessary, close positions at the checkpoint time one
         # position_duration ago.
         self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)

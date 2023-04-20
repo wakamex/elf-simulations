@@ -1,4 +1,4 @@
-"""The Hyperdrive pricing model"""
+"""The Hyperdrive pricing model."""
 from __future__ import annotations  # types will be strings by default in 3.11
 
 from decimal import Decimal
@@ -20,8 +20,7 @@ if TYPE_CHECKING:
 
 
 class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
-    """
-    Hyperdrive Pricing Model
+    """Hyperdrive Pricing Model.
 
     This pricing model uses a combination of the Constant Sum and Yield Space
     invariants with modifications to the Yield Space invariant that enable the
@@ -40,8 +39,7 @@ class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
-        r"""
-        Calculates the amount of an asset that must be provided to receive a
+        r"""Calculates the amount of an asset that must be provided to receive a
         specified amount of the other asset given the current AMM reserves.
 
         The input is calculated as:
@@ -188,8 +186,7 @@ class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
-        r"""
-        Calculates the amount of an asset that must be provided to receive a specified amount of the
+        r"""Calculates the amount of an asset that must be provided to receive a specified amount of the
         other asset given the current AMM reserves.
 
         The output is calculated as:
@@ -330,8 +327,7 @@ class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
     def calc_tokens_out_given_lp_in(
         self, lp_in: float, market_state: hyperdrive_market.MarketState
     ) -> tuple[float, float]:
-        """
-        Calculates the amount of base shares and bonds released from burning a specified amount of
+        """Calculates the amount of base shares and bonds released from burning a specified amount of
         LP shares from the pool.
 
         Parameters
@@ -363,8 +359,7 @@ class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
 
 
 class HyperdrivePricingModelFP(yieldspace_pm.YieldspacePricingModelFP):
-    """
-    Hyperdrive Pricing Model
+    """Hyperdrive Pricing Model.
 
     This pricing model uses a combination of the Constant Sum and Yield Space
     invariants with modifications to the Yield Space invariant that enable the
@@ -383,8 +378,7 @@ class HyperdrivePricingModelFP(yieldspace_pm.YieldspacePricingModelFP):
         market_state: hyperdrive_market.MarketStateFP,
         time_remaining: time.StretchedTimeFP,
     ) -> trades.TradeResultFP:
-        r"""
-        Calculates the amount of an asset that must be provided to receive a
+        r"""Calculates the amount of an asset that must be provided to receive a
         specified amount of the other asset given the current AMM reserves.
 
         The input is calculated as:
@@ -529,8 +523,7 @@ class HyperdrivePricingModelFP(yieldspace_pm.YieldspacePricingModelFP):
         market_state: hyperdrive_market.MarketStateFP,
         time_remaining: time.StretchedTimeFP,
     ) -> trades.TradeResultFP:
-        r"""
-        Calculates the amount of an asset that must be provided to receive a specified amount of the
+        r"""Calculates the amount of an asset that must be provided to receive a specified amount of the
         other asset given the current AMM reserves.
 
         The output is calculated as:
@@ -669,8 +662,7 @@ class HyperdrivePricingModelFP(yieldspace_pm.YieldspacePricingModelFP):
     def calc_tokens_out_given_lp_in(
         self, lp_in: FixedPoint, market_state: hyperdrive_market.MarketStateFP
     ) -> tuple[FixedPoint, FixedPoint]:
-        """
-        Calculates the amount of base shares and bonds released from burning a specified amount of
+        """Calculates the amount of base shares and bonds released from burning a specified amount of
         LP shares from the pool.
 
         Parameters

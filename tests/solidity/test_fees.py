@@ -1,4 +1,4 @@
-"""Trade fee tests that match those being executed in the solidity repo"""
+"""Trade fee tests that match those being executed in the solidity repo."""
 import unittest
 from typing import Optional, Tuple
 
@@ -16,7 +16,7 @@ AMOUNT = [10**i for i in range(1, 9)]  # trade amounts up to 100 million
 
 
 class TestFees(unittest.TestCase):
-    """Test case for fees applied to trades"""
+    """Test case for fees applied to trades."""
 
     # pylint: disable=too-many-instance-attributes
 
@@ -74,12 +74,12 @@ class TestFees(unittest.TestCase):
 
 
 def idfn(val):
-    """Custom id function for pytest parametrize"""
+    """Custom id function for pytest parametrize."""
     return f"amount={val:.0f}"
 
 
 def advance_time(test, time_delta):
-    """Move time forward by time_delta and update the share price to simulate interest"""
+    """Move time forward by time_delta and update the share price to simulate interest."""
     test.block_time.tick(delta_years=time_delta)
     test.hyperdrive.market_state.share_price = test.market_state_before_open.share_price * (
         1 + test.target_apr * time_delta
@@ -89,7 +89,7 @@ def advance_time(test, time_delta):
 def get_all_the_fees(
     test: TestFees, in_unit: Optional[types.TokenType] = None, out_unit: Optional[types.TokenType] = None
 ) -> Tuple[float, float, float, float]:
-    """Get all the fees from the market state"""
+    """Get all the fees from the market state."""
     # calculate time remaining
     years_remaining = time.get_years_remaining(
         market_time=test.hyperdrive.block_time.time,
@@ -175,7 +175,7 @@ def test_gov_fee_accrual(amount):
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
 def test_collect_fees_long(amount):
-    """Open a long and then close close to maturity; verify that gov fees are correct"""
+    """Open a long and then close close to maturity; verify that gov fees are correct."""
     test = TestFees(trade_amount=amount)  # set up test object
 
     # check that both gov fees and gov balance are 0 before opening a long
@@ -219,7 +219,7 @@ def test_collect_fees_long(amount):
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
 def test_collect_fees_short(amount):
-    """Open a short and then close close to maturity; verify that gov fees are correct"""
+    """Open a short and then close close to maturity; verify that gov fees are correct."""
     test = TestFees(trade_amount=amount)  # set up test object
 
     # check that both gov fees and gov balance are 0 before opening a short
@@ -269,7 +269,7 @@ def test_collect_fees_short(amount):
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
 def test_calc_fees_out_given_shares_in_at_initiation_gov_fee_0p5(amount):
-    """Test that the fees are calculated correctly at initiation"""
+    """Test that the fees are calculated correctly at initiation."""
     # set up test object
     test = TestFees(target_apr=1, trade_amount=amount)  # 100% APR gives spot_price = 0.5
 
@@ -283,7 +283,7 @@ def test_calc_fees_out_given_shares_in_at_initiation_gov_fee_0p5(amount):
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
 def test_calc_fees_out_given_shares_in_at_maturity_gov_fee_0p5(amount):
-    """Test that the fees are calculated correctly at maturity"""
+    """Test that the fees are calculated correctly at maturity."""
     # set up test object
     test = TestFees(target_apr=1, trade_amount=amount)  # 100% APR gives spot_price = 0.5
 
@@ -298,7 +298,7 @@ def test_calc_fees_out_given_shares_in_at_maturity_gov_fee_0p5(amount):
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
 def test_calc_fees_out_given_shares_in_at_initiation_gov_fee_0p6(amount):
-    """Test that the fees are calculated correctly at initiation"""
+    """Test that the fees are calculated correctly at initiation."""
     # set up test object
     test = TestFees(target_apr=1, gov_fee=0.6, trade_amount=amount)  # 100% APR gives spot_price = 0.5
 
@@ -312,7 +312,7 @@ def test_calc_fees_out_given_shares_in_at_initiation_gov_fee_0p6(amount):
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
 def test_calc_fees_out_given_shares_in_at_maturity_gov_fee_0p6(amount):
-    """Test that the fees are calculated correctly at maturity"""
+    """Test that the fees are calculated correctly at maturity."""
     # set up test object
     test = TestFees(target_apr=1, gov_fee=0.6, trade_amount=amount)  # 100% APR gives spot_price = 0.5
 
@@ -327,7 +327,7 @@ def test_calc_fees_out_given_shares_in_at_maturity_gov_fee_0p6(amount):
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
 def test_calc_fees_out_given_bonds_in_at_initiation(amount):
-    """Test the redeption & trade fee helper function"""
+    """Test the redeption & trade fee helper function."""
     # set up test object
     test = TestFees(target_apr=1 / 9, trade_amount=amount)  # gives spot_price = 0.9
 
@@ -339,7 +339,7 @@ def test_calc_fees_out_given_bonds_in_at_initiation(amount):
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
 def test_calc_fees_out_given_bonds_in_at_maturity(amount):
-    """Test the redeption & trade fee helper function"""
+    """Test the redeption & trade fee helper function."""
     # set up test object
     test = TestFees(target_apr=1 / 9, trade_amount=amount)  # gives spot_price = 0.9
 
@@ -352,7 +352,7 @@ def test_calc_fees_out_given_bonds_in_at_maturity(amount):
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
 def test_calc_fees_out_given_bonds_out_at_initiation(amount):
-    """Test the redeption & trade fee helper function"""
+    """Test the redeption & trade fee helper function."""
     # set up test object
     test = TestFees(target_apr=1 / 9, trade_amount=amount)  # gives spot_price = 0.9
 
@@ -366,7 +366,7 @@ def test_calc_fees_out_given_bonds_out_at_initiation(amount):
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
 def test_calc_fees_out_given_bonds_out_at_maturity(amount):
-    """Test the redeption & trade fee helper function"""
+    """Test the redeption & trade fee helper function."""
     # set up test object
     test = TestFees(target_apr=1 / 9, trade_amount=amount)  # gives spot_price = 0.9
 

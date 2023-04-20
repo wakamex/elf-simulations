@@ -1,4 +1,4 @@
-"""Fixed point math tests inspired from solidity hyperdrive implementation"""
+"""Fixed point math tests inspired from solidity hyperdrive implementation."""
 import math
 import unittest
 
@@ -22,7 +22,7 @@ class TestFixedPoint(unittest.TestCase):
     """
 
     def test_init(self):
-        r"""Test initialization for FixedPoint numbers"""
+        r"""Test initialization for FixedPoint numbers."""
         # INTS
         assert int(FixedPoint(1)) == 1  # int intput directly maps
         assert int(FixedPoint(1.0)) == 1000000000000000000  # float input is rescaled by 1e18
@@ -43,7 +43,7 @@ class TestFixedPoint(unittest.TestCase):
         assert FixedPoint("5.000001000") == FixedPoint(5.000001)
 
     def test_add(self):
-        r"""Test `+` sugar for various type combos"""
+        r"""Test `+` sugar for various type combos."""
         # int + int
         assert FixedPoint(5) + FixedPoint(5) == FixedPoint(10)
         assert int(FixedPoint(5) + FixedPoint(5)) == 10
@@ -59,7 +59,7 @@ class TestFixedPoint(unittest.TestCase):
         assert float(FixedPoint("5.0") + FixedPoint("5.0")) == 10.0
 
     def test_add_fail(self):
-        r"""Test failure of `+` sugar
+        r"""Test failure of `+` sugar.
 
         We are ignoring type errors -- we know they're bad, but we're looking for failure
         """
@@ -78,7 +78,7 @@ class TestFixedPoint(unittest.TestCase):
             _ = int_value + fixed_point_value  # type: ignore
 
     def test_sub(self):
-        r"""Test `-` sugar for various type combos"""
+        r"""Test `-` sugar for various type combos."""
         # int - int
         assert FixedPoint(5) - FixedPoint(4) == FixedPoint(1)
         assert FixedPoint(5) - FixedPoint(5) == FixedPoint(0)
@@ -92,7 +92,7 @@ class TestFixedPoint(unittest.TestCase):
         assert float(FixedPoint("5.0") - FixedPoint("0.025")) == 4.975
 
     def test_sub_fail(self):
-        r"""Test failure of `-` sugar
+        r"""Test failure of `-` sugar.
 
         We are ignoring type errors -- we know they're bad, but we're looking for failure
         """
@@ -109,7 +109,7 @@ class TestFixedPoint(unittest.TestCase):
             _ = int_value - fixed_point_value  # type: ignore
 
     def test_multiply(self):
-        r"""Test `*` sugar for various type combos"""
+        r"""Test `*` sugar for various type combos."""
         # int * int
         # NOTE: multiply divides by 1e18, so this is 5 * 5 / 1e18 which rounds to zero
         for scale in range(0, 8):
@@ -134,7 +134,7 @@ class TestFixedPoint(unittest.TestCase):
         assert FixedPoint("5.0") * FixedPoint("5.0") * FixedPoint("0.1") == FixedPoint("2.50")
 
     def test_multiply_fail(self):
-        r"""Test failure of `*` sugar
+        r"""Test failure of `*` sugar.
 
         We are ignoring type errors -- we know they're bad, but we're looking for failure
         """
@@ -151,7 +151,7 @@ class TestFixedPoint(unittest.TestCase):
             _ = int_value * fixed_point_value  # type: ignore
 
     def test_divide(self):
-        r"""Test `/` sugar for various type combos"""
+        r"""Test `/` sugar for various type combos."""
         # int / int
         assert int(FixedPoint(5) / FixedPoint(5)) == 1 * 10**18  # 1 * 10**18 is "1" in FP world
         assert int(FixedPoint(5) / FixedPoint(5)) == 1 * 10**18
@@ -175,7 +175,7 @@ class TestFixedPoint(unittest.TestCase):
         assert FixedPoint(2.0).div_up(FixedPoint(1 * 10**37)) == FixedPoint(1)
 
     def test_divide_fail(self):
-        r"""Test failure of `/` sugar
+        r"""Test failure of `/` sugar.
 
         We are ignoring type errors -- we know they're bad, but we're looking for failure
         """
@@ -192,7 +192,7 @@ class TestFixedPoint(unittest.TestCase):
             _ = int_value / fixed_point_value  # type: ignore
 
     def test_power(self):
-        r"""Test `**` sugar for various type combos"""
+        r"""Test `**` sugar for various type combos."""
         # power zero
         assert int(FixedPoint(5.0) ** FixedPoint(0)) == 1 * 10**18
         assert int(FixedPoint(5) ** FixedPoint(0)) == 1 * 10**18

@@ -82,7 +82,7 @@ class TestWithdrawShares(unittest.TestCase):
         # bond_amount = long_market_deltas.d_bond_asset
 
     def test_redeem_withdraw_shares_long(self):
-        """Should receive the correct amount of withdrawal shares when there are multiple longs"""
+        """Should receive the correct amount of withdrawal shares when there are multiple longs."""
         market_state = self.hyperdrive.market_state
 
         # TODO: fuzz the trade size betweeon 0 and 5M
@@ -125,7 +125,7 @@ class TestWithdrawShares(unittest.TestCase):
         self.assertAlmostEqual(withdrawal_proceeds, expected_withdrawal_proceeds, places=7)
 
     def test_redeem_withdraw_shares_long_long(self):
-        """Should receive the correct amount of withdrawal shares when there are multiple longs"""
+        """Should receive the correct amount of withdrawal shares when there are multiple longs."""
         variable_rate = 0.05
         market_state = self.hyperdrive.market_state
 

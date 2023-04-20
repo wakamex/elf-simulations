@@ -1,4 +1,4 @@
-""" Implements functions that are useful for testing """
+"""Implements functions that are useful for testing."""
 from __future__ import annotations  # types are strings by default in 3.11
 
 import logging
@@ -15,7 +15,7 @@ import elfpy.utils.sim_utils as sim_utils
 
 
 def setup_simulation_entities(config, agent_policies) -> simulators.Simulator:
-    """Construct and run the simulator"""
+    """Construct and run the simulator."""
     # Create the agents.
     agents = []
     for agent_id, policy_instruction in enumerate(agent_policies):
@@ -41,9 +41,7 @@ def setup_simulation_entities(config, agent_policies) -> simulators.Simulator:
 
 
 def validate_custom_parameters(policy_instruction):
-    """
-    separate the policy name from the policy arguments and validate the arguments
-    """
+    """Separate the policy name from the policy arguments and validate the arguments."""
     policy_name, policy_args = policy_instruction.split(":")
     try:
         policy_args = policy_args.split(",")

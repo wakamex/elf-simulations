@@ -1,4 +1,4 @@
-"""Implements helper functions for setting up a simulation"""
+"""Implements helper functions for setting up a simulation."""
 from __future__ import annotations  # types will be strings by default in 3.11
 
 from importlib import import_module
@@ -20,7 +20,7 @@ def get_simulator(
     config: simulators.Config,
     agents: Optional[list[Agent]] = None,
 ) -> simulators.Simulator:
-    r"""Construct and initialize a simulator with sane defaults
+    r"""Construct and initialize a simulator with sane defaults.
 
     The simulated market is initialized with an initial LP.
 
@@ -105,7 +105,7 @@ def get_initialized_hyperdrive_market(
     block_time: time.BlockTime,
     config: simulators.Config,
 ) -> tuple[hyperdrive_market.Market, wallet.Wallet, hyperdrive_actions.MarketDeltas]:
-    r"""Setup market
+    r"""Setup market.
 
     Parameters
     ----------
@@ -164,7 +164,7 @@ def get_initialized_hyperdrive_market(
 
 
 def get_policy(agent_type: str) -> Policy:
-    """Returns an uninstantiated agent
+    """Returns an uninstantiated agent.
 
     Parameters
     ----------

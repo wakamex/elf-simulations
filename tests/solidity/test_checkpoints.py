@@ -1,4 +1,4 @@
-"""Testing Hyperdrive Checkpointing"""
+"""Testing Hyperdrive Checkpointing."""
 
 import unittest
 
@@ -14,7 +14,7 @@ from elfpy.errors import errors
 
 
 class TestCheckpoint(unittest.TestCase):
-    """Test adding liquidity to hyperdrive"""
+    """Test adding liquidity to hyperdrive."""
 
     contribution = 500_000_000
     target_apr = 0.05
@@ -45,17 +45,17 @@ class TestCheckpoint(unittest.TestCase):
         self.alice.wallet.update(wallet_deltas)
 
     def test_checkpoint_failure_future_checkpoint(self):
-        """Test that creating a checkpoint in the future fails"""
+        """Test that creating a checkpoint in the future fails."""
         with self.assertRaises(errors.InvalidCheckpointTime):
             self.hyperdrive.checkpoint(self.block_time.time + self.hyperdrive.market_state.checkpoint_duration)
 
     def test_checkpoint_failure_invalid_checkpoint(self):
-        """Test that creating checkpoint not evenly divisible by the checkpoint duration fails"""
+        """Test that creating checkpoint not evenly divisible by the checkpoint duration fails."""
         with self.assertRaises(errors.InvalidCheckpointTime):
             self.hyperdrive.checkpoint(self.block_time.time + self.hyperdrive.market_state.checkpoint_duration * 1.1)
 
     def test_checkpoint_preset_checkpoint(self):
-        """Test that checkpoints don't change amm values and capture values at time of creation"""
+        """Test that checkpoints don't change amm values and capture values at time of creation."""
         share_price_before = self.hyperdrive.market_state.share_price
         # open a long and a short
         long_amount = 10_000_000
@@ -95,7 +95,7 @@ class TestCheckpoint(unittest.TestCase):
         self.assertEqual(self.hyperdrive.market_state.shorts_outstanding, short_amount)
 
     def test_checkpoint_latest_checkpoint(self):
-        """Test that the latest checkpoint has updated share price"""
+        """Test that the latest checkpoint has updated share price."""
         # Advance a checkpoint.
         self.block_time.step()
         # Update the share price. Since the long and short were opened in this checkpoint, the
@@ -116,7 +116,7 @@ class TestCheckpoint(unittest.TestCase):
         self.assertEqual(checkpoint.share_price, self.hyperdrive.market_state.share_price)
 
     def test_checkpoint_in_the_past(self):
-        """Test that checkpoints created in the past work as expected"""
+        """Test that checkpoints created in the past work as expected."""
         # Open a long and a short.
         long_amount = 10_000_000
         self.hyperdrive.open_long(self.bob.wallet, long_amount)

@@ -1,1 +1,1 @@
-"""Stateless pricing models for computing trade outcomes"""
+"""Stateless pricing models for computing trade outcomes."""

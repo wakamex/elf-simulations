@@ -1,4 +1,4 @@
-"""Helper functions for delivering simulation outputs"""
+"""Helper functions for delivering simulation outputs."""
 from __future__ import annotations  # types will be strings by default in 3.11
 
 from typing import TYPE_CHECKING
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 def plot_market_lp_reserves(
     state_df: pd.DataFrame, exclude_first_day: bool = True, exclude_last_day: bool = True
 ) -> Figure:
-    r"""Plot the simulator market LP reserves per day
+    r"""Plot the simulator market LP reserves per day.
 
     Parameters
     ----------
@@ -58,7 +58,7 @@ def plot_market_lp_reserves(
 def plot_market_spot_price(
     state_df: pd.DataFrame, exclude_first_day: bool = True, exclude_last_day: bool = True
 ) -> Figure:
-    r"""Plot the simulator market APR per day
+    r"""Plot the simulator market APR per day.
 
     Parameters
     ----------
@@ -86,7 +86,7 @@ def plot_market_spot_price(
 
 
 def plot_agent_pnl(state_df: pd.DataFrame, exclude_first_agent: bool = True, exclude_first_day=True) -> Figure:
-    r"""Plot the agent pnl
+    r"""Plot the agent pnl.
 
     Parameters
     ----------
@@ -116,7 +116,7 @@ def plot_agent_pnl(state_df: pd.DataFrame, exclude_first_agent: bool = True, exc
 
 
 def plot_lp_pnl(trades_agg: pd.DataFrame, exclude_last_day=True) -> Figure:
-    r"""Plot the lp pnl
+    r"""Plot the lp pnl.
 
     Parameters
     ----------
@@ -144,7 +144,7 @@ def plot_lp_pnl(trades_agg: pd.DataFrame, exclude_last_day=True) -> Figure:
 
 
 def plot_fixed_apr(state_df: pd.DataFrame, exclude_first_day: bool = True, exclude_last_day: bool = True) -> Figure:
-    r"""Plot the simulator market APR per day
+    r"""Plot the simulator market APR per day.
 
     Parameters
     ----------
@@ -174,7 +174,7 @@ def plot_fixed_apr(state_df: pd.DataFrame, exclude_first_day: bool = True, exclu
 def plot_fixed_volume(
     trades_agg: pd.DataFrame, exclude_first_trade: bool = True, exclude_last_trade: bool = True
 ) -> Figure:
-    r"""Plot the simulator market APR per day
+    r"""Plot the simulator market APR per day.
 
     Parameters
     ----------
@@ -206,7 +206,7 @@ def plot_longs_and_shorts(
     exclude_first_trade: bool = True,
     xtick_step: int = 10,
 ) -> Figure:
-    r"""Plot the total market longs & shorts over time
+    r"""Plot the total market longs & shorts over time.
 
     Parameters
     ----------
@@ -259,7 +259,7 @@ def plot_wallet_reserves(
     exclude_first_trade: bool = True,
     xtick_step: int = 10,
 ) -> Figure:
-    r"""Plot the wallet base asset and LP token quantities over time
+    r"""Plot the wallet base asset and LP token quantities over time.
 
     Parameters
     ----------
@@ -307,7 +307,7 @@ def plot_wallet_reserves(
 
 
 def get_gridspec_subplots(nrows: int = 1, ncols: int = 1, **kwargs: Any) -> tuple[Figure, list[Axes], GridSpec]:
-    r"""Setup a figure with axes that have reasonable spacing
+    r"""Setup a figure with axes that have reasonable spacing.
 
     Parameters
     ----------
@@ -332,7 +332,7 @@ def get_gridspec_subplots(nrows: int = 1, ncols: int = 1, **kwargs: Any) -> tupl
 
 
 def clear_axis(axis: Axes, spines: str = "none") -> Axes:
-    r"""Clear spines & tick labels from proplot axis object
+    r"""Clear spines & tick labels from proplot axis object.
 
     Parameters
     ----------
@@ -356,7 +356,7 @@ def clear_axis(axis: Axes, spines: str = "none") -> Axes:
 
 
 def clear_axes(axes: list[Axes], spines: str = "none") -> list:
-    r"""Calls clear_axis iteratively for each axis in axes
+    r"""Calls clear_axis iteratively for each axis in axes.
 
     Parameters
     ----------
@@ -377,7 +377,7 @@ def clear_axes(axes: list[Axes], spines: str = "none") -> list:
 def format_axis(
     axis_handle, xlabel="", fontsize=18, linestyle="--", linewidth="1", color="grey", which="both", axis="y"
 ):
-    r"""Formats the axis"""
+    r"""Formats the axis."""
     # pylint: disable=too-many-arguments
     axis_handle.set_xlabel(xlabel)
     axis_handle.tick_params(axis="both", labelsize=fontsize)
@@ -388,7 +388,7 @@ def format_axis(
 
 
 def annotate(axis_handle, text, major_offset, minor_offset, val):
-    r"""Adds legend-like labels"""
+    r"""Adds legend-like labels."""
     annotation_handle = axis_handle.annotate(
         text,
         xy=(
@@ -423,7 +423,7 @@ def setup_logging(
     log_level: int = elfpy.DEFAULT_LOG_LEVEL,
     delete_previous_logs: bool = False,
 ) -> None:
-    r"""Setup logging and handlers with default settings"""
+    r"""Setup logging and handlers with default settings."""
     if log_filename is None:
         handler = logging.StreamHandler(sys.stdout)
     else:  # we have a filename
@@ -446,7 +446,7 @@ def setup_logging(
 
 
 def close_logging(delete_logs=True):
-    r"""Close logging and handlers for the test"""
+    r"""Close logging and handlers for the test."""
     logging.shutdown()
     if delete_logs:
         for handler in logging.getLogger().handlers:
@@ -459,7 +459,7 @@ def close_logging(delete_logs=True):
 
 
 def text_to_log_level(logging_text: str) -> int:
-    r"""Converts logging level description to an integer
+    r"""Converts logging level description to an integer.
 
     Parameters
     ----------
@@ -489,10 +489,10 @@ def text_to_log_level(logging_text: str) -> int:
 
 
 class CustomEncoder(json.JSONEncoder):
-    r"""Custom encoder for JSON string dumps"""
+    r"""Custom encoder for JSON string dumps."""
 
     def default(self, o):
-        r"""Override default behavior"""
+        r"""Override default behavior."""
         if isinstance(o, np.integer):
             return int(o)
         if isinstance(o, np.floating):

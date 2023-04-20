@@ -28,11 +28,11 @@ from elfpy.pricing_models.yieldspace import YieldspacePricingModel
 
 
 class TestCalcInGivenOut(unittest.TestCase):
-    """Unit tests for the calc_in_given_out function"""
+    """Unit tests for the calc_in_given_out function."""
 
     # TODO: Add tests for the full TradeResult object
     def test_calc_in_given_out_success(self):
-        """Success tests for calc_in_given_out"""
+        """Success tests for calc_in_given_out."""
         output_utils.setup_logging("test_calc_in_given_out")
         pricing_models: list[PricingModel] = [YieldspacePricingModel(), HyperdrivePricingModel()]
         success_test_cases = base_in_test_cases + pt_in_test_cases + pt_in_test_cases_hyperdrive_only
@@ -92,8 +92,7 @@ class TestCalcInGivenOut(unittest.TestCase):
         output_utils.close_logging()
 
     def test_calc_in_given_out_precision(self):
-        """
-        This test ensures that the pricing model can handle very extreme inputs
+        """This test ensures that the pricing model can handle very extreme inputs
         such as extremely small inputs with extremely large reserves.
         """
         output_utils.setup_logging("test_calc_in_given_out")
@@ -151,7 +150,7 @@ class TestCalcInGivenOut(unittest.TestCase):
     # TODO: This should be refactored to be a test for check_input_assertions and check_output_assertions
     # issue #57
     def test_calc_in_given_out_failure(self):
-        """Failure tests for calc_in_given_out"""
+        """Failure tests for calc_in_given_out."""
         output_utils.setup_logging("test_calc_in_given_out")
         pricing_models: list[PricingModel] = [YieldspacePricingModel(), HyperdrivePricingModel()]
         # Failure test cases.

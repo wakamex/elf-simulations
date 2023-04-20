@@ -23,16 +23,15 @@ PricingModel = TypeVar("PricingModel", bound="base_pm.PricingModel")
 
 
 class MarketActionType(Enum):
-    r"""
-    The descriptor of an action in a market
-    """
+    r"""The descriptor of an action in a market."""
+
     NULL_ACTION = "null action"
 
 
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
 class MarketAction(Generic[Action]):
-    r"""Market action specification"""
+    r"""Market action specification."""
 
     action_type: Enum  # these two variables are required to be set by the strategy
     wallet: wallet.Wallet  # the agent's wallet
@@ -41,25 +40,25 @@ class MarketAction(Generic[Action]):
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class MarketDeltas:
-    r"""Specifies changes to values in the market"""
+    r"""Specifies changes to values in the market."""
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class MarketActionResult:
-    r"""The result to a market of performing a trade"""
+    r"""The result to a market of performing a trade."""
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class MarketActionResultFP:
-    r"""The result to a market of performing a trade"""
+    r"""The result to a market of performing a trade."""
 
 
 @types.freezable(frozen=False, no_new_attribs=False)
 @dataclass
 class BaseMarketState:
-    r"""The state of an AMM
+    r"""The state of an AMM.
 
     Implements a class for all that that an AMM smart contract would hold or would have access to
     For example, reserve numbers are local state variables of the AMM.
@@ -72,12 +71,12 @@ class BaseMarketState:
 
     # TODO: have this be generic enough that any subclass can copy?
     def copy(self) -> BaseMarketState:
-        """Returns a new copy of self"""
+        """Returns a new copy of self."""
         raise NotImplementedError
 
 
 class Market(Generic[State, Deltas, PricingModel]):
-    r"""Market state simulator
+    r"""Market state simulator.
 
     Holds state variables for market simulation and executes trades.
     The Market class executes trades by updating market variables according to the given pricing model.
@@ -104,14 +103,14 @@ class Market(Generic[State, Deltas, PricingModel]):
         raise NotImplementedError
 
     def check_market_updates(self, market_deltas: Deltas) -> None:
-        """Check market update values to make sure they are valid"""
+        """Check market update values to make sure they are valid."""
         for key, value in market_deltas.__dict__.items():
             if value:  # check that it's instantiated and non-empty
                 value_to_check = value.amount if isinstance(value, types.Quantity) else value
                 assert np.isfinite(value_to_check), f"ERROR: market delta key {key} is not finite."
 
     def update_market(self, market_deltas: Deltas) -> None:
-        """Increments member variables to reflect current market conditions"""
+        """Increments member variables to reflect current market conditions."""
         self.check_market_updates(market_deltas)  # check that market deltas are valid
         self.market_state.apply_delta(market_deltas)
         elfpy.check_non_zero(self.market_state)  # check reserves are non-zero within precision threshold

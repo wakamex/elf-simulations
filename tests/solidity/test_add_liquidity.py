@@ -1,4 +1,4 @@
-"""Testing the Borrow Market"""
+"""Testing the Borrow Market."""
 
 import unittest
 
@@ -10,7 +10,7 @@ import elfpy.time as time
 
 
 class TestAddLiquidity(unittest.TestCase):
-    """Test adding liquidity to hyperdrive"""
+    """Test adding liquidity to hyperdrive."""
 
     contribution = 500_000_000
     target_apr = 0.05
@@ -41,13 +41,14 @@ class TestAddLiquidity(unittest.TestCase):
         self.alice.wallet.update(wallet_deltas)
 
     def test_add_liquidity_failure_zero_amount(self):
-        """Test adding zero liquidity fails"""
+        """Test adding zero liquidity fails."""
         with self.assertRaises(AssertionError):
             self.hyperdrive.add_liquidity(self.bob.wallet, 0)
 
     def test_add_liquidity_identical_lp_shares(self):
         """Test adding liquidity equal to the total liquidity of the pool creates the same number of
-        shares that are in the pool."""
+        shares that are in the pool.
+        """
         lp_supply_before = self.hyperdrive.market_state.lp_total_supply
 
         # Add liquidity with the same amount as the original contribution.
@@ -68,7 +69,8 @@ class TestAddLiquidity(unittest.TestCase):
 
     def test_add_liquidity_with_long_immediately(self):
         """Test adding liquidity when there is a long open.  LP should still get the same number of
-        shares as if there weren't any longs open."""
+        shares as if there weren't any longs open.
+        """
         lp_supply_before = self.hyperdrive.market_state.lp_total_supply
 
         # Celine opens a long.
@@ -98,7 +100,8 @@ class TestAddLiquidity(unittest.TestCase):
 
     def test_add_liquidity_with_short_immediately(self):
         """Test adding liquidity when there is a long short.  LP should still get the same number of
-        shares as if there weren't any shorts open."""
+        shares as if there weren't any shorts open.
+        """
         self.assertEqual(True, True)
         lp_supply_before = self.hyperdrive.market_state.lp_total_supply
 

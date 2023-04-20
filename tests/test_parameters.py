@@ -1,4 +1,4 @@
-"""Testing for the ElfPy package modules"""
+"""Testing for the ElfPy package modules."""
 from __future__ import annotations  # types are strings by default in 3.11
 
 import unittest
@@ -12,14 +12,14 @@ import elfpy.utils.outputs as output_utils  # utilities for file outputs
 
 
 class BaseParameterTest(unittest.TestCase):
-    """Generic Parameter Test class"""
+    """Generic Parameter Test class."""
 
     def run_base_trade_test(
         self,
         agent_policies,
         delete_logs=True,
     ):
-        """Assigns member variables that are useful for many tests"""
+        """Assigns member variables that are useful for many tests."""
         output_utils.setup_logging(log_filename=".logging/test_parameters.log", log_level=logging.DEBUG)
         config = simulators.Config()
         config.num_trading_days = 3
@@ -30,7 +30,7 @@ class BaseParameterTest(unittest.TestCase):
         return simulator
 
     def run_custom_parameters_test(self, agent_policies, expected_result, delete_logs=True):
-        """Test custom parameters passed to agent creation"""
+        """Test custom parameters passed to agent creation."""
         # create simulator with agent_policies
         simulator = self.run_base_trade_test(agent_policies=agent_policies, delete_logs=delete_logs)
         number_of_init_agents = 0  # count number of init agents so we can skip over them
@@ -49,16 +49,16 @@ class BaseParameterTest(unittest.TestCase):
 
 
 class CustomParameterTests(BaseParameterTest):
-    """Tests of custom parameters"""
+    """Tests of custom parameters."""
 
     def test_successfully_pass_custom_parameters(self):
-        """Test successfully setting to passsed in values"""
+        """Test successfully setting to passsed in values."""
         agent_policies = ["single_lp:amount_to_lp=200", "single_short:amount_to_trade=500"]
         expected_result = [{"amount_to_lp": 200}, {"amount_to_trade": 500}]
         self.run_custom_parameters_test(agent_policies=agent_policies, expected_result=expected_result)
 
     def test_failure_first_parameter_smaller(self):
-        """Test failure when first parameter is smaller"""
+        """Test failure when first parameter is smaller."""
         agent_policies = ["single_lp:amount_to_lp=199", "single_short:amount_to_trade=500"]
         expected_result = [{"amount_to_lp": 200}, {"amount_to_trade": 500}]
         exception_type = AssertionError
@@ -66,7 +66,7 @@ class CustomParameterTests(BaseParameterTest):
             self.run_custom_parameters_test(agent_policies=agent_policies, expected_result=expected_result)
 
     def test_failure_first_parameter_larger(self):
-        """Test failure when first parameter is larger"""
+        """Test failure when first parameter is larger."""
         agent_policies = ["single_lp:amount_to_lp=201", "single_short:amount_to_trade=500"]
         expected_result = [{"amount_to_lp": 200}, {"amount_to_trade": 500}]
         exception_type = AssertionError
@@ -74,7 +74,7 @@ class CustomParameterTests(BaseParameterTest):
             self.run_custom_parameters_test(agent_policies=agent_policies, expected_result=expected_result)
 
     def test_failure_second_parameter_smaller(self):
-        """Test failure when second parameter is smaller"""
+        """Test failure when second parameter is smaller."""
         agent_policies = ["single_lp:amount_to_lp=200", "single_short:amount_to_trade=499"]
         expected_result = [{"amount_to_lp": 200}, {"amount_to_trade": 500}]
         exception_type = AssertionError
@@ -82,7 +82,7 @@ class CustomParameterTests(BaseParameterTest):
             self.run_custom_parameters_test(agent_policies=agent_policies, expected_result=expected_result)
 
     def test_failure_second_parameter_larger(self):
-        """Test failure when second parameter is larger"""
+        """Test failure when second parameter is larger."""
         agent_policies = ["single_lp:amount_to_lp=200", "single_short:amount_to_trade=501"]
         expected_result = [{"amount_to_lp": 200}, {"amount_to_trade": 500}]
         exception_type = AssertionError
@@ -90,7 +90,7 @@ class CustomParameterTests(BaseParameterTest):
             self.run_custom_parameters_test(agent_policies=agent_policies, expected_result=expected_result)
 
     def test_failure_incorrect_first_parameter(self):
-        """Test failure when trying to assignt a parameter that doesn't exist"""
+        """Test failure when trying to assignt a parameter that doesn't exist."""
         agent_policies = ["single_lp:amount_to_lpx=200", "single_short:amount_to_trade=500"]
         expected_result = [{"amount_to_lp": 200}, {"amount_to_trade": 500}]
         exception_type = AttributeError
@@ -98,7 +98,7 @@ class CustomParameterTests(BaseParameterTest):
             self.run_custom_parameters_test(agent_policies=agent_policies, expected_result=expected_result)
 
     def test_failure_incorrect_second_parameter(self):
-        """Test failure when trying to assignt a parameter that doesn't exist"""
+        """Test failure when trying to assignt a parameter that doesn't exist."""
         agent_policies = ["single_lp:amount_to_lp=200", "single_short:amount_to_tradex=500"]
         expected_result = [{"amount_to_lp": 200}, {"amount_to_trade": 500}]
         exception_type = AttributeError

@@ -6,7 +6,7 @@ from elfpy.markets.hyperdrive import hyperdrive_actions, hyperdrive_market
 
 
 def get_wallet_state(agent_wallet: wallet.Wallet, market: hyperdrive_market.Market) -> dict[str, float]:
-    r"""The wallet's current state of public variables
+    r"""The wallet's current state of public variables.
 
     .. todo:: This will go away once we finish refactoring the state
     """

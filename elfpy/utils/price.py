@@ -1,4 +1,4 @@
-"""Utilities for price calculations"""
+"""Utilities for price calculations."""
 from __future__ import annotations  # types will be strings by default in 3.11
 
 import elfpy.time as time
@@ -7,8 +7,7 @@ from elfpy.utils.math import FixedPoint
 
 ### Spot Price and APR ###
 def calc_apr_from_spot_price(price: float, time_remaining: time.StretchedTime):
-    r"""
-    Returns the APR (decimal) given the current (positive) base asset price and the remaining pool duration
+    r"""Returns the APR (decimal) given the current (positive) base asset price and the remaining pool duration.
 
     Parameters
     ----------
@@ -35,8 +34,7 @@ def calc_apr_from_spot_price(price: float, time_remaining: time.StretchedTime):
 
 
 def calc_apr_from_spot_price_fp(price: FixedPoint, time_remaining: time.StretchedTimeFP):
-    r"""
-    Returns the APR (decimal) given the current (positive) base asset price and the remaining pool duration
+    r"""Returns the APR (decimal) given the current (positive) base asset price and the remaining pool duration.
 
     Parameters
     ----------
@@ -63,7 +61,7 @@ def calc_apr_from_spot_price_fp(price: FixedPoint, time_remaining: time.Stretche
 
 
 def calc_spot_price_from_apr(apr: float, time_remaining: time.StretchedTime):
-    r"""Returns the current spot price based on the current APR (decimal) and the remaining pool duration
+    r"""Returns the current spot price based on the current APR (decimal) and the remaining pool duration.
 
     Parameters
     ----------

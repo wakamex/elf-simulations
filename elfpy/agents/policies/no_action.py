@@ -1,4 +1,4 @@
-"""Base policy class
+"""Base policy class.
 
 Policies inherit from Users (thus each policy is assigned to a user)
 subclasses of BasicPolicy will implement trade actions
@@ -14,9 +14,9 @@ if TYPE_CHECKING:
 
 
 class Policy(agent.Agent):
-    """Most basic policy setup, which implements a noop agent that performs no action"""
+    """Most basic policy setup, which implements a noop agent that performs no action."""
 
     def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
-        """Returns an empty list, indicating now action"""
+        """Returns an empty list, indicating now action."""
         # pylint disable=unused-argument
         return []
