@@ -500,7 +500,7 @@ if __name__ == "__main__":
     simulator.add_agents(sim_agents)
     # Use agent 0 to initialize the chain market
     base_address = sol_agents["agent_0"].deploy(project.ERC20Mintable)  # type: ignore
-    base_ERC20 = project.ERC20Mintable.at(base_address)  # type: ignore
+    base_ERC20 = project.ERC20Mintable.at(base_address)  # type: ignore  # noqa: N816
     fixed_math_address = sol_agents["agent_0"].deploy(project.MockFixedPointMath)  # type: ignore
     fixed_math = project.MockFixedPointMath.at(fixed_math_address)  # type: ignore
     base_ERC20.mint(to_fixed_point(config.target_liquidity), sender=sol_agents["agent_0"])  # type: ignore

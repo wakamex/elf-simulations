@@ -338,7 +338,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=time.StretchedTimeFP(
                     days=FixedPoint("365.0"), time_stretch=FixedPoint("1.0"), normalizing_constant=FixedPoint("365.0")
                 ),
-                exception_type=(errors.DivisionByZero),
+                exception_type=(errors.DivisionByZeroError),
             ),
             CalcInGivenOutFailureTestCase(  # test 10
                 out=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),

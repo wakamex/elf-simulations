@@ -46,12 +46,12 @@ class TestCheckpoint(unittest.TestCase):
 
     def test_checkpoint_failure_future_checkpoint(self):
         """Test that creating a checkpoint in the future fails."""
-        with self.assertRaises(errors.InvalidCheckpointTime):
+        with self.assertRaises(errors.InvalidCheckpointTimeError):
             self.hyperdrive.checkpoint(self.block_time.time + self.hyperdrive.market_state.checkpoint_duration)
 
     def test_checkpoint_failure_invalid_checkpoint(self):
         """Test that creating checkpoint not evenly divisible by the checkpoint duration fails."""
-        with self.assertRaises(errors.InvalidCheckpointTime):
+        with self.assertRaises(errors.InvalidCheckpointTimeError):
             self.hyperdrive.checkpoint(self.block_time.time + self.hyperdrive.market_state.checkpoint_duration * 1.1)
 
     def test_checkpoint_preset_checkpoint(self):

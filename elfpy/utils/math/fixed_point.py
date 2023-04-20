@@ -111,7 +111,7 @@ class FixedPoint:
         if other is NotImplemented:
             return NotImplemented
         if other <= FixedPoint("0.0"):
-            raise errors.DivisionByZero
+            raise errors.DivisionByZeroError
         return FixedPoint(FixedPointMath.div_down(self.int_value, other.int_value))
 
     def __pow__(self, other: int | FixedPoint) -> FixedPoint:
@@ -186,7 +186,7 @@ class FixedPoint:
         if other is NotImplemented:
             return NotImplemented
         if other <= FixedPoint("0.0"):
-            raise errors.DivisionByZero
+            raise errors.DivisionByZeroError
         return FixedPoint(FixedPointMath.div_up(self.int_value, other.int_value))
 
 

@@ -567,7 +567,7 @@ class Market(
         )
         # slippage protection
         if max_deposit < agent_deltas.balance.amount:
-            raise errors.OutputLimit()
+            raise errors.OutputLimitError
         # apply deltas
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
@@ -689,7 +689,7 @@ class Market(
         if (checkpoint_time * 365) % (
             365 * self.market_state.checkpoint_duration
         ) > 0 or latest_checkpoint < checkpoint_time:
-            raise errors.InvalidCheckpointTime()
+            raise errors.InvalidCheckpointTimeError()
         # if the checkpoint time is the latest checkpoint, we use the current
         # share price. otherwise, we use a linear search to find the closest
         # share price and use that to perform the checkpoint.
@@ -848,7 +848,7 @@ class Market(
         wallet_deltas.balance.amount += base_proceeds
         # Enforce min user outputs
         if min_output > Decimal(base_proceeds):
-            raise errors.OutputLimit
+            raise errors.OutputLimitError
         return market_deltas, wallet_deltas
 
     def _withdraw(self, shares: float, as_underlying: bool) -> float:
@@ -869,7 +869,7 @@ class Market(
         """
         # This yield source doesn't accept the underlying since it's just base.
         if not as_underlying:
-            raise errors.UnsupportedOption
+            raise errors.UnsupportedOptionError
         # TODO: add step to accrue interest
         # Get the amount of base to transfer.
         amount_withdrawn = shares * self.market_state.share_price
