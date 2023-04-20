@@ -4,8 +4,8 @@ import unittest
 import elfpy.agents.agent as agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-import elfpy.types as types
 import elfpy.time as time
+import elfpy.types as types
 
 # pylint: disable=too-many-arguments
 # pylint: disable=duplicate-code

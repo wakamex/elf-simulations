@@ -1,21 +1,22 @@
 """Helper functions for delivering simulation outputs."""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from typing import TYPE_CHECKING
-import os
-import sys
 import json
 import logging
+import os
+import sys
 from logging.handlers import RotatingFileHandler
+from typing import TYPE_CHECKING
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib import gridspec
 
 import elfpy
 
 if TYPE_CHECKING:
-    from typing import Optional, Any
+    from typing import Any, Optional
+
     import pandas as pd
     from matplotlib.figure import Figure
     from matplotlib.gridspec import GridSpec

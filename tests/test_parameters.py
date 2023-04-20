@@ -1,12 +1,12 @@
 """Testing for the ElfPy package modules."""
 from __future__ import annotations  # types are strings by default in 3.11
 
-import unittest
 import logging
+import unittest
 
 import numpy as np
-
 import utils_for_tests as test_utils  # utilities for testing
+
 import elfpy.simulators.simulators as simulators
 import elfpy.utils.outputs as output_utils  # utilities for file outputs
 

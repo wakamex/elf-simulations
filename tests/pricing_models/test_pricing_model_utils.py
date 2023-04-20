@@ -1,6 +1,6 @@
 """Testing for the utility methods in the pricing models."""
-import unittest
 import logging
+import unittest
 from typing import Union
 
 import numpy as np

@@ -4,10 +4,10 @@ from __future__ import annotations  # types will be strings by default in 3.11
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional, Dict
+from typing import Dict, Optional
 
-import elfpy.markets.base as base_market
 import elfpy.agents.wallet as wallet
+import elfpy.markets.base as base_market
 import elfpy.pricing_models.base as base_pm
 import elfpy.types as types
 

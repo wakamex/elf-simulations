@@ -1,15 +1,15 @@
 """Testing for logging in the ElfPy package modules."""
 from __future__ import annotations  # types are strings by default in 3.11
 
-import unittest
-import logging
 import itertools
+import logging
 import os
 import sys
+import unittest
 
+import elfpy.utils.outputs as output_utils  # utilities for setting up a simulation
 from elfpy.simulators import simulators
 from elfpy.utils import sim_utils
-import elfpy.utils.outputs as output_utils  # utilities for setting up a simulation
 
 
 class TestLogging(unittest.TestCase):

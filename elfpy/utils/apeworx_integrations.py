@@ -1,9 +1,9 @@
 """Helper functions for integrating the sim repo with solidity contracts via Apeworx."""
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any, Optional
 
 import logging
+from typing import TYPE_CHECKING, Any, Optional
 
 # TODO: apeworx is not worxing with github actions when it is listed in requirements
 # and pyright doesn't like imports that aren't also in requirements.

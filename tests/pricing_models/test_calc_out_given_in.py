@@ -2,25 +2,24 @@
 from __future__ import annotations
 
 import decimal
-import unittest
 import logging
+import unittest
 
 import numpy as np
-
 from calc_test_dataclasses import (
+    CalcOutGivenInFailureTestCase,
+    CalcOutGivenInSuccessByModelTestResult,
     CalcOutGivenInSuccessTestCase,
     CalcOutGivenInSuccessTestResult,
-    CalcOutGivenInSuccessByModelTestResult,
-    CalcOutGivenInFailureTestCase,
 )
 
-import elfpy.types as types
 import elfpy.time as time
+import elfpy.types as types
 import elfpy.utils.outputs as output_utils
+from elfpy.markets.hyperdrive.hyperdrive_market import MarketState
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldspacePricingModel
-from elfpy.markets.hyperdrive.hyperdrive_market import MarketState
 
 # pylint: disable=duplicate-code
 # pylint: disable=too-many-lines

@@ -1,21 +1,21 @@
 """Testing for the ElfPy package modules."""
 from __future__ import annotations
-import builtins  # types are strings by default in 3.11
 
+import builtins  # types are strings by default in 3.11
 import logging
 import unittest
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from numpy.random import RandomState
 
-import elfpy.simulators.simulators as simulators
 import elfpy.agents.wallet as wallet
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
+import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+import elfpy.simulators.simulators as simulators
+import elfpy.types as types
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.sim_utils as sim_utils  # utilities for setting up a simulation
-import elfpy.types as types
 
 
 class TestSimulator(unittest.TestCase):

@@ -1,6 +1,7 @@
 """Testing for functions in elfpy/utils/post_processing.py."""
 
 import unittest
+
 import pandas as pd
 
 import elfpy.utils.post_processing as post_processing

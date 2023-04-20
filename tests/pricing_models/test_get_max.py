@@ -3,18 +3,18 @@ from __future__ import annotations
 
 import copy
 import logging
-from dataclasses import dataclass
 import unittest
-from elfpy.pricing_models.yieldspace import YieldspacePricingModel
+from dataclasses import dataclass
 
-import elfpy.pricing_models.trades as trades
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
-import elfpy.types as types
+import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+import elfpy.pricing_models.trades as trades
 import elfpy.time as time
+import elfpy.types as types
 import elfpy.utils.outputs as output_utils
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
+from elfpy.pricing_models.yieldspace import YieldspacePricingModel
 
 # pylint: disable=duplicate-code
 

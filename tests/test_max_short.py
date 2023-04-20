@@ -1,12 +1,11 @@
 """tests that attempting to 500 and 5000 PTs against liquidity of $200 is scaled down properly, with and without init_lp."""
 from __future__ import annotations  # types are strings by default in 3.11
 
-import unittest
 import logging
-
-from pytest import skip
+import unittest
 
 import utils_for_tests as test_utils  # utilities for testing
+from pytest import skip
 
 import elfpy.simulators.simulators as simulators
 import elfpy.utils.outputs as output_utils  # utilities for file outputs

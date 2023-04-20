@@ -5,18 +5,18 @@ matplotlib.use("Agg")  # headless backend so that plots won't render
 
 # pylint: disable=wrong-import-order
 # pylint: disable=wrong-import-position
-import unittest
+import ast
 import builtins
 import logging
 import os
 import pathlib
-import ast
 import tempfile
-from contextlib import redirect_stdout, redirect_stderr
+import unittest
+from contextlib import redirect_stderr, redirect_stdout
 
 import astunparse
-from IPython.core.inputtransformer2 import TransformerManager
 import nbformat
+from IPython.core.inputtransformer2 import TransformerManager
 
 import elfpy.utils.outputs as output_utils
 

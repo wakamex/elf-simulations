@@ -1,7 +1,7 @@
 """User strategy that opens a long position and then closes it after a certain amount of time has passed."""
+import elfpy.agents.agent as agent
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.agents.agent as agent
 import elfpy.types as types
 
 # pylint: disable=too-many-arguments

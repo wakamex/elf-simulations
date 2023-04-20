@@ -43,15 +43,17 @@ extend-exclude = "\\.ipynb"
 exclude = ["hyperdrive_solidity"]
 
 [tool.ruff]
-# Enable pycodestyle (E) and Pyflakes (F) codes by default.
+# Default is: pycodestyle (E) and Pyflakes (F)
 # We add flake8-builtins (A), pydocstyle (D), isort (I),
 # pep8-naming (N), flake8-unused-arguments (ARG), and pylint (PL).
-# select = ["A", "D", "E", "F", "I", "N", "ARG", "PL"]
-select = ["D"]
+# We remove pycodestyle (E) since it throws erroneous line too long errors.
+# We remove Pyflakes (F) since it complains about `import *` which we need.
+# select = ["A", "D", "I", "N", "ARG", "PL"]
+select = ["I"]
 ignore = []
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.
-fixable = ["D"]
+fixable = ["I"]
 # fixable = [
 #     "A",   # flake8-builtins
 #     "B",   # flake8-bugbear
