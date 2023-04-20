@@ -14,6 +14,7 @@ class FixedPoint:
     """New fixed-point datatype."""
 
     int_value: int  # integer representation of self
+    decimal_places = 18  # number of decimal places
 
     def __init__(self, value: Union[FixedPoint, float, int, str], decimal_places: int = 18, signed: bool = True):
         """Store fixed-point properties."""
@@ -22,8 +23,8 @@ class FixedPoint:
             raise NotImplementedError("Only signed FixedPoint ints are supported.")
         self.signed = signed
         # TODO: support non-default decimal values
-        if decimal_places != 18:
-            raise NotImplementedError("Only 18 decimal precision FixedPoint ints are supported.")
+        if decimal_places != self.decimal_places:
+            raise NotImplementedError(f"Only {self.decimal_places} decimal precision FixedPoint ints are supported.")
         self.decimal_places = decimal_places
         if isinstance(value, float):
             # round with one extra precision then int truncates

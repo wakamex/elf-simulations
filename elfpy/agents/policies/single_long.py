@@ -17,10 +17,11 @@ class Policy(agent.Agent):
         """Specify action."""
         longs = list(self.wallet.longs.values())
         has_opened_long = len(longs) > 0
+        time_to_wait_until_closing = 0.01
         action_list = []
         if has_opened_long:
             mint_time = list(self.wallet.longs)[-1]
-            enough_time_has_passed = market.block_time.time - mint_time > 0.01
+            enough_time_has_passed = market.block_time.time - mint_time > time_to_wait_until_closing
             if enough_time_has_passed:
                 action_list.append(
                     types.Trade(
