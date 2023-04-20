@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Optional
 # pylint: disable=import-error
 import ape  # type: ignore[reportMissingImports]
 
-import elfpy.markets.hyperdrive.hyperdrive_assets as hyperdrive_assets
+from elfpy.markets.hyperdrive import hyperdrive_assets
 
 if TYPE_CHECKING:
     from ape.api.accounts import AccountAPI  # type: ignore[reportMissingImports]

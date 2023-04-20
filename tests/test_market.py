@@ -5,11 +5,11 @@ import unittest
 
 import numpy as np
 
-import elfpy.markets.borrow as borrow
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+from elfpy.markets import borrow
+from elfpy.markets.hyperdrive import hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.yieldspace as yieldspace_pm
-import elfpy.time as time
+from elfpy import time
 
 
 class BaseMarketTest(unittest.TestCase):

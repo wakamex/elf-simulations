@@ -1,8 +1,8 @@
 """User strategy that adds base liquidity and doesn't remove until liquidation."""
-import elfpy.agents.agent as agent
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.types as types
+from elfpy.agents import agent
+from elfpy.markets.hyperdrive import hyperdrive_actions
+from elfpy.markets.hyperdrive import hyperdrive_market
+from elfpy import types
 
 # TODO: the init calls are replicated across each strategy, which looks like duplicate code
 #     this should be resolved once we fix user inheritance

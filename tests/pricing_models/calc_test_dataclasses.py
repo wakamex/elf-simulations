@@ -5,8 +5,8 @@ import builtins
 from dataclasses import dataclass
 from typing import Optional, Type
 
-import elfpy.time as time
-import elfpy.types as types
+from elfpy import time
+from elfpy import types
 from elfpy.markets.hyperdrive.hyperdrive_market import MarketState
 
 

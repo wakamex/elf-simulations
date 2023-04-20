@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 import elfpy
-import elfpy.types as types
+from elfpy import types
 
 if TYPE_CHECKING:
     from typing import Any, Iterable

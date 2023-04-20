@@ -8,12 +8,12 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 import numpy as np
 
 import elfpy
-import elfpy.types as types
+from elfpy import types
 
 if TYPE_CHECKING:
-    import elfpy.agents.wallet as wallet
+    from elfpy.agents import wallet
     import elfpy.pricing_models.base as base_pm
-    import elfpy.time as time
+    from elfpy import time
 
 # all 1subclasses of Market need to pass subclasses of MarketAction, MarketState and MarketDeltas
 Action = TypeVar("Action", bound="MarketAction")

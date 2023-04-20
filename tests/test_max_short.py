@@ -7,7 +7,7 @@ import unittest
 import utils_for_tests as test_utils  # utilities for testing
 from pytest import skip
 
-import elfpy.simulators.simulators as simulators
+from elfpy.simulators import simulators
 import elfpy.utils.outputs as output_utils  # utilities for file outputs
 
 # TODO: rewrite these tests wthout the simulator, and actually verify values are correct or at least

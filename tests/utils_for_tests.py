@@ -3,8 +3,8 @@ from __future__ import annotations  # types are strings by default in 3.11
 
 import logging
 
-import elfpy.simulators as simulators
-import elfpy.utils.sim_utils as sim_utils
+from elfpy import simulators
+from elfpy.utils import sim_utils
 
 # TODO: review these helper functions for inclusion into the package under elfpy/utils
 # left to be reviewed when we add new examples that will live inside the package

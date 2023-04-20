@@ -8,15 +8,15 @@ from typing import TYPE_CHECKING, Literal, Optional
 
 import numpy as np
 
-import elfpy.agents.wallet as wallet
+from elfpy.agents import wallet
 import elfpy.markets.base as base_market
-import elfpy.time as time
-import elfpy.types as types
+from elfpy import time
+from elfpy import types
 from elfpy.utils.math import FixedPoint
 from elfpy.utils.math.update_weighted_average import update_weighted_average
 
 if TYPE_CHECKING:
-    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+    from elfpy.markets.hyperdrive import hyperdrive_market
 
 
 # TODO: clean up to avoid these

@@ -6,13 +6,13 @@ import unittest
 
 import numpy as np
 
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+from elfpy.markets.hyperdrive import hyperdrive_actions
+from elfpy.markets.hyperdrive import hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-import elfpy.simulators.simulators as simulators
-import elfpy.time as time
+from elfpy.simulators import simulators
+from elfpy import time
 import elfpy.utils.outputs as output_utils
-import elfpy.utils.sim_utils as sim_utils
+from elfpy.utils import sim_utils
 
 # pylint: disable=too-many-locals
 

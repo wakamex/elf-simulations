@@ -5,7 +5,7 @@ import unittest
 
 import numpy as np
 
-import elfpy.time as time
+from elfpy import time
 
 
 class TestTimeUtils(unittest.TestCase):

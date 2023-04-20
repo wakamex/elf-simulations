@@ -7,7 +7,7 @@ import unittest
 import numpy as np
 import utils_for_tests as test_utils  # utilities for testing
 
-import elfpy.simulators.simulators as simulators
+from elfpy.simulators import simulators
 import elfpy.utils.outputs as output_utils  # utilities for file outputs
 
 

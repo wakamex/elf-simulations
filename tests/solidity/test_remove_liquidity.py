@@ -3,10 +3,10 @@ import unittest
 
 import numpy as np
 
-import elfpy.agents.agent as agent
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+from elfpy.agents import agent
+from elfpy.markets.hyperdrive import hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-import elfpy.time as time
+from elfpy import time
 
 # pylint: disable=too-many-arguments
 # pylint: disable=duplicate-code

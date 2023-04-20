@@ -44,16 +44,15 @@ exclude = ["hyperdrive_solidity"]
 
 [tool.ruff]
 # Default is: pycodestyle (E) and Pyflakes (F)
-# We add flake8-builtins (A), pydocstyle (D), isort (I),
-# pep8-naming (N), flake8-unused-arguments (ARG), and pylint (PL).
+# We add flake8-builtins (A), pydocstyle (D), isort (I), pep8-naming (N), and pylint (PL).
 # We remove pycodestyle (E) since it throws erroneous line too long errors.
 # We remove Pyflakes (F) since it complains about `import *` which we need.
-# select = ["A", "D", "I", "N", "ARG", "PL"]
-select = ["N"]
+# select = ["A", "D", "I", "N", "PL"]
+select = ["PL"]
 ignore = []
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.
-fixable = ["N"]
+fixable = ["PL"]
 # fixable = [
 #     "A",   # flake8-builtins
 #     "B",   # flake8-bugbear
@@ -103,7 +102,11 @@ unfixable = []
 
 exclude = ["hyperdrive_solidity", "docs"]
 
-per-file-ignores = { "elfpy/utils/math/fixed_point.py" = ["A003"] }
+per-file-ignores = { "elfpy/utils/math/fixed_point.py" = [
+    "A003",
+], "tests/*" = [
+    "PLR2004",
+] }
 
 # Ignore builtins in elfpy/utils/math/fixed_point.py
 line-length = 120

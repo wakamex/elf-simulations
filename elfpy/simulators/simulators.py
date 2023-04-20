@@ -10,15 +10,15 @@ import numpy as np
 import pandas as pd
 from numpy.random._generator import Generator as NumpyGenerator
 
-import elfpy.agents.wallet as wallet
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
-import elfpy.time as time
-import elfpy.types as types
+from elfpy.agents import wallet
+from elfpy.markets.hyperdrive import hyperdrive_actions
+from elfpy import time
+from elfpy import types
 import elfpy.utils.outputs as output_utils
 from elfpy.agents.get_wallet_state import get_wallet_state
 
 if TYPE_CHECKING:
-    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+    from elfpy.markets.hyperdrive import hyperdrive_market
     from elfpy.agents.agent import Agent
 
 

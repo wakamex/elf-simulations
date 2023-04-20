@@ -4,7 +4,7 @@ import unittest
 
 import pandas as pd
 
-import elfpy.utils.post_processing as post_processing
+from elfpy.utils import post_processing
 
 
 class PostProcessingTests(unittest.TestCase):

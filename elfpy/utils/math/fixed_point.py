@@ -4,7 +4,7 @@ from __future__ import annotations
 import copy
 from typing import Union
 
-import elfpy.errors.errors as errors
+from elfpy.errors import errors
 
 # we will use single letter names for this class since all functions do basic arithmetic
 # pylint: disable=invalid-name

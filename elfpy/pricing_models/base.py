@@ -7,14 +7,14 @@ from decimal import Decimal, getcontext
 from typing import TYPE_CHECKING
 
 import elfpy
-import elfpy.pricing_models.trades as trades
-import elfpy.time as time
-import elfpy.types as types
+from elfpy.pricing_models import trades
+from elfpy import time
+from elfpy import types
 import elfpy.utils.price as price_utils
 from elfpy.utils.math import FixedPoint
 
 if TYPE_CHECKING:
-    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+    from elfpy.markets.hyperdrive import hyperdrive_market
 
 
 # Set the Decimal precision to be higher than the default of 28. This ensures

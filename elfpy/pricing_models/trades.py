@@ -1,9 +1,9 @@
 """Trade related classes and functions."""
 from dataclasses import dataclass
 
-import elfpy.agents.agent as agent
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
-import elfpy.types as types
+from elfpy.agents import agent
+from elfpy.markets.hyperdrive import hyperdrive_actions
+from elfpy import types
 from elfpy.utils.math import FixedPoint
 
 

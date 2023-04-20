@@ -7,8 +7,8 @@ import unittest
 import numpy as np
 
 import elfpy.markets.borrow as borrow_market
-import elfpy.time as time
-import elfpy.types as types
+from elfpy import time
+from elfpy import types
 import elfpy.utils.outputs as output_utils
 
 

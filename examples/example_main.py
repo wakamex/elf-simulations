@@ -10,15 +10,15 @@ from stochastic.processes import GeometricBrownianMotion
 
 # elfpy core repo
 import elfpy
-import elfpy.agents.agent as agent
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
-import elfpy.simulators as simulators
-import elfpy.types as types
+from elfpy.agents import agent
+from elfpy.markets.hyperdrive import hyperdrive_actions
+from elfpy import simulators
+from elfpy import types
 import elfpy.utils.outputs as output_utils
-import elfpy.utils.sim_utils as sim_utils
+from elfpy.utils import sim_utils
 
 if TYPE_CHECKING:
-    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+    from elfpy.markets.hyperdrive import hyperdrive_market
 
 
 # pylint: disable=duplicate-code

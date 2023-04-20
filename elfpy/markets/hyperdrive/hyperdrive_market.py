@@ -9,13 +9,13 @@ from decimal import Decimal
 
 import numpy as np
 
-import elfpy.agents.wallet as wallet
-import elfpy.errors.errors as errors
+from elfpy.agents import wallet
+from elfpy.errors import errors
 import elfpy.markets.base as base_market
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
+from elfpy.markets.hyperdrive import hyperdrive_actions
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-import elfpy.time as time
-import elfpy.types as types
+from elfpy import time
+from elfpy import types
 import elfpy.utils.price as price_utils
 from elfpy.utils.math import FixedPoint
 

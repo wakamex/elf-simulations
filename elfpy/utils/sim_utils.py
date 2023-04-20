@@ -4,14 +4,14 @@ from __future__ import annotations  # types will be strings by default in 3.11
 from importlib import import_module
 from typing import TYPE_CHECKING, Optional
 
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+from elfpy.markets.hyperdrive import hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-import elfpy.simulators as simulators
-import elfpy.time as time
+from elfpy import simulators
+from elfpy import time
 
 if TYPE_CHECKING:
-    import elfpy.agents.wallet as wallet
-    import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
+    from elfpy.agents import wallet
+    from elfpy.markets.hyperdrive import hyperdrive_actions
     from elfpy.agents.agent import Agent
     from elfpy.agents.policies.no_action import Policy
 

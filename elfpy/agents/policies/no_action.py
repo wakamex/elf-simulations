@@ -7,11 +7,11 @@ from __future__ import annotations  # types will be strings by default in 3.11
 
 from typing import TYPE_CHECKING
 
-import elfpy.agents.agent as agent
-import elfpy.types as types
+from elfpy.agents import agent
+from elfpy import types
 
 if TYPE_CHECKING:
-    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+    from elfpy.markets.hyperdrive import hyperdrive_market
 
 
 class Policy(agent.Agent):
