@@ -383,7 +383,7 @@ def format_axis(
     axis_handle.set_xlabel(xlabel)
     axis_handle.tick_params(axis="both", labelsize=fontsize)
     axis_handle.grid(visible=True, linestyle=linestyle, linewidth=linewidth, color=color, which=which, axis=axis)
-    if xlabel == "":
+    if not xlabel:
         axis_handle.xaxis.set_ticklabels([])
     axis_handle.legend(fontsize=fontsize)
 
@@ -431,7 +431,7 @@ def setup_logging(
         log_dir, log_name = os.path.split(log_filename)
         if not log_name.endswith(".log"):
             log_name += ".log"
-        if log_dir == "":  # we have just a filename, log to default .logging directory
+        if not log_dir:  # we have just a filename, log to default .logging directory
             base_folder = os.path.dirname(os.path.dirname(os.path.abspath(elfpy.__file__)))
             log_dir = os.path.join(base_folder, ".logging")
         if not os.path.exists(log_dir):  # create log_dir if necessary
