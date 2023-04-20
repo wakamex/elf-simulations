@@ -73,3 +73,7 @@ dmypy.json
 
 # pycharm
 .idea
+
+# elfpy specific files (storing data for tests)
+random_seed.txt
+no_crash.txt

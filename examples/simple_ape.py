@@ -13,14 +13,6 @@ from ape.contracts import ContractInstance
 from dotenv import load_dotenv
 from elfpy.utils.format_number import format_number as fmt
 import matplotlib.pyplot as plt
-
-# get darkmode from my gitlab
-url = "https://git.mihaicosma.com/mihaico/darkmode/-/raw/main/darkmode_orange.py"
-import requests
-
-with open("darkmode_orange.py", "w", encoding="utf-8") as file:
-    file.write(requests.get(url).text)
-
 import darkmode_orange
 
 load_dotenv()
@@ -31,8 +23,6 @@ ours = [
     "0xFed2c446A218d26477b78f652B252a400F929436",
     "0x4612E8A93E2e089d074c25F41F3b11D853718f68",
 ]
-
-# pylint: disable=unnecessary-dunder-call
 
 
 # %% Helper functions
@@ -64,9 +54,7 @@ def get_gas_fee_stats(
 
 
 # %% Set up ape
-provider: ProviderAPI = ape.networks.parse_network_choice(
-    "ethereum:goerli:alchemy", provider_settings={"port": 8548}
-).__enter__()
+provider: ProviderAPI = ape.networks.parse_network_choice("ethereum:goerli:alchemy").__enter__()
 provider.network.config.goerli.required_confirmations = 1
 project_root = Path.cwd()
 project = ape.Project(path=project_root)
@@ -131,5 +119,3 @@ for txn in our_txns:  # plot em!
     axs[1].axvline(txn.max_priority_fee / 1e9, color="white", linestyle="solid") if txn.max_priority_fee else None
 axs[0].legend(prop={"size": 14}, loc="upper center")
 axs[1].legend(prop={"size": 14}, loc="upper center")
-
-# %%
