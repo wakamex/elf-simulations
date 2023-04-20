@@ -57,6 +57,9 @@ def get_gas_fee_stats(
 provider: ProviderAPI = ape.networks.parse_network_choice("ethereum:goerli:alchemy").__enter__()
 provider.network.config.goerli.required_confirmations = 1
 project_root = Path.cwd()
+# if current folder is examples, move up one
+if project_root.name == "examples":
+    project_root = project_root.parent
 project = ape.Project(path=project_root)
 
 # %% Hyperdrive specific stuff
@@ -77,7 +80,7 @@ block_time = latest_block.timestamp
 _max_max_fee, _avg_max_fee, _max_priority_fee, _avg_priority_fee = get_gas_fee_stats(latest_block)
 
 # %% Get gas for a specific block
-BLOCK_NUMBER = 8856830
+BLOCK_NUMBER = 8860229
 max_fees, priority_fees = get_gas_fees(BLOCK_NUMBER)
 
 # %% Plot gas
@@ -100,7 +103,6 @@ ax.hist(
     label=["Priority fee (gwei)"],
 )
 
-# find our transactions
 our_txns = [txn for txn in ape.chain.blocks[BLOCK_NUMBER].transactions if txn.sender in ours]
 for txn in our_txns:  # plot em!
     print(f"found our txn from {txn.sender} with hash")
@@ -114,8 +116,7 @@ for txn in our_txns:  # plot em!
             print(f" => {k}: {fmt(v)}")
         else:
             print(f" => {k}: {v}")
-    axs[0].axvline(txn.max_fee / 1e9, color="white", linestyle="solid") if txn.max_fee else None
-    axs[0].axvline(txn.gas_price / 1e9, color="white", linestyle="solid") if txn.gas_price else None
-    axs[1].axvline(txn.max_priority_fee / 1e9, color="white", linestyle="solid") if txn.max_priority_fee else None
+    axs[0].axvline(txn.max_fee / 1e9, color="yellow", linestyle="solid", label="ours") if txn.max_fee else None
+    axs[1].axvline(txn.max_priority_fee / 1e9, color="yellow", linestyle="solid", label="ours") if txn.max_priority_fee else None
 axs[0].legend(prop={"size": 14}, loc="upper center")
-axs[1].legend(prop={"size": 14}, loc="upper center")
+axs[1].legend(prop={"size": 14}, loc="upper center");
