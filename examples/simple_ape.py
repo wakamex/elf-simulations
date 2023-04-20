@@ -11,10 +11,8 @@ from ape import Contract
 from ape.api import BlockAPI, ProviderAPI
 from ape.contracts import ContractInstance
 from dotenv import load_dotenv
-from elfpy.utils.fmt import fmt
+from elfpy.utils.format_number import format_number as fmt
 import matplotlib.pyplot as plt
-import numpy as np
-from elfpy.utils.fmt import fmt
 
 # get darkmode from my gitlab
 url = "https://git.mihaicosma.com/mihaico/darkmode/-/raw/main/darkmode_orange.py"
