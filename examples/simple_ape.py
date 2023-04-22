@@ -4,6 +4,7 @@ from __future__ import annotations  # types will be strings by default in 3.11
 # stdlib
 from pathlib import Path
 from typing import Optional, List
+from time import time
 
 # external lib
 import ape
@@ -11,8 +12,8 @@ from ape import Contract
 from ape.api import BlockAPI, ProviderAPI
 from ape.contracts import ContractInstance
 from dotenv import load_dotenv
-from elfpy.utils.format_number import format_number as fmt
 import matplotlib.pyplot as plt
+from elfpy.utils.format_number import format_number as fmt
 import darkmode_orange
 
 load_dotenv()
@@ -73,6 +74,16 @@ for k, v in hyper_config.items():
     print(f" {k}: {fmt(v/divisor)}")
 hyper_config["term_length"] = 365  # days
 
+# %% Print all ABIs in our project
+start_time = time()
+Path("abi").mkdir(parents=True, exist_ok=True)
+for name, contract in project.contracts.items():
+    # print(f"{name}: {contract=}")
+    with open(f"abi/{name}.json", "w", encoding="utf-8") as f:
+        for abi in contract.abi:
+            f.write(f"{abi.json()}\n")
+print(f"Wrote all ABIs in {time() - start_time:.2f}s")
+
 # %% Do stuff
 latest_block = ape.chain.blocks[-1]
 block_number = latest_block.number or 0
@@ -117,6 +128,8 @@ for txn in our_txns:  # plot em!
         else:
             print(f" => {k}: {v}")
     axs[0].axvline(txn.max_fee / 1e9, color="yellow", linestyle="solid", label="ours") if txn.max_fee else None
-    axs[1].axvline(txn.max_priority_fee / 1e9, color="yellow", linestyle="solid", label="ours") if txn.max_priority_fee else None
+    axs[1].axvline(
+        txn.max_priority_fee / 1e9, color="yellow", linestyle="solid", label="ours"
+    ) if txn.max_priority_fee else None
 axs[0].legend(prop={"size": 14}, loc="upper center")
-axs[1].legend(prop={"size": 14}, loc="upper center");
+axs[1].legend(prop={"size": 14}, loc="upper center")

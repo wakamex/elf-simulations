@@ -30,9 +30,7 @@ requires = ["flit_core>=3.2"]
 build-backend = "flit_core.buildapi"
 
 [tool.pytest.ini_options]
-addopts = [
-    "--import-mode=importlib",
-]
+addopts = ["--import-mode=importlib"]
 
 [tool.pylint.format]
 max-line-length = "120"
@@ -42,6 +40,34 @@ line-length = "120"
 extend-exclude = "\\.ipynb"
 
 [tool.pyright]
-exclude = [
-    "hyperdrive_solidity",
-]
+exclude = ["hyperdrive_solidity"]
+
+[tool.ruff]
+# Default is: pycodestyle (E) and Pyflakes (F)
+# We add flake8-builtins (A), pydocstyle (D), isort (I), pep8-naming (N), and pylint (PL).
+# We remove pycodestyle (E) since it throws erroneous line too long errors.
+# We remove Pyflakes (F) since it complains about `import *` which we need.
+select = ["A", "D", "I", "N", "PL"]
+ignore = []
+
+# Allow autofix for all enabled rules (when `--fix`) is provided.
+fixable = ["A", "D", "I", "N", "PL"]
+unfixable = []
+
+exclude = ["hyperdrive_solidity", "docs"]
+
+# override pow in fixed_point, and allow literal comparison in tests
+per-file-ignores = { "elfpy/utils/math/fixed_point.py" = [
+    "A003",
+], "tests/*" = [
+    "PLR2004",
+] }
+
+# Ignore builtins in elfpy/utils/math/fixed_point.py
+line-length = 120
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+# Assume Python 3.9.
+target-version = "py39"
