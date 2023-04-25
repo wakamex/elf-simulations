@@ -2,7 +2,7 @@
 from __future__ import annotations  # types will be strings by default in 3.11
 
 import logging
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING
 
 import elfpy.agents.wallet as wallet
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
@@ -11,8 +11,6 @@ import elfpy.types as types
 if TYPE_CHECKING:
     import elfpy.markets.base as base_market
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-
-AgentType = TypeVar("AgentType", bound="Agent")  # pylint: disable=invalid-name
 
 
 class Agent:

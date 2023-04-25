@@ -9,7 +9,7 @@ import logging
 import os
 from pathlib import Path
 from time import sleep
-from typing import cast, Optional, Generic, Type
+from typing import cast, Optional, Type
 from collections import namedtuple
 from dataclasses import dataclass
 
@@ -258,13 +258,13 @@ def get_argparser() -> argparse.ArgumentParser:
 
 
 @dataclass
-class BotInfo(Generic[agentlib.AgentType]):
+class BotInfo:
     """Information about a bot."""
 
     Budget = namedtuple("Budget", ["mean", "std", "min", "max"])
     Risk = namedtuple("Risk", ["mean", "std", "min", "max"])
 
-    policy: Type[agentlib.AgentType]
+    policy: Type[agentlib.Agent]
     trade_chance: float = 0.1
     risk_threshold: Optional[float] = None
     budget: Budget = Budget(mean=5_000, std=2_000, min=1_000, max=10_000)
