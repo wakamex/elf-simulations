@@ -1,11 +1,11 @@
 """Helper functions for integrating the sim repo with solidity contracts via Apeworx"""
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple, Union
 from pathlib import Path
 
 import logging
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
 from ape.types import AddressType
 from ape.exceptions import TransactionError
@@ -14,10 +14,9 @@ from ape.contracts import ContractContainer
 from ape.managers.project import ProjectManager
 from ape.contracts.base import ContractTransaction, ContractTransactionHandler
 import numpy as np
-
+from elfpy.markets.hyperdrive import hyperdrive_assets, hyperdrive_market
 from elfpy.utils.outputs import number_to_string as fmt
 from elfpy.utils.outputs import log_and_show
-import elfpy.markets.hyperdrive.hyperdrive_assets as hyperdrive_assets
 
 if TYPE_CHECKING:
     from ape.api.accounts import AccountAPI
@@ -46,6 +45,75 @@ class HyperdriveProject(ProjectManager):
     def get_hyperdrive_contract(self) -> ContractInstance:
         """Get the Hyperdrive contract instance."""
         return self.hyperdrive.at(self.conversion_manager.convert(self.address, AddressType))
+
+
+def get_market_state_from_contract(
+    contract: ContractInstance, block: Optional[BlockAPI] = None, block_number: Optional[Union[int, float]] = None
+) -> hyperdrive_market.MarketState:
+    """Return the current market state from the smart contract.
+
+    Parameters
+    ----------
+    contract: `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
+        Contract pointing to the initialized MockHyperdriveTestnet smart contract.
+
+    Returns
+    -------
+    hyperdrive_market.MarketState
+    """
+    if block is None and block_number is None:
+        pool_state = contract.getPoolInfo().__dict__
+        hyper_config = contract.getPoolConfig().__dict__
+    elif block is not None:
+        pool_state = contract.getPoolInfo(block=block).__dict__
+        hyper_config = contract.getPoolConfig(block=block).__dict__
+    else:
+        pool_state = contract.getPoolInfo(block_number=block_number).__dict__
+        hyper_config = contract.getPoolConfig(block_number=block_number).__dict__
+    hyper_config["timeStretch"] = 1 / (hyper_config["timeStretch"] / 1e18)
+    hyper_config["term_length"] = 365  # days
+    asset_id = hyperdrive_assets.encode_asset_id(
+        hyperdrive_assets.AssetIdPrefix.WITHDRAWAL_SHARE, hyper_config["positionDuration"]
+    )
+    total_supply_withdraw_shares = contract.balanceOf(asset_id, contract.address)
+
+    return hyperdrive_market.MarketState(
+        lp_total_supply=to_floating_point(pool_state["lpTotalSupply"]),
+        share_reserves=to_floating_point(pool_state["shareReserves"]),
+        bond_reserves=to_floating_point(pool_state["bondReserves"]),
+        base_buffer=to_floating_point(pool_state["longsOutstanding"]),  # so do we not need any buffers now?
+        # TODO: bond_buffer=0,
+        variable_apr=0.01,  # TODO: insert real value
+        share_price=to_floating_point(pool_state["sharePrice"]),
+        init_share_price=to_floating_point(hyper_config["initialSharePrice"]),
+        curve_fee_multiple=to_floating_point(hyper_config["curveFee"]),
+        flat_fee_multiple=to_floating_point(hyper_config["flatFee"]),
+        governance_fee_multiple=to_floating_point(hyper_config["governanceFee"]),
+        longs_outstanding=to_floating_point(pool_state["longsOutstanding"]),
+        shorts_outstanding=to_floating_point(pool_state["shortsOutstanding"]),
+        long_average_maturity_time=to_floating_point(pool_state["longAverageMaturityTime"]),
+        short_average_maturity_time=to_floating_point(pool_state["shortAverageMaturityTime"]),
+        long_base_volume=to_floating_point(pool_state["longBaseVolume"]),
+        short_base_volume=to_floating_point(pool_state["shortBaseVolume"]),
+        # TODO: checkpoints=defaultdict
+        checkpoint_duration=hyper_config["checkpointDuration"],
+        total_supply_longs=defaultdict(float, {0: to_floating_point(pool_state["longsOutstanding"])}),
+        total_supply_shorts=defaultdict(float, {0: to_floating_point(pool_state["shortsOutstanding"])}),
+        total_supply_withdraw_shares=to_floating_point(total_supply_withdraw_shares),
+        withdraw_shares_ready_to_withdraw=to_floating_point(pool_state["withdrawalSharesReadyToWithdraw"]),
+        withdraw_capital=to_floating_point(pool_state["capital"]),
+        withdraw_interest=to_floating_point(pool_state["interest"]),
+    )
+
+
+def to_fixed_point(float_var, decimal_places=18):
+    """Convert floating point argument to fixed point with specified number of decimals."""
+    return int(float_var * 10**decimal_places)
+
+
+def to_floating_point(float_var, decimal_places=18):
+    """Convert fixed point argument to floating point with specified number of decimals."""
+    return float(float_var / 10**decimal_places)
 
 
 def get_gas_fees(block: BlockAPI) -> tuple[float, float, float, float]:

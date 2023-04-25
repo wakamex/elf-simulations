@@ -7,7 +7,6 @@ import argparse
 import json
 import logging
 import os
-from collections import defaultdict
 from pathlib import Path
 from time import sleep
 from typing import cast
@@ -30,11 +29,12 @@ import elfpy.agents.agent as agentlib
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.utils.apeworx_integrations as ape_utils
 import elfpy.utils.outputs as output_utils
+from elfpy.utils.apeworx_integrations import to_fixed_point, to_fixed_point
 from elfpy.utils.outputs import number_to_string as fmt
 from elfpy.utils.outputs import log_and_show
 from elfpy import simulators, time, types
 from elfpy.agents.policies import random_agent
-from elfpy.markets.hyperdrive import hyperdrive_actions, hyperdrive_assets, hyperdrive_market
+from elfpy.markets.hyperdrive import hyperdrive_actions, hyperdrive_market
 
 load_dotenv(dotenv_path=f"{Path.cwd() if Path.cwd().name != 'examples' else Path.cwd().parent}/.env")
 
@@ -348,63 +348,6 @@ def get_agents():  # sourcery skip: merge-dict-assign, use-fstring-for-concatena
     return _sim_agents, _dev_accounts
 
 
-def to_fixed_point(float_var, decimal_places=18):
-    """Convert floating point argument to fixed point with specified number of decimals."""
-    return int(float_var * 10**decimal_places)
-
-
-def to_floating_point(float_var, decimal_places=18):
-    """Convert fixed point argument to floating point with specified number of decimals."""
-    return float(float_var / 10**decimal_places)
-
-
-def get_market_state_from_contract(contract: ContractInstance):
-    """Return the current market state from the smart contract.
-
-    Parameters
-    ----------
-    contract: `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
-        Contract pointing to the initialized MockHyperdriveTestnet smart contract.
-
-    Returns
-    -------
-    hyperdrive_market.MarketState
-    """
-    pool_state = contract.getPoolInfo().__dict__
-    asset_id = hyperdrive_assets.encode_asset_id(
-        hyperdrive_assets.AssetIdPrefix.WITHDRAWAL_SHARE, hyper_config["positionDuration"]
-    )
-    total_supply_withdraw_shares = hyperdrive.balanceOf(asset_id, dev_accounts[0].address)
-
-    return hyperdrive_market.MarketState(
-        lp_total_supply=to_floating_point(pool_state["lpTotalSupply"]),
-        share_reserves=to_floating_point(pool_state["shareReserves"]),
-        bond_reserves=to_floating_point(pool_state["bondReserves"]),
-        base_buffer=to_floating_point(pool_state["longsOutstanding"]),  # so do we not need any buffers now?
-        # TODO: bond_buffer=0,
-        variable_apr=0.01,  # TODO: insert real value
-        share_price=to_floating_point(pool_state["sharePrice"]),
-        init_share_price=to_floating_point(hyper_config["initialSharePrice"]),
-        curve_fee_multiple=to_floating_point(hyper_config["curveFee"]),
-        flat_fee_multiple=to_floating_point(hyper_config["flatFee"]),
-        governance_fee_multiple=to_floating_point(hyper_config["governanceFee"]),
-        longs_outstanding=to_floating_point(pool_state["longsOutstanding"]),
-        shorts_outstanding=to_floating_point(pool_state["shortsOutstanding"]),
-        long_average_maturity_time=to_floating_point(pool_state["longAverageMaturityTime"]),
-        short_average_maturity_time=to_floating_point(pool_state["shortAverageMaturityTime"]),
-        long_base_volume=to_floating_point(pool_state["longBaseVolume"]),
-        short_base_volume=to_floating_point(pool_state["shortBaseVolume"]),
-        # TODO: checkpoints=defaultdict
-        checkpoint_duration=hyper_config["checkpointDuration"],
-        total_supply_longs=defaultdict(float, {0: to_floating_point(pool_state["longsOutstanding"])}),
-        total_supply_shorts=defaultdict(float, {0: to_floating_point(pool_state["shortsOutstanding"])}),
-        total_supply_withdraw_shares=to_floating_point(total_supply_withdraw_shares),
-        withdraw_shares_ready_to_withdraw=to_floating_point(pool_state["withdrawalSharesReadyToWithdraw"]),
-        withdraw_capital=to_floating_point(pool_state["capital"]),
-        withdraw_interest=to_floating_point(pool_state["interest"]),
-    )
-
-
 def do_trade():
     """Execute agent trades on hyperdrive solidity contract."""
     # TODO: add market-state-dependent trading for smart bots
@@ -469,7 +412,7 @@ if __name__ == "__main__":
         start_time = locals().get("start_time", block_time)  # get variable if it exists, otherwise set to block_time
         if block_number > locals().get("last_executed_block", 0):  # get variable if it exists, otherwise set to 0
             get_and_show_block_and_gas()
-            market_state = get_market_state_from_contract(contract=hyperdrive)
+            market_state = ape_utils.get_market_state_from_contract(contract=hyperdrive)
             market: hyperdrive_market.Market = hyperdrive_market.Market(
                 pricing_model=config.scratch["pricing_model"],
                 market_state=market_state,
