@@ -209,7 +209,22 @@ class LongLouie(agentlib.Agent):
 
 
 def get_argparser() -> argparse.ArgumentParser:
-    """Define & parse arguments from stdin."""
+    """Define & parse arguments from stdin.
+
+    List of arguments:
+        log_filename : Optional output filename for logging. Default is "testnet_bots".
+        log_level : Logging level, should be in ["DEBUG", "INFO", "WARNING"]. Default is "INFO".
+        max_bytes : Maximum log file output size, in bytes. Default is 1MB.
+        num_louie : Number of Long Louie agents to run. Default is 0.
+        num_frida : Number of Fixed Rate Frida agents to run. Default is 0.
+        num_random: Number of Random agents to run. Default is 0.
+        trade_chance : Chance for a bot to execute a trade. Default is 0.1.
+
+    Returns
+    -------
+    parser : argparse.ArgumentParser
+
+    """
     parser = argparse.ArgumentParser(
         prog="TestnetBots",
         description="Execute bots on testnet",
