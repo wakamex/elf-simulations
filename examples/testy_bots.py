@@ -1,4 +1,5 @@
 """A demo for executing an arbitrary number of trades bots on testnet."""
+
 from __future__ import annotations  # types will be strings by default in 3.11
 
 # stdlib
@@ -9,16 +10,14 @@ import os
 from collections import defaultdict
 from pathlib import Path
 from time import sleep
-from typing import Optional, cast
+from typing import cast
 
 # external lib
 import ape
 import numpy as np
 from ape import Contract, accounts
-from ape.api import BlockAPI, ProviderAPI, ReceiptAPI
-from ape.contracts import ContractContainer, ContractInstance
-from ape.managers.project import ProjectManager
-from ape.types import AddressType
+from ape.api import ReceiptAPI
+from ape.contracts import ContractInstance
 from ape.utils import generate_dev_accounts
 from ape_accounts.accounts import KeyfileAccount
 from dotenv import load_dotenv
@@ -37,7 +36,7 @@ from elfpy import simulators, time, types
 from elfpy.agents.policies import random_agent
 from elfpy.markets.hyperdrive import hyperdrive_actions, hyperdrive_assets, hyperdrive_market
 
-load_dotenv()
+load_dotenv(dotenv_path=f"{Path.cwd() if Path.cwd().name != 'examples' else Path.cwd().parent}/.env")
 
 NO_CRASH = 0
 
@@ -433,36 +432,14 @@ def set_days_without_crashing(no_crash: int):
     return no_crash
 
 
-def get_gas_fees(block: BlockAPI) -> tuple[Optional[float], Optional[float], Optional[float], Optional[float]]:
-    """Get the max and avg max and priority fees from a block."""
-    if type2 := [txn for txn in block.transactions if txn.type == 2]:  # noqa: PLR2004
-        max_fees, priority_fees = zip(*((txn.max_fee, txn.max_priority_fee) for txn in type2))
-        max_fees = [f / 1e9 for f in max_fees if f is not None]
-        priority_fees = [f / 1e9 for f in priority_fees if f is not None]
-        _max_max_fee, _avg_max_fee = max(max_fees), sum(max_fees) / len(max_fees)
-        _max_priority_fee, _avg_priority_fee = max(priority_fees), sum(priority_fees) / len(priority_fees)
-        return _max_max_fee, _avg_max_fee, _max_priority_fee, _avg_priority_fee
-    return None, None, None, None
-
-
-class HyperdriveProject(ProjectManager):
-    """Hyperdrive project class, to provide static typing for the Hyperdrive contract."""
-
-    hyperdrive: ContractContainer
-    address: str = "0xB311B825171AF5A60d69aAD590B857B1E5ed23a2"
-
-    def __init__(self, path: Path) -> None:
-        """Initialize the project, loading the Hyperdrive contract."""
-        super().__init__(path)
-        self.load_contracts()
-        try:
-            self.hyperdrive: ContractContainer = self.get_contract("Hyperdrive")
-        except AttributeError as err:
-            raise AttributeError("Hyperdrive contract not found") from err
-
-    def get_hyperdrive_contract(self) -> ContractInstance:
-        """Get the Hyperdrive contract instance."""
-        return self.hyperdrive.at(self.conversion_manager.convert(self.address, AddressType))
+def get_and_show_block_and_gas():
+    """Get and show the latest block number and gas fees."""
+    max_max_fee, avg_max_fee, max_priority_fee, avg_priority_fee = ape_utils.get_gas_fees(latest_block)
+    log_string = "Block number: {}, Block time: {}, Trades without crashing: {}"
+    log_string += ", Gas: max={},avg={}, Priority max={},avg={}"
+    log_vars = block_number, block_time, NO_CRASH
+    log_vars += fmt(max_max_fee), fmt(avg_max_fee), fmt(max_priority_fee), fmt(avg_priority_fee)
+    log_and_show(log_string, *log_vars)
 
 
 if __name__ == "__main__":
@@ -470,10 +447,8 @@ if __name__ == "__main__":
     output_utils.setup_logging(log_filename=config.log_filename, log_level=config.log_level)
 
     # Set up ape
-    provider: ProviderAPI = ape.networks.parse_network_choice(  # pylint: disable=unnecessary-dunder-call
-        "ethereum:goerli:alchemy"
-    ).__enter__()
-    project = HyperdriveProject(Path.cwd())
+    ape.networks.parse_network_choice("ethereum:goerli:alchemy").push_provider()
+    project = ape_utils.HyperdriveProject(Path.cwd())
     dai: ContractInstance = Contract("0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844")  # sDai
     sim_agents, dev_accounts = get_agents()  # Set up agents and their dev accounts
     hyperdrive: ContractInstance = project.get_hyperdrive_contract()
@@ -493,11 +468,7 @@ if __name__ == "__main__":
         block_time = latest_block.timestamp
         start_time = locals().get("start_time", block_time)  # get variable if it exists, otherwise set to block_time
         if block_number > locals().get("last_executed_block", 0):  # get variable if it exists, otherwise set to 0
-            max_max_fee, avg_max_fee, max_priority_fee, avg_priority_fee = get_gas_fees(latest_block)
-            LOG_STRING = "Block number: {}, Block time: {}, Trades without crashing: {}"
-            LOG_STRING += ", Gas: max={},avg={}, Priority max={},avg={}"
-            log_vars = block_number, block_time, NO_CRASH, max_max_fee, avg_max_fee, max_priority_fee, avg_priority_fee
-            log_and_show(LOG_STRING, *log_vars)
+            get_and_show_block_and_gas()
             market_state = get_market_state_from_contract(contract=hyperdrive)
             market: hyperdrive_market.Market = hyperdrive_market.Market(
                 pricing_model=config.scratch["pricing_model"],

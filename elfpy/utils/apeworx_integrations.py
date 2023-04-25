@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple
+from pathlib import Path
 
 import logging
 from collections import namedtuple
 
+from ape.types import AddressType
 from ape.exceptions import TransactionError
-from ape.api import ReceiptAPI, TransactionAPI
+from ape.api import BlockAPI, ReceiptAPI, TransactionAPI
+from ape.contracts import ContractContainer
+from ape.managers.project import ProjectManager
 from ape.contracts.base import ContractTransaction, ContractTransactionHandler
 import numpy as np
 
@@ -20,6 +24,41 @@ if TYPE_CHECKING:
     from ape.contracts.base import ContractInstance
     from ape.types import ContractLog
     from ethpm_types.abi import MethodABI
+
+
+class HyperdriveProject(ProjectManager):
+    """Hyperdrive project class, to provide static typing for the Hyperdrive contract."""
+
+    hyperdrive: ContractContainer
+    address: str = "0xB311B825171AF5A60d69aAD590B857B1E5ed23a2"
+
+    def __init__(self, path: Path) -> None:
+        """Initialize the project, loading the Hyperdrive contract."""
+        if path.name == "examples":  # if in examples folder, move up a level
+            path = path.parent
+        super().__init__(path)
+        self.load_contracts()
+        try:
+            self.hyperdrive: ContractContainer = self.get_contract("Hyperdrive")
+        except AttributeError as err:
+            raise AttributeError("Hyperdrive contract not found") from err
+
+    def get_hyperdrive_contract(self) -> ContractInstance:
+        """Get the Hyperdrive contract instance."""
+        return self.hyperdrive.at(self.conversion_manager.convert(self.address, AddressType))
+
+
+def get_gas_fees(block: BlockAPI) -> tuple[float, float, float, float]:
+    """Get the max and avg max and priority fees from a block."""
+    if type2 := [txn for txn in block.transactions if txn.type == 2]:  # noqa: PLR2004
+        max_fees, priority_fees = zip(*((txn.max_fee, txn.max_priority_fee) for txn in type2))
+        max_fees = [f / 1e9 for f in max_fees if f is not None]
+        priority_fees = [f / 1e9 for f in priority_fees if f is not None]
+        _max_max_fee, _avg_max_fee = max(max_fees), sum(max_fees) / len(max_fees)
+        _max_priority_fee, _avg_priority_fee = max(priority_fees), sum(priority_fees) / len(priority_fees)
+        return _max_max_fee, _avg_max_fee, _max_priority_fee, _avg_priority_fee
+    else:
+        raise ValueError("No type 2 transactions in block")
 
 
 def get_transfer_single_event(tx_receipt: ReceiptAPI) -> ContractLog:
