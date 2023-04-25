@@ -33,10 +33,10 @@ def get_gas_fees(block: BlockAPI | float | int) -> tuple[List[float], List[float
         block = ape.chain.blocks[int(block)]
     if type2 := [txn for txn in block.transactions if txn.type == 2]:
         type2 = [txn for txn in type2 if txn.max_fee is not None and txn.max_priority_fee is not None]
-        max_fees, priority_fees = zip(*((txn.max_fee, txn.max_priority_fee) for txn in type2))
-        max_fees = [f / 1e9 for f in max_fees if f is not None]
-        priority_fees = [f / 1e9 for f in priority_fees if f is not None]
-        return max_fees, priority_fees
+        _max_fees, _priority_fees = zip(*((txn.max_fee, txn.max_priority_fee) for txn in type2))
+        _max_fees = [f / 1e9 for f in max_fees if f is not None]
+        _priority_fees = [f / 1e9 for f in _priority_fees if f is not None]
+        return _max_fees, _priority_fees
     return [], []
 
 
@@ -47,9 +47,9 @@ def get_gas_fee_stats(
     if isinstance(block, (float, int)):
         block = ape.chain.blocks[int(block)]
     if [txn for txn in block.transactions if txn.type == 2]:
-        max_fees, priority_fees = get_gas_fees(block)
-        _max_max_fee, _avg_max_fee = max(max_fees), sum(max_fees) / len(max_fees)
-        _max_priority_fee, _avg_priority_fee = max(priority_fees), sum(priority_fees) / len(priority_fees)
+        _max_fees, _priority_fees = get_gas_fees(block)
+        _max_max_fee, _avg_max_fee = max(_max_fees), sum(max_fees) / len(max_fees)
+        _max_priority_fee, _avg_priority_fee = max(_priority_fees), sum(_priority_fees) / len(_priority_fees)
         return _max_max_fee, _avg_max_fee, _max_priority_fee, _avg_priority_fee
     return None, None, None, None
 
@@ -121,15 +121,15 @@ for txn in our_txns:  # plot em!
         # don't print if k is data or sender
         if k in ["data", "sender", "signature"]:
             continue
-        elif k == "gas_price":
+        if k == "gas_price":
             print(f" => {k}: {fmt(v/1e9)}")
         elif k == "gas_limit":
             print(f" => {k}: {fmt(v)}")
         else:
             print(f" => {k}: {v}")
-    axs[0].axvline(txn.max_fee / 1e9, color="yellow", linestyle="solid", label="ours") if txn.max_fee else None
-    axs[1].axvline(
-        txn.max_priority_fee / 1e9, color="yellow", linestyle="solid", label="ours"
-    ) if txn.max_priority_fee else None
+    if txn.max_fee:
+        axs[0].axvline(txn.max_fee / 1e9, color="yellow", linestyle="solid", label="ours")
+    if txn.max_priority_fee:
+        axs[1].axvline(txn.max_priority_fee / 1e9, color="yellow", linestyle="solid", label="ours")
 axs[0].legend(prop={"size": 14}, loc="upper center")
 axs[1].legend(prop={"size": 14}, loc="upper center")
