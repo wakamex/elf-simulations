@@ -9,7 +9,9 @@ import logging
 import os
 from pathlib import Path
 from time import sleep
-from typing import cast
+from typing import cast, Optional, Generic, Type
+from collections import namedtuple
+from dataclasses import dataclass
 
 # external lib
 import ape
@@ -29,7 +31,7 @@ import elfpy.agents.agent as agentlib
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.utils.apeworx_integrations as ape_utils
 import elfpy.utils.outputs as output_utils
-from elfpy.utils.apeworx_integrations import to_fixed_point, to_fixed_point
+from elfpy.utils.apeworx_integrations import to_fixed_point
 from elfpy.utils.outputs import number_to_string as fmt
 from elfpy.utils.outputs import log_and_show
 from elfpy import simulators, time, types
@@ -215,17 +217,17 @@ def get_argparser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--log_filename", help="Optional output filename for logging", default="testnet_bots", type=str)
     parser.add_argument(
+        "--log_level",
+        help='Logging level, should be in ["DEBUG", "INFO", "WARNING"]. Default is "INFO".',
+        default="INFO",
+        type=str,
+    )
+    parser.add_argument(
         "--max_bytes",
         help=f"Maximum log file output size, in bytes. Default is {elfpy.DEFAULT_LOG_MAXBYTES} bytes."
         "More than 100 files will cause overwrites.",
         default=elfpy.DEFAULT_LOG_MAXBYTES,
         type=int,
-    )
-    parser.add_argument(
-        "--log_level",
-        help='Logging level, should be in ["DEBUG", "INFO", "WARNING"]. Default uses the config.',
-        default="INFO",
-        type=str,
     )
     parser.add_argument("--num_louie", help="Number of Louie agents (default=0)", default=0, type=int)
     parser.add_argument("--num_frida", help="Number of Frida agents (default=0)", default=0, type=int)
@@ -238,6 +240,20 @@ def get_argparser() -> argparse.ArgumentParser:
         type=float,
     )
     return parser
+
+
+@dataclass
+class BotInfo(Generic[agentlib.AgentType]):
+    """Information about a bot."""
+
+    Budget = namedtuple("Budget", ["mean", "std", "min", "max"])
+    Risk = namedtuple("Risk", ["mean", "std", "min", "max"])
+
+    policy: Type[agentlib.AgentType]
+    trade_chance: float = 0.1
+    risk_threshold: Optional[float] = None
+    budget: Budget = Budget(mean=5_000, std=2_000, min=1_000, max=10_000)
+    risk: Risk = Risk(mean=0.02, std=0.01, min=0.0, max=0.06)
 
 
 def get_config() -> simulators.Config:
@@ -258,32 +274,19 @@ def get_config() -> simulators.Config:
             _config[key] = value
         else:
             _config.scratch[key] = value
-    _config.scratch["louie_risk_threshold"] = 0.0
-    _config.scratch["louie_budget_mean"] = 5_000
-    _config.scratch["louie_budget_std"] = 2_000
-    _config.scratch["louie_budget_max"] = 10_000
-    _config.scratch["louie_budget_min"] = 1_000
-    _config.scratch["frida_budget_mean"] = 5_000
-    _config.scratch["frida_budget_std"] = 2_000
-    _config.scratch["frida_budget_max"] = 10_000
-    _config.scratch["frida_budget_min"] = 1_000
-    _config.scratch["frida_risk_min"] = 0.0
-    _config.scratch["frida_risk_max"] = 0.06
-    _config.scratch["frida_risk_mean"] = 0.02
-    _config.scratch["frida_risk_std"] = 0.01
-    _config.scratch["random_budget_mean"] = 5_000
-    _config.scratch["random_budget_std"] = 2_000
-    _config.scratch["random_budget_max"] = 10_000
-    _config.scratch["random_budget_min"] = 1_000
-    _config.scratch["bot_types"] = {"louie": LongLouie, "frida": FixedFrida, "random": random_agent.Policy}
+    trade_chance = _config.scratch["trade_chance"]
+    _config.scratch["louie"] = BotInfo(risk_threshold=0.0, policy=LongLouie, trade_chance=trade_chance)
+    _config.scratch["frida"] = BotInfo(policy=FixedFrida, trade_chance=trade_chance)
+    _config.scratch["random"] = BotInfo(policy=random_agent.Policy, trade_chance=trade_chance)
+    _config.scratch["bot_names"] = {"louie", "frida", "random"}
     _config.scratch["pricing_model"] = hyperdrive_pm.HyperdrivePricingModel()
     _config.freeze()
     return _config
 
 
-def get_accounts(bot_types) -> list[KeyfileAccount]:
+def get_accounts() -> list[KeyfileAccount]:
     """Generate dev accounts and turn on auto-sign."""
-    num = sum(config.scratch[f"num_{bot}"] for bot in bot_types)
+    num = sum(config.scratch[f"num_{bot}"] for bot in config.scratch["bot_names"])
     assert (mnemonic := os.environ["MNEMONIC"]), "You must provide a mnemonic in .env to run this script."
     keys = generate_dev_accounts(mnemonic=mnemonic, number_of_accounts=num)
     for num, key in enumerate(keys):
@@ -301,46 +304,38 @@ def get_accounts(bot_types) -> list[KeyfileAccount]:
 
 def get_agents():  # sourcery skip: merge-dict-assign, use-fstring-for-concatenation
     """Get python agents & corresponding solidity wallets."""
-    bot_types = config.scratch["bot_types"]
-    for _bot, _policy in bot_types.items():
-        log_string = f"{_bot:6s}: n={config.scratch['num_'+_bot]}  "
-        log_string += f"policy={(_policy.__name__ if _policy.__module__ == '__main__' else _policy.__module__):20s}"
-        log_and_show(log_string)
-    _dev_accounts = get_accounts(bot_types)
+    _dev_accounts = get_accounts()
     faucet = Contract("0xe2bE5BfdDbA49A86e27f3Dd95710B528D43272C2")
 
+    for bot_name in config.scratch["bot_names"]:
+        _policy = config.scratch[bot_name].policy
+        log_string = f"{bot_name:6s}: n={config.scratch['num_'+bot_name]}  "
+        log_string += f"policy={(_policy.__name__ if _policy.__module__ == '__main__' else _policy.__module__):20s}"
+        log_and_show(log_string)
+
     _sim_agents = {}
-    for _bot, _policy in [item for item in bot_types.items() if config.scratch[f"num_{item[0]}"] > 0]:
-        for _ in range(config.scratch[f"num_{_bot}"]):
+    for bot_name in [name for name in config.scratch["bot_names"] if config.scratch[f"num_{name}"] > 0]:
+        bot_info = config.scratch[bot_name]
+        budget_mean, budget_std, budget_min, budget_max = bot_info.budget
+        _policy = bot_info.policy
+        for _ in range(config.scratch[f"num_{bot_name}"]):
             params = {}
             agent_num = len(_sim_agents)
             params["trade_chance"] = config.scratch["trade_chance"]
-            params["wallet_address"] = _dev_accounts[agent_num].address
-            params["budget"] = np.clip(
-                config.rng.normal(
-                    loc=config.scratch[f"{_bot}_budget_mean"], scale=config.scratch[f"{_bot}_budget_std"]
-                ),
-                config.scratch[f"{_bot}_budget_min"],
-                config.scratch[f"{_bot}_budget_max"],
-            )
-            if hasattr(config, f"{_bot}_risk_min"):
-                params["risk_threshold"] = np.clip(
-                    config.rng.normal(
-                        loc=config.scratch[f"{_bot}_risk_mean"], scale=config.scratch[f"{_bot}_risk_std"]
-                    ),
-                    config.scratch[f"{_bot}_risk_min"],
-                    config.scratch[f"{_bot}_risk_max"],
-                )
-            elif hasattr(config, f"{_bot}_risk_threshold"):
-                params["risk_threshold"] = config.scratch[f"{_bot}_risk_threshold"]
-            agent = _policy(rng=config.rng, **params)  # instantiate the agent
+            params["budget"] = np.clip(config.rng.normal(loc=budget_mean, scale=budget_std), budget_min, budget_max)
+            if bot_info.risk_threshold and bot_name != "random":  # random agent doesn't use risk threshold
+                params["risk_threshold"] = bot_info.risk_threshold  # if risk threshold is manually set, we use it
+            if bot_name != "random":  # if risk threshold isn't manually set, we get a random one
+                risk_mean, risk_std, risk_min, risk_max = bot_info.risk
+                params["risk_threshold"] = np.clip(config.rng.normal(loc=risk_mean, scale=risk_std), risk_min, risk_max)
+            agent = _policy(rng=config.rng, wallet_address=_dev_accounts[agent_num].address, **params)
             agent.contract = _dev_accounts[agent_num]  # assign its wallet
             if (need_to_mint := params["budget"] - dai.balanceOf(agent.contract.address) / 1e18) > 0:
                 log_and_show(f" agent_{agent.wallet.address[:7]} needs to mint {fmt(need_to_mint)} Dai")
                 with ape.accounts.use_sender(agent.contract):
                     txn_receipt: ReceiptAPI = faucet.mint(dai.address, agent.wallet.address, to_fixed_point(50_000))
                     txn_receipt.await_confirmations()
-            log_string = f" agent_{agent.wallet.address[:7]} is a {_bot} with budget={fmt(params['budget'])}"
+            log_string = f" agent_{agent.wallet.address[:7]} is a {bot_name} with budget={fmt(params['budget'])}"
             log_string += f" Eth={fmt(agent.contract.balance/1e18)}"
             log_string += f" Dai={fmt(dai.balanceOf(agent.contract.address)/1e18)}"
             log_and_show(log_string)
