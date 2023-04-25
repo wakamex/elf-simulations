@@ -4,13 +4,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple
 
 import logging
-from dataclasses import dataclass
+from collections import namedtuple
 
 from ape.exceptions import TransactionError
 from ape.api import ReceiptAPI, TransactionAPI
 from ape.contracts.base import ContractTransaction, ContractTransactionHandler
 import numpy as np
-from elfpy.types import freezable
 
 from elfpy.utils.outputs import number_to_string as fmt
 from elfpy.utils.outputs import log_and_show
@@ -141,13 +140,7 @@ def select_abi(
     return selected_abi, args
 
 
-@freezable(frozen=True, no_new_attribs=True)
-@dataclass
-class Info:
-    """Fancy tuple that lets us return item.method and item.prefix instead of item[0] and item[1]"""
-
-    method: Callable
-    prefix: hyperdrive_assets.AssetIdPrefix
+Info = namedtuple("Info", ["method", "prefix"])
 
 
 def ape_trade(
