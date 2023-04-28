@@ -405,60 +405,52 @@ def get_and_show_block_and_gas():
 
 def get_hyper_trades():
     """Get all trades from hyperdrive contract."""
-    if hyper_trades := globals().get("hyper_trades"):
+    if (hyper_trades := globals().get("hyper_trades", None)) is not None:
         unique_maturities = globals().get("unique_maturities")
         unique_ids = globals().get("unique_ids")
         unique_block_numbers = globals().get("unique_block_numbers")
         share_price = globals().get("share_price")
         return hyper_trades, unique_maturities, unique_ids, unique_block_numbers, share_price
+    
+    log_and_show(f"hyper_trades not found in memory, loading from chain...")
+    start_time = now()
 
-    # get all trades
-    start_time_ = now()
+    # get all trades and process
     hyper_trades = hyperdrive.TransferSingle.query("*")
-    print(f"looked up {len(hyper_trades)} trades in {(now() - start_time_):0.1f}s")
-
-    start_time_ = now()
     hyper_trades = pd.concat(
         [
             hyper_trades.loc[:, ["block_number", "event_name"]],
-            pd.DataFrame((dict(i) for i in hyper_trades["event_arguments"])),
-        ],
+            pd.DataFrame((dict(i) for i in hyper_trades["event_arguments"]))],
         axis=1,
     )
     tuple_series = hyper_trades.apply(func=lambda x: hyperdrive_assets.decode_asset_id(int(x["id"])), axis=1)
-    # split into two columns
-    hyper_trades["prefix"], hyper_trades["maturity_timestamp"] = zip(*tuple_series)
+    hyper_trades["prefix"], hyper_trades["maturity_timestamp"] = zip(*tuple_series) # split into two columns
     hyper_trades["trade_type"] = hyper_trades["prefix"].apply(lambda x: hyperdrive_assets.AssetIdPrefix(x).name)
     hyper_trades["value"] = hyper_trades["value"]
-    print(f"processed in {(now() - start_time_)*1e3:0.1f}ms")
 
-    # unique maturities
     unique_maturities = hyper_trades["maturity_timestamp"].unique()
     unique_maturities = unique_maturities[unique_maturities != 0]
-    print(f"found {len(unique_maturities)} unique maturities: {','.join(str(i) for i in unique_maturities)}")
 
-    # unique id's excluding zero
     unique_ids = hyper_trades["id"].unique()
     unique_ids = unique_ids[unique_ids != 0]
 
-    # unique block_number's
     unique_block_numbers = hyper_trades["block_number"].unique()
-    print(f"found {len(unique_block_numbers)} unique block numbers: {','.join(str(i) for i in unique_block_numbers)}")
 
     # map share price to block number
-    start_time = now()
     share_price = {}
     for block_number in unique_block_numbers:  # type: ignore
         share_price |= {block_number: hyperdrive.getPoolInfo(block_identifier=int(block_number))["sharePrice"]}
-    print(f"looked up {len(share_price)} share prices in {(now() - start_time)*1e3:0.1f}ms")
     for block_number, price in share_price.items():
         print(f"{block_number=}, {price=}")
+    
+    print(f"hyper_trades generated in {(now() - start_time)*1e3:0.1f}ms")
 
     return hyper_trades, unique_maturities, unique_ids, unique_block_numbers, share_price
 
 
 def whats_in_your_wallet(address_: str, index: int):
     """get on-chain wallet balances"""
+    global hyper_trades, unique_maturities, unique_ids, unique_block_numbers, share_price
     hyper_trades, unique_maturities, unique_ids, unique_block_numbers, share_price = get_hyper_trades()
 
     shorts: dict[float, Short] = defaultdict(lambda: Short(0, 0))
@@ -485,8 +477,8 @@ def whats_in_your_wallet(address_: str, index: int):
                     print(f"  {asset_type} {i.value=} => {running_total=}")
                 print(f" SUBTOTAL {running_total=} is off {query_balance} by {(balance - query_balance):.1E}", end="")
                 print(f" ({(balance - query_balance)*1e18} wei))")
-            else:  # snake emoji
-                print("  => EXACT MATCH (waoh 🐍)")
+            # else:  # snake emoji
+            #     print("  => EXACT MATCH (waoh 🐍)")
             mint_timestamp = maturity - SECONDS_IN_YEAR
             # print(idx.index[idx==True])
             for idx in idx.index[idx]:
@@ -558,5 +550,6 @@ if __name__ == "__main__":
                         LOG_STRING = "Crashed in Python simulation: {}"
                         log_and_show(LOG_STRING, exc)
                         NO_CRASH = set_days_without_crashing(0)  # set and save to file
+                        print("break here")
             last_executed_block = block_number
         sleep(1)
