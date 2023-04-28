@@ -2,6 +2,7 @@
 import json
 from pathlib import Path
 from time import time
+from datetime import datetime
 import os
 
 import ape
@@ -112,9 +113,6 @@ provider: ProviderAPI = ape.networks.parse_network_choice(f"ethereum:goerli:{PRO
 project = ape_utils.HyperdriveProject(Path.cwd())
 hyperdrive: ContractInstance = project.get_hyperdrive_contract()
 dai: ContractInstance = Contract("0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844")  # sDai
-for k, v in provider.__dict__.items():
-    if not k.startswith("_"):
-        print(k, v)
 print(f"Block number: {ape.chain.blocks[-1].number or 0}, Block time: {ape.chain.blocks[-1].timestamp}")
 
 # %% Inspect trades
@@ -132,6 +130,82 @@ position_duration = elfpy_time.StretchedTime(
     hyper_config["term_length"], hyper_config["timeStretch"], hyper_config["term_length"]
 )
 params = {"pricing_model": hyperdrive_pm.HyperdrivePricingModel()} | {"position_duration": position_duration}
+
+# %%
+address = addresses[0]
+for name, method in hyperdrive._view_methods_.items():  # pylint: disable=protected-access
+    # print if not ALL CAPS
+    if name.isupper():
+        continue
+    print(method)
+
+# %% look up ids for address
+start_time = time()
+print(f"looking up ids for address {address}")
+ids = {i["id"] for i in trades if i["id"] != 0 and i["operator"] == address}
+for token_id in ids:
+    prefix, maturity_timestamp = hyperdrive_assets.decode_asset_id(int(token_id))
+    trade_type = hyperdrive_assets.AssetIdPrefix(prefix).name
+    mint_timestamp = maturity_timestamp - SECONDS_IN_YEAR
+    print(
+        f"{token_id=}\n => {prefix=}, {trade_type=}\n"
+        f" => {maturity_timestamp=} ({datetime.fromtimestamp(maturity_timestamp)})\n"
+        f" => {mint_timestamp=} ({datetime.fromtimestamp(mint_timestamp)})"
+    )
+print(f"looked up ids in {(time() - start_time)*1e3:0.1f}ms")
+
+# %% get all trades
+start_time = time()
+hyper_trades = hyperdrive.TransferSingle.query("*")
+print(f"looked up {len(hyper_trades)} trades in {(time() - start_time):0.1f}s")
+start_time = time()
+hyper_trades = pd.concat(
+    [
+        hyper_trades.loc[:, ["block_number", "event_name"]],
+        pd.DataFrame((dict(i) for i in hyper_trades["event_arguments"])),
+    ],
+    axis=1,
+)
+tuple_series = hyper_trades.apply(func=lambda x: hyperdrive_assets.decode_asset_id(int(x["id"])), axis=1)
+# split into two columns
+hyper_trades["prefix"], hyper_trades["maturity_timestamp"] = zip(*tuple_series)
+hyper_trades["trade_type"] = hyper_trades["prefix"].apply(lambda x: hyperdrive_assets.AssetIdPrefix(x).name)
+hyper_trades["value"] = hyper_trades["value"] / 1e18
+print(f"processed in {(time() - start_time)*1e3:0.1f}ms")
+# %% display head
+hyper_trades.head(2).style.format({"value": "{:0,.2f}"})
+
+# %% get unique maturities
+unique_maturities = hyper_trades["maturity_timestamp"].unique()
+unique_maturities = unique_maturities[unique_maturities != 0]
+print(f"found {len(unique_maturities)} unique maturities: {','.join(str(i) for i in unique_maturities)}")
+
+# unique id's excluding zero
+unique_ids = hyper_trades["id"].unique()
+unique_ids = unique_ids[unique_ids != 0]
+
+# unique block_number's
+unique_block_numbers = hyper_trades["block_number"].unique()
+print(f"found {len(unique_block_numbers)} unique block numbers: {','.join(str(i) for i in unique_block_numbers)}")
+
+# %% get each agent's balance
+for address in addresses:
+    shorts, longs = [], []
+    for id_ in unique_ids:
+        idx = (hyper_trades["operator"] == address) & (hyper_trades["id"] == id_)
+        balance = hyper_trades.loc[idx, "value"].sum()
+        query_balance = hyperdrive.balanceOf(id_, address) / 1e18
+        asset_prefix, maturity = hyperdrive_assets.decode_asset_id(id_)
+        asset_type = hyperdrive_assets.AssetIdPrefix(asset_prefix).name
+        if balance != 0 or query_balance != 0:
+            # right align balance
+            balance = f"{balance:0,.2f}".rjust(10)
+            query_balance = f"{query_balance:0,.2f}".rjust(10)
+            print(f"{address[:8]} {asset_type:4} maturing {maturity}, balance: ", end="")
+            print(f"calculated from trades {balance}, queried from chain {query_balance}")
+            mint_timestamp = maturity - SECONDS_IN_YEAR
+            if asset_type == "SHORT":
+                shorts.append({mint_timestamp: Short(balance=balance, 
 
 # %% Set up wallets
 agent_wallets = {
