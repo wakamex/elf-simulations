@@ -4,11 +4,15 @@ from pathlib import Path
 from time import time
 from datetime import datetime
 import os
+from collections import defaultdict
+
 
 import ape
 import darkmode_orange  # type: ignore # pylint: disable=unused-import
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
 import requests
 from ape import Contract
 from ape.api import ProviderAPI, ReceiptAPI
@@ -131,7 +135,7 @@ position_duration = elfpy_time.StretchedTime(
 )
 params = {"pricing_model": hyperdrive_pm.HyperdrivePricingModel()} | {"position_duration": position_duration}
 
-# %%
+# %% print methods
 address = addresses[0]
 for name, method in hyperdrive._view_methods_.items():  # pylint: disable=protected-access
     # print if not ALL CAPS
@@ -170,7 +174,7 @@ tuple_series = hyper_trades.apply(func=lambda x: hyperdrive_assets.decode_asset_
 # split into two columns
 hyper_trades["prefix"], hyper_trades["maturity_timestamp"] = zip(*tuple_series)
 hyper_trades["trade_type"] = hyper_trades["prefix"].apply(lambda x: hyperdrive_assets.AssetIdPrefix(x).name)
-hyper_trades["value"] = hyper_trades["value"] / 1e18
+hyper_trades["value"] = hyper_trades["value"]
 print(f"processed in {(time() - start_time)*1e3:0.1f}ms")
 # %% display head
 hyper_trades.head(2).style.format({"value": "{:0,.2f}"})
@@ -188,24 +192,77 @@ unique_ids = unique_ids[unique_ids != 0]
 unique_block_numbers = hyper_trades["block_number"].unique()
 print(f"found {len(unique_block_numbers)} unique block numbers: {','.join(str(i) for i in unique_block_numbers)}")
 
+# %% map share price to block number
+start_time = time()
+share_price = {}
+for block_number in unique_block_numbers:
+    share_price |= {block_number: hyperdrive.getPoolInfo(block_identifier=int(block_number))["sharePrice"]}
+print(f"looked up {len(share_price)} share prices in {(time() - start_time)*1e3:0.1f}ms")
+for block_number, price in share_price.items():
+    print(f"{block_number=}, {price=}")
+
+# %% plot share price by block number
+plt.figure(figsize=(12, 6))
+plt.scatter(share_price.keys(), share_price.values())
+# remove offset from y axis
+plt.gca().get_yaxis().get_major_formatter().set_useOffset(False)
+plt.title("Share price by block number")
+# format x axis as #,###,###
+plt.gca().get_xaxis().set_major_formatter(FuncFormatter(lambda x, p: format(int(x), ",")))
+
 # %% get each agent's balance
+agent_wallets = {}
 for address in addresses:
-    shorts, longs = [], []
+    shorts: dict[float, Short] = defaultdict(lambda: Short(0, 0))
+    longs: dict[float, Long] = defaultdict(lambda: Long(0))
+    lp_tokens = 0  # pylint: disable=invalid-name
     for id_ in unique_ids:
         idx = (hyper_trades["operator"] == address) & (hyper_trades["id"] == id_)
         balance = hyper_trades.loc[idx, "value"].sum()
-        query_balance = hyperdrive.balanceOf(id_, address) / 1e18
+        query_balance = hyperdrive.balanceOf(id_, address)
         asset_prefix, maturity = hyperdrive_assets.decode_asset_id(id_)
         asset_type = hyperdrive_assets.AssetIdPrefix(asset_prefix).name
+        assert abs(balance - query_balance) < 3, f"events {balance=} != {query_balance=}"
         if balance != 0 or query_balance != 0:
             # right align balance
-            balance = f"{balance:0,.2f}".rjust(10)
-            query_balance = f"{query_balance:0,.2f}".rjust(10)
+            balance_str = f"{balance:0,.2f}".rjust(10)
+            query_balance_str = f"{query_balance:0,.2f}".rjust(10)
             print(f"{address[:8]} {asset_type:4} maturing {maturity}, balance: ", end="")
-            print(f"calculated from trades {balance}, queried from chain {query_balance}")
+            print(f"from events {balance_str}, from balanceOf {query_balance_str}")
+            if balance != query_balance:
+                # print each trade, and show how it adds up to the total
+                running_total = 0  # pylint: disable=invalid-name
+                for i in hyper_trades.loc[idx, :].itertuples():
+                    running_total += i.value
+                    print(f"  {asset_type} {i.value=} => {running_total=}")
+                print(f" SUBTOTAL {running_total=} is off {query_balance} by {(balance - query_balance):.1E}", end="")
+                print(f" ({(balance - query_balance)*1e18} wei))")
+            else:  # snake emoji
+                print("  => EXACT MATCH (waoh 🐍)")
             mint_timestamp = maturity - SECONDS_IN_YEAR
-            if asset_type == "SHORT":
-                shorts.append({mint_timestamp: Short(balance=balance, 
+            # print(idx.index[idx==True])
+            for idx in idx.index[idx]:
+                if asset_type == "SHORT":
+                    block_number = hyper_trades.loc[idx, "block_number"]
+                    open_share_price = share_price[block_number]
+                    shorts |= {mint_timestamp: Short(balance=balance, open_share_price=open_share_price)}
+                elif asset_type == "LONG":
+                    longs |= {mint_timestamp: Long(balance=balance)}
+                elif asset_type == "LP":
+                    lp_tokens += balance
+    agent_wallets |= {
+        address: Wallet(
+            address=addresses.index(address),
+            balance=types.Quantity(
+                amount=dai.balanceOf(address),
+                unit=types.TokenType.BASE,
+            ),
+            shorts=shorts,
+            longs=longs,
+            lp_tokens=lp_tokens,
+        )
+    }
+    print(f"{address}: has {agent_wallets[address]}")
 
 # %% Set up wallets
 agent_wallets = {
