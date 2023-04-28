@@ -125,7 +125,6 @@ for trade in trades:
     print(f"{trade['function_name']}: {info}")
 
 # %% Set up hyperdrive
-# querying by block_number is faster than querying by block (2.3x: 35ms vs. 82ms)
 start_time = ape.chain.blocks[int(initialize_trade["block_number"])].timestamp
 hyper_config = hyperdrive.getPoolConfig(block_identifier=initialize_trade["block_number"]).__dict__
 hyper_config["timeStretch"] = 1 / (hyper_config["timeStretch"] / 1e18)
