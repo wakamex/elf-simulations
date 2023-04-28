@@ -186,9 +186,11 @@ def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance
     logging.debug("hyperdrive_pool_state=%s", pool_state)
     return pool_state
 
+
 def get_agent_deltas(tx_receipt: ReceiptAPI):
     agent = tx_receipt["operator"]
-    event_args = tx_receipt["event_arguments"] |= {k:v for k,v in tx_receipt.items() if k in ["block_number","event_name"]}
+    event_args = tx_receipt["event_arguments"]
+    event_args |= {k: v for k, v in tx_receipt.items() if k in ["block_number", "event_name"]}
     txn_events = [e.dict() for e in tx_receipt.events if agent in [e.get("from"), e.get("to")]]
     dai_events = [e.dict() for e in tx_receipt.events if agent in [e.get("src"), e.get("dst")]]
     dai_in = sum(int(e["event_arguments"]["wad"]) for e in dai_events if e["event_arguments"]["src"] == agent) / 1e18
@@ -492,7 +494,7 @@ def attempt_txn(
         serial_txn: TransactionAPI = contract_txn.serialize_transaction(*args, **kwargs)
         prepped_txn: TransactionAPI = agent.prepare_transaction(serial_txn)
         signed_txn: Optional[TransactionAPI] = agent.sign_transaction(prepped_txn)
-        log_and_show(f" => sending {signed_txn=}")
+        logging.debug(" => sending signed_txn {}", signed_txn)
         if signed_txn is None:
             raise ValueError("Failed to sign transaction")
         try:

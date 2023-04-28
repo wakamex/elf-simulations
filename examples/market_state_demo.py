@@ -38,20 +38,20 @@ if USE_ALCHEMY:
     load_dotenv(dotenv_path=examples_dir.parent / ".env")
 
 
-# def is_interactive_function():  # pylint: disable=missing-function-docstring
-#     import __main__ as main  # pylint: disable=import-outside-toplevel
+def is_interactive_function():  # pylint: disable=missing-function-docstring
+    import __main__ as main  # pylint: disable=import-outside-toplevel
 
-#     return not hasattr(main, "__file__")
-
-
-# IS_INTERACTIVE = is_interactive_function()  # calculate once
+    return not hasattr(main, "__file__")
 
 
-# def display(*args, **kwargs):  # pylint: disable=missing-function-docstring
-#     if IS_INTERACTIVE:
-#         display(*args, **kwargs)
-#     else:
-#         print(*args, **kwargs)
+IS_INTERACTIVE = is_interactive_function()  # calculate once
+
+
+def display(*args, **kwargs):  # pylint: disable=missing-function-docstring
+    if IS_INTERACTIVE:
+        display(*args, **kwargs)
+    else:
+        print(*args, **kwargs)
 
 
 # %% read it in
