@@ -1,6 +1,7 @@
 """Main body of the elfpy simulation"""
 from __future__ import annotations
 from dataclasses import dataclass, field  # types will be strings by default in 3.11
+from collections import defaultdict
 from enum import Enum
 from abc import ABC
 from copy import deepcopy
@@ -8,7 +9,6 @@ from decimal import Decimal
 
 import logging
 from functools import wraps
-from importlib import import_module
 from typing import Type, Any, Dict, Optional
 
 import numpy as np
@@ -151,8 +151,9 @@ class Config:
 
     def __post_init__(self) -> None:
         r"""init_share_price & rng are a function of other random variables"""
+        self.num_blocks = self.num_trading_days * self.num_blocks_per_day
         self.rng = np.random.default_rng(self.random_seed)
-        self.variable_rate = [0.05] * self.num_trading_days
+        self.variable_rate = [0.05] * self.num_blocks
         self.init_share_price = (1 + self.variable_rate[0]) ** self.init_vault_age
         self.disable_new_attribs()  # disallow new attributes # pylint: disable=no-member # type: ignore
 
@@ -297,8 +298,8 @@ class Wallet:
     lp: float = 0
 
     # non-fungible (identified by key=mint_time, stored as dict)
-    longs: Dict[float, Position] = field(default_factory=Dict)
-    shorts: Dict[float, Position] = field(default_factory=Dict)
+    longs: Dict[float, Position] = field(default_factory=lambda: defaultdict(Position))
+    shorts: Dict[float, Position] = field(default_factory=lambda: defaultdict(Position))
 
     share_price: float = 0
 
@@ -383,21 +384,19 @@ class MarketAction:
 
 
 def apply_delta(wallet: Wallet, delta: Wallet) -> None:
-    r"""Applies a delta to the wallet"""
     for key, value in delta.__dict__.items():
         if key == "address":
             continue
-        if isinstance(value, dict):
+        if isinstance(value, dict) and not isinstance(value, defaultdict):
             apply_delta(wallet[key], delta[key])
-        else:
+        elif not isinstance(value, defaultdict):  # value is a float
+            assert isinstance(value, (float, int)), f"Wallet {key} must be a float. Error on {value=}"
             wallet[key] += value
             if key in ["shares", "bonds", "base_buffer", "bond_buffer", "lp", "share_price"]:
-                assert (
-                    0 > value > -PRECISION_THRESHOLD
-                ), f"Wallet {key} must be > {-PRECISION_THRESHOLD}. Error on {value=}"
-    if "shares" in delta and delta["shares"] != 0:
+                assert value > -PRECISION_THRESHOLD, f"Wallet {key} must be > {-PRECISION_THRESHOLD}. Error on {value=}"
+    if "shares" in delta.__dict__ and delta.shares != 0:
         wallet.base = wallet.shares * wallet.share_price
-    elif "base" in delta and delta["base"] != 0:
+    elif "base" in delta.__dict__ and delta.base != 0 and wallet.share_price != 0:
         wallet.shares = wallet.base / wallet.share_price
 
 
@@ -435,20 +434,23 @@ def trade_and_update(simulation_state_, action_details: tuple[int, MarketAction]
     # issue 216
     # for each position, specify how to forumulate trade and then execute
     if agent_action.action_type == MarketActionType.OPEN_LONG:  # buy to open long
-        market_deltas, agent_deltas = simulation_state_.open_long(
+        market_deltas, agent_deltas = open_long(
+            simulation_state_=simulation_state_,
             wallet_address=agent_action.wallet.address,
             trade_amount=agent_action.trade_amount,  # in base: that's the thing in your wallet you want to sell
         )
     elif agent_action.action_type == MarketActionType.CLOSE_LONG:  # sell to close long
         # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
         mint_time = float(agent_action.mint_time or 0)
-        market_deltas, agent_deltas = simulation_state_.close_long(
+        market_deltas, agent_deltas = close_long(
+            simulation_state_=simulation_state_,
             wallet_address=agent_action.wallet.address,
             trade_amount=agent_action.trade_amount,  # in bonds: that's the thing in your wallet you want to sell
             mint_time=mint_time,
         )
     elif agent_action.action_type == MarketActionType.OPEN_SHORT:  # sell PT to open short
-        market_deltas, agent_deltas = simulation_state_.open_short(
+        market_deltas, agent_deltas = open_short(
+            simulation_state_=simulation_state_,
             wallet_address=agent_action.wallet.address,
             trade_amount=agent_action.trade_amount,  # in bonds: that's the thing you want to short
         )
@@ -456,19 +458,22 @@ def trade_and_update(simulation_state_, action_details: tuple[int, MarketAction]
         # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
         mint_time = float(agent_action.mint_time or 0)
         open_share_price = agent_action.wallet.shorts[mint_time].open_share_price
-        market_deltas, agent_deltas = simulation_state_.close_short(
+        market_deltas, agent_deltas = close_short(
+            simulation_state_=simulation_state_,
             wallet_address=agent_action.wallet.address,
             trade_amount=agent_action.trade_amount,  # in bonds: that's the thing you owe, and need to buy back
             mint_time=mint_time,
             open_share_price=open_share_price,
         )
     elif agent_action.action_type == MarketActionType.ADD_LIQUIDITY:
-        market_deltas, agent_deltas = simulation_state_.add_liquidity(
+        market_deltas, agent_deltas = add_liquidity(
+            simulation_state_=simulation_state_,
             wallet_address=agent_action.wallet.address,
             trade_amount=agent_action.trade_amount,
         )
     elif agent_action.action_type == MarketActionType.REMOVE_LIQUIDITY:
-        market_deltas, agent_deltas = simulation_state_.remove_liquidity(
+        market_deltas, agent_deltas = remove_liquidity(
+            simulation_state_=simulation_state_,
             wallet_address=agent_action.wallet.address,
             trade_amount=agent_action.trade_amount,
         )
@@ -544,7 +549,7 @@ def open_short(
         address=wallet_address,
         base=-max_loss,
         shorts={
-            simulation_state_.time: Position(
+            simulation_state_.time_in_years: Position(
                 balance=trade_amount, open_share_price=simulation_state_.market_state.share_price
             )
         },
@@ -581,7 +586,7 @@ def close_short(
         )
         trade_amount = simulation_state_.market_state.bond_reserves
 
-    time_remaining_in_years = simulation_state_.term_length_in_years - (simulation_state.time - mint_time)
+    time_remaining_in_years = simulation_state_.term_length_in_years - (simulation_state.time_in_years - mint_time)
 
     # Perform the trade.
     trade_quantity = Quantity(amount=trade_amount, unit=TokenType.PT)
@@ -651,7 +656,7 @@ def open_long(
         agent_deltas = Wallet(
             address=wallet_address,
             base=trade_result.user_result.d_base,
-            longs={simulation_state_.time: Position(trade_result.user_result.d_bonds)},
+            longs={simulation_state_.time_in_years: Position(trade_result.user_result.d_bonds)},
         )
     else:
         market_deltas = Wallet()
@@ -670,7 +675,7 @@ def close_long(
     compute wallet update spec with specific details
     will be conditional on the pricing model
     """
-    time_remaining_in_years = simulation_state_.term_length_in_years - (simulation_state.time - mint_time)
+    time_remaining_in_years = simulation_state_.term_length_in_years - (simulation_state.time_in_years - mint_time)
 
     # Perform the trade.
     trade_quantity = Quantity(amount=trade_amount, unit=TokenType.PT)
@@ -711,7 +716,7 @@ def initialize_market(
         target_apr=target_apr,
         time_remaining=simulation_state_.position_duration,
         market_state=MarketState(
-            share_reserves=share_reserves,
+            shares=share_reserves,
             init_share_price=simulation_state_.market_state.init_share_price,
             share_price=simulation_state_.market_state.share_price,
         ),
@@ -740,19 +745,25 @@ def add_liquidity(
     ):  # pool has not been initialized
         rate = 0
     else:
-        rate = simulation_state_.apr
+        rate = simulation_state_.market_state.apr
     # sanity check inputs
-    simulation_state_.pricing_model.check_input_assertions(
+    simulation_state_.market_state.pricing_model.check_input_assertions(
         quantity=Quantity(amount=trade_amount, unit=TokenType.PT),  # temporary Quantity object just for this check
         market_state=simulation_state_.market_state,
-        time_remaining=simulation_state_.position_duration,
+        time_remaining_in_years=simulation_state_.market_state.term_length_in_years,
+        time_stretch=simulation_state_.market_state.time_stretch,
     )
     # perform the trade
-    lp_out, d_base_reserves, d_token_reserves = simulation_state_.pricing_model.calc_lp_out_given_tokens_in(
+    (
+        lp_out,
+        d_base_reserves,
+        d_token_reserves,
+    ) = simulation_state_.market_state.pricing_model.calc_lp_out_given_tokens_in(
         d_base=trade_amount,
         rate=rate,
         market_state=simulation_state_.market_state,
-        time_remaining=simulation_state_.position_duration,
+        time_remaining_in_years=simulation_state_.market_state.term_length_in_years,
+        time_stretch=simulation_state_.market_state.time_stretch,
     )
     market_deltas = Wallet(
         base=d_base_reserves,
@@ -782,7 +793,7 @@ def remove_liquidity(
     # perform the trade
     lp_in, d_base_reserves, d_token_reserves = simulation_state_.pricing_model.calc_tokens_out_given_lp_in(
         lp_in=trade_amount,
-        rate=simulation_state_.apr,
+        rate=simulation_state_.market_state.apr,
         market_state=simulation_state_.market_state,
         time_remaining=simulation_state_.position_duration,
     )
@@ -808,13 +819,13 @@ def log_market_step_string(simulation_state_) -> None:
         rate = str(np.nan)
     else:
         spot_price = simulation_state_.spot_price
-        rate = simulation_state_.apr
+        rate = simulation_state_.market_state.apr
     logging.debug(
         ("t = %g" "\nx = %g" "\ny = %g" "\nlp = %g" "\nz = %g" "\nx_b = %g" "\ny_b = %g" "\np = %s" "\npool apr = %s"),
-        simulation_state_.time,
+        simulation_state_.time_in_years,
         simulation_state_.market_state.share_reserves * simulation_state_.market_state.share_price,
         simulation_state_.market_state.bond_reserves,
-        simulation_state_.market_state.lp,
+        simulation_state_.market_state.lp_reserves,
         simulation_state_.market_state.share_reserves,
         simulation_state_.market_state.base_buffer,
         simulation_state_.market_state.bond_buffer,
@@ -837,56 +848,55 @@ def init_market_state(
         term_length_in_years=term_length_in_years,
         time_stretch=time_stretch,
     )
-    simulation_state_.market_state.time_stretch = time_stretch
-    simulation_state_.market_state.share_reserves = share_reserves_direct
-    simulation_state_.market_state.bond_reserves = bond_reserves_direct
+    simulation_state_.market_state = MarketState(
+        shares=share_reserves_direct,
+        bonds=bond_reserves_direct,
+        time_stretch=time_stretch,
+    )
 
 
 @dataclass
 class SimulationState:
     """stores Simulator State"""
 
-    config: Config = field(default_factory=lambda: Config())  # pylint: disable=unnecessary-lambda
+    config: Config = field(default_factory=lambda: Config())
     logging.info("%s", config)
-    market_state: MarketState = field(default_factory=lambda: MarketState())  # pylint: disable=unnecessary-lambda
+    market_state: MarketState = field(default_factory=lambda: MarketState())
     agents: dict[int, Agent] = field(default_factory=dict)
 
     # Simulation variables
-    run_number = 0
-    block_number = 0
+    run_number = [0]
+    block_number = [0]
     seconds_in_a_day = 86400
-    run_trade_number = 0
+    run_trade_number = [0]
 
     @property
-    def time(self) -> float:
-        """Returns the current time in the simulation (in seconds)"""
-        return self.block_number * self.time_between_blocks
+    def time_in_seconds(self) -> float:
+        return self.block_number[-1] * self.time_between_blocks
 
     @property
     def time_in_days(self) -> float:
-        """Returns the current time in the simulation (in days)"""
-        return self.time / self.seconds_in_a_day
+        return self.time_in_seconds / self.seconds_in_a_day
 
     @property
     def time_in_years(self) -> float:
-        """Returns the current time in the simulation (in years)"""
-        return self.time / self.seconds_in_a_day / 365
+        return self.time_in_seconds / self.seconds_in_a_day / 365
 
     def __post_init__(self):
-        self.time_between_blocks = self.seconds_in_a_day / self.config.num_blocks_per_day
         self.config.check_variable_rate()
         self.config.freeze()  # pylint: disable=no-member # type: ignore
+        self.time_between_blocks = self.seconds_in_a_day / self.config.num_blocks_per_day
         self.rng = self.config.rng
-        logging.info("%s %s %s", "#" * 20, self.config.pricing_model_name, "#" * 20)
         if self.config.pricing_model_name.lower() == "hyperdrive":
-            self.market_state.pricing_model = HyperdrivePricingModel()
+            pricing_model = HyperdrivePricingModel()
         elif self.config.pricing_model_name.lower() == "yieldspace":
-            self.market_state.pricing_model = YieldSpacePricingModel()
+            pricing_model = YieldSpacePricingModel()
         else:
             raise ValueError(
                 f'pricing_config.pricing_model_name must be "Hyperdrive", or "YieldSpace", not {self.config.pricing_model_name}'
             )
-        init_market_state(self, config=self.config, pricing_model=self.market_state.pricing_model)
+        init_market_state(simulation_state_=self, config=self.config, pricing_model=pricing_model)
+        logging.info("%s %s %s", "#" * 20, self.config.pricing_model_name, "#" * 20)
         if self.config.init_lp is True:  # Instantiate and add the initial LP agent, if desired
             current_market_liquidity = self.market_state.pricing_model.calc_total_liquidity_from_reserves_and_price(
                 market_state=self.market_state, share_price=self.market_state.share_price
@@ -976,21 +986,15 @@ def collect_trades(simulation_state_, agent_ids: list[int], liquidate: bool = Fa
         agent = simulation_state_.agents[agent_id]
         if liquidate:
             logging.debug("Collecting liquiditation trades for market closure")
-            trades = agent.get_liquidation_trades(simulation_state_.market)
+            trades = agent.get_liquidation_trades(simulation_state_.market_state)
         else:
-            trades = agent.get_trades(simulation_state_.market)
+            trades = get_trades(agent_=agent, simulation_state_=simulation_state_)
         agents_and_trades.extend((agent_id, trade) for trade in trades)
     return agents_and_trades
 
 
-def collect_and_execute_trades(simulation_state_, last_block_in_sim: bool = False) -> None:
-    r"""Get trades from the agent list, execute them, and update states
-
-    Parameters
-    ----------
-    last_block_in_sim : bool
-        If True, indicates if the current set of trades are occuring on the final block in the simulation
-    """
+def collect_and_execute_trades(simulation_state_: SimulationState, last_block_in_sim: bool = False) -> None:
+    """Get trades from the agent list, execute them, and update states"""
     if simulation_state_.config.shuffle_users:
         if last_block_in_sim:
             agent_ids: list[int] = simulation_state_.rng.permutation(  # shuffle wallets except init_lp
@@ -998,25 +1002,25 @@ def collect_and_execute_trades(simulation_state_, last_block_in_sim: bool = Fals
             ).tolist()
             if simulation_state_.config.init_lp:
                 agent_ids.append(0)  # add init_lp so that they're always last
-        else:
+        else:  # not last block in sim
             agent_ids = simulation_state_.rng.permutation(
                 list(simulation_state_.agents)
             ).tolist()  # random permutation of keys (agent wallet addresses)
-    else:  # we are in a deterministic mode
+    else:  # we are in a deterministic mode, close their trades in reverse order to allow withdrawing of LP tokens
         agent_ids = (
-            list(simulation_state_.agents)[
-                ::-1
-            ]  # close their trades in reverse order to allow withdrawing of LP tokens
+            list(simulation_state_.agents)[::-1]
             if last_block_in_sim
             else list(simulation_state_.agents)  # execute in increasing order
         )
     agent_trades = collect_trades(simulation_state_, agent_ids, liquidate=last_block_in_sim)
     for trade in agent_trades:
-        agent_id, agent_deltas, market_deltas = simulation_state_.market.trade_and_update(trade)
-        simulation_state_.wallet.apply_delta(market_deltas)
+        agent_id, agent_deltas, market_deltas = trade_and_update(
+            simulation_state_=simulation_state_, action_details=trade
+        )
+        apply_delta(wallet=simulation_state_.market_state.wallet, delta=market_deltas)
         agent = simulation_state_.agents[agent_id]
         logging.debug("agent #%g wallet deltas:\n%s", agent.wallet.address, agent_deltas)
-        agent.wallet.apply_delta(agent_deltas)
+        apply_delta(wallet=agent.wallet, delta=agent_deltas)
         logging.info(agent)
         # TODO: need to log deaggregated trade informaiton, i.e. trade_deltas
         # issue #215
@@ -1025,7 +1029,7 @@ def collect_and_execute_trades(simulation_state_, last_block_in_sim: bool = Fals
 
 
 def run_simulation(simulation_state_, liquidate_on_end: bool = True) -> None:
-    r"""Run the trade simulation and update the output state dictionary
+    """Run the trade simulation and update the output state dictionary
 
     This is the primary function of the Simulator class.
     The PricingModel and Market objects will be constructed.
@@ -1044,21 +1048,21 @@ def run_simulation(simulation_state_, liquidate_on_end: bool = True) -> None:
     last_block_in_sim = False
     for day in range(simulation_state_.config.num_trading_days):
         simulation_state_.day = day
-        simulation_state_.market.market_state.vault_apr = simulation_state_.config.vault_apr[simulation_state_.day]
+        simulation_state_.market_state.vault_apr = simulation_state_.config.vault_apr[simulation_state_.day]
         # Vault return can vary per day, which sets the current price per share
         if simulation_state_.day > 0:  # Update only after first day (first day set to init_share_price)
             if simulation_state_.config.compound_vault_apr:  # Apply return to latest price (full compounding)
-                price_multiplier = simulation_state_.market.market_state.share_price
+                price_multiplier = simulation_state_.market_state.share_price
             else:  # Apply return to starting price (no compounding)
-                price_multiplier = simulation_state_.market.market_state.init_share_price
+                price_multiplier = simulation_state_.market_state.init_share_price
             delta = Wallet(
                 share_price=(
-                    simulation_state_.market.market_state.vault_apr  # current day's apy
+                    simulation_state_.market_state.vault_apr  # current day's apy
                     / 365  # convert annual yield to daily
                     * price_multiplier
                 )
             )
-            simulation_state_.market.update_market(delta)
+            apply_delta(wallet=simulation_state_.market_state.wallet, delta=delta)
         for daily_block_number in range(simulation_state_.config.num_blocks_per_day):
             simulation_state_.daily_block_number = daily_block_number
             last_block_in_sim = (simulation_state_.day == simulation_state_.config.num_trading_days - 1) and (
@@ -1069,13 +1073,36 @@ def run_simulation(simulation_state_, liquidate_on_end: bool = True) -> None:
             logging.debug(
                 "day = %d, daily_block_number = %d\n", simulation_state_.day, simulation_state_.daily_block_number
             )
-            simulation_state_.market.log_market_step_string()
+            simulation_state_.market_state.log_market_step_string()
             if not last_block_in_sim:
-                simulation_state_.market.time += simulation_state_.market_step_size()
+                simulation_state_.time_in_years += simulation_state_.market_step_size()
                 simulation_state_.block_number += 1
     # simulation has ended
     for agent in simulation_state_.agents.values():
         agent.log_final_report(simulation_state_.market)
+
+
+def add_dict_entries(simulation_state_: SimulationState, dictionary: dict) -> None:
+    r"""Adds keys & values of input ditionary to the simulation state
+
+    The simulation state is an ever-growing list,
+    so each item in this dict is appended to the attribute with a corresponding key.
+    If no attribute exists for that key, a new list containing the value is assigned to the attribute
+
+    Parameters
+    ----------
+    dictionary : dict
+        items to be added
+    """
+    for key, val in dictionary.items():
+        if key in ["frozen", "no_new_attribs"]:
+            continue
+        if hasattr(simulation_state_, key):
+            attribute_state = getattr(simulation_state_, key)
+            attribute_state.append(val)
+            setattr(simulation_state_, key, attribute_state)
+        else:
+            setattr(simulation_state_, key, [val])
 
 
 def update_simulation_state(simulation_state_) -> None:
@@ -1094,31 +1121,35 @@ def update_simulation_state(simulation_state_) -> None:
         "market_time",
         "run_trade_number",
         "market_step_size",
-        "position_duration",
+        "term_length_in_years",
+        "time_stretch",
         "fixed_apr",
         "variable_rate",
     ]
     for parameter in parameter_list:
         if not hasattr(simulation_state_, parameter):
             setattr(simulation_state_, parameter, [])
-    simulation_state_.model_name.append(simulation_state_.market.pricing_model.model_name())
-    simulation_state_.run_number.append(simulation_state_.run_number)
+    simulation_state_.model_name.append(simulation_state_.market_state.pricing_model.model_name())
+    simulation_state_.run_number.append(simulation_state_.run_number[-1])
     simulation_state_.day.append(simulation_state_.day)
-    simulation_state_.block_number.append(simulation_state_.block_number)
-    simulation_state_.market_time.append(simulation_state_.market.time)
+    simulation_state_.block_number.append(simulation_state_.block_number[-1])
+    simulation_state_.market_time.append(simulation_state_.time_in_years)
     simulation_state_.run_trade_number.append(simulation_state_.run_trade_number)
     simulation_state_.market_step_size.append(simulation_state_.market_step_size)
-    simulation_state_.position_duration.append(simulation_state_.market.position_duration)
-    simulation_state_.fixed_apr.append(simulation_state_.market.apr)
-    simulation_state_.variable_rate.append(simulation_state_.config.variable_rate[simulation_state_.day])
-    simulation_state_.add_dict_entries({f"config.{key}": val for key, val in simulation_state_.config.__dict__.items()})
-    simulation_state_.add_dict_entries(simulation_state_.market.market_state.__dict__)
+    simulation_state_.term_length_in_years.append(simulation_state_.market_state.term_length_in_years)
+    simulation_state_.time_stretch.append(simulation_state_.market_state.time_stretch)
+    simulation_state_.fixed_apr.append(simulation_state_.market_state.apr)
+    simulation_state_.variable_rate.append(simulation_state_.config.variable_rate[simulation_state_.block_number[-1]])
+    add_dict_entries(
+        simulation_state_, {f"config.{key}": val for key, val in simulation_state_.config.__dict__.items()}
+    )
+    add_dict_entries(simulation_state_, simulation_state_.market_state.__dict__)
     for agent in simulation_state_.agents.values():
-        simulation_state_.add_dict_entries(agent.wallet.get_state(simulation_state_))
+        add_dict_entries(simulation_state_, agent.wallet.get_state(simulation_state_))
     # TODO: This is a HACK to prevent test_sim from failing on market shutdown
     # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
-    if simulation_state_.market.market_state.share_reserves > 0:  # there is money in the market
-        simulation_state_.spot_price.append(simulation_state_.market.spot_price)
+    if simulation_state_.market_state.market_state.share_reserves > 0:  # there is money in the market
+        simulation_state_.spot_price.append(simulation_state_.market_state.spot_price)
     else:
         simulation_state_.spot_price.append(np.nan)
 
@@ -1142,16 +1173,9 @@ def add_agents(self, agent_list: list[Agent]) -> None:
 
 
 def execute_trades(simulation_state_, agent_trades: list[tuple[int, MarketAction]]) -> None:
-    r"""Execute a list of trades associated with agents in the simulator.
-
-    Parameters
-    ----------
-    trades : list[tuple[int, list[MarketAction]]]
-        A list of agent trades. These will be executed in order.
-    """
     for trade in agent_trades:
-        agent_id, agent_deltas, market_deltas = simulation_state_.market.trade_and_update(trade)
-        simulation_state_.market.update_market(market_deltas)
+        agent_id, agent_deltas, market_deltas = simulation_state_.market_state.trade_and_update(trade)
+        apply_delta(wallet=simulation_state_.market_state.wallet, delta=market_deltas)
         agent = simulation_state_.agents[agent_id]
         logging.debug(
             "agent #%g wallet deltas:\n%s",
@@ -1399,11 +1423,11 @@ class PricingModel(ABC):
         )
         total_liquidity = self.calc_total_liquidity_from_reserves_and_price(
             MarketState(
-                share_reserves=share_reserves,
-                bond_reserves=bond_reserves,
+                shares=share_reserves,
+                bonds=bond_reserves,
                 base_buffer=market_state.base_buffer,
                 bond_buffer=market_state.bond_buffer,
-                lp_reserves=market_state.lp_reserves,
+                lp=market_state.lp_reserves,
                 share_price=market_state.share_price,
                 init_share_price=market_state.init_share_price,
             ),
@@ -2439,11 +2463,11 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         # TODO: This is somewhat strange since these updates never actually hit the reserves.
         # Redeem the matured bonds 1:1 and simulate these updates hitting the reserves.
         if out.unit == TokenType.BASE:
-            market_state.share_reserves -= float(d_shares)
-            market_state.bond_reserves += float(d_bonds)
+            market_state.wallet.shares -= float(d_shares)
+            market_state.wallet.bonds += float(d_bonds)
         elif out.unit == TokenType.PT:
-            market_state.share_reserves += float(d_shares)
-            market_state.bond_reserves -= float(d_bonds)
+            market_state.wallet.shares += float(d_shares)
+            market_state.wallet.bonds -= float(d_bonds)
         else:
             raise AssertionError(
                 "pricing_models.calc_in_given_out: ERROR: "
@@ -2577,11 +2601,11 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         # TODO: This is somewhat strange since these updates never actually hit the reserves.
         # Redeem the matured bonds 1:1 and simulate these updates hitting the reserves.
         if in_.unit == TokenType.BASE:
-            market_state.share_reserves += float(d_shares)
-            market_state.bond_reserves -= float(d_bonds)
+            market_state.wallet.shares += float(d_shares)
+            market_state.wallet.bonds -= float(d_bonds)
         elif in_.unit == TokenType.PT:
-            market_state.share_reserves -= float(d_shares)
-            market_state.bond_reserves += float(d_bonds)
+            market_state.wallet.shares -= float(d_shares)
+            market_state.wallet.bonds += float(d_bonds)
         else:
             raise AssertionError(
                 "pricing_models.calc_out_given_in: ERROR: "
@@ -2638,17 +2662,17 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         )
 
 
-def get_pricing_model(model: str):
+def get_pricing_model(model: str) -> PricingModel:
     """Get the pricing model from the string"""  # sourcery skip: assign-if-exp, reintroduce-else
     model = model.lower()
     if model == "yieldspace":
-        return YieldSpacePricingModel
+        return YieldSpacePricingModel()
     if model == "hyperdrive":
-        return HyperdrivePricingModel
-    return PricingModel
+        return HyperdrivePricingModel()
+    return PricingModel()
 
 
-@freezable(frozen=False, no_new_attribs=False)
+@freezable(frozen=False, no_new_attribs=True)
 @dataclass
 class MarketState:
     r"""The state of an AMM
@@ -2661,14 +2685,8 @@ class MarketState:
     ----------
     share_reserves: float
         Quantity of shares stored in the market
-    bond_reserves: float
-        Quantity of bonds stored in the market
-    base_buffer: float
-        Base amount set aside to account for open longs
-    bond_buffer: float
-        Bond amount set aside to account for open shorts
-    lp: float
-        Amount of lp tokens
+    wallet: Wallet
+        The wallet which holds the reserves of the market
     variable_rate: float
         .. todo: fill this in
     share_price: float
@@ -2686,20 +2704,35 @@ class MarketState:
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
 
-    pricing_model: PricingModel = field(default_factory=get_pricing_model("hyperdrive"))
-    time: float = 0.0
+    pricing_model: PricingModel = field(default_factory=lambda: get_pricing_model("hyperdrive"))
+    wallet: Wallet = field(default_factory=Wallet)
     term_length_in_days: float = 90
     time_stretch: float = 1
-    share_reserves: float = 0.0
-    bond_reserves: float = 0.0
-    base_buffer: float = 0.0
-    bond_buffer: float = 0.0
-    lp_reserves: float = 0.0
     variable_rate: float = 0.0
     share_price: float = 1.0
     init_share_price: float = 1.0
     trade_fee_percent: float = 0.0
     redemption_fee_percent: float = 0.0
+
+    @property
+    def share_reserves(self) -> float:
+        return self.wallet.shares
+
+    @property
+    def bond_reserves(self) -> float:
+        return self.wallet.bonds
+
+    @property
+    def base_buffer(self) -> float:
+        return self.wallet.base
+
+    @property
+    def bond_buffer(self) -> float:
+        return self.wallet.bonds
+
+    @property
+    def lp_reserves(self) -> float:
+        return self.wallet.lp
 
     @property
     def term_length_in_years(self) -> float:
@@ -2727,6 +2760,26 @@ class MarketState:
                 time_stretch=self.time_stretch,
             )
         )
+
+    def __init__(
+        self,
+        shares: float = 0,
+        bonds: float = 0,
+        base: float = 0,
+        lp: float = 0,
+        bond_buffer: float = 0,
+        base_buffer: float = 0,
+        pricing_model: PricingModel = get_pricing_model("hyperdrive"),
+        **kwargs,
+    ):
+        # self.wallet = Wallet(shares=shares, bonds=bonds, base=base, lp=lp)
+        self.wallet = Wallet(
+            shares=shares, bonds=bonds, base=base, lp=lp, bond_buffer=bond_buffer, base_buffer=base_buffer
+        )
+        self.pricing_model = pricing_model
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        print(self.pricing_model)
 
     def copy(self) -> "MarketState":
         """Returns a copy of the market state"""
@@ -2772,7 +2825,7 @@ class Agent:
 
 def weighted_average_spend(agent_, simulation_state_: SimulationState) -> float:
     """Calculates the weighted average spend of the agent"""
-    return agent_.product_of_time_and_base / (simulation_state_.time - agent_.last_update_spend)
+    return agent_.product_of_time_and_base / (simulation_state_.time_in_years - agent_.last_update_spend)
 
 
 def get_agent_max_long(agent_: Agent, market_state_: MarketState) -> float:
@@ -2841,7 +2894,7 @@ def get_trades(agent_: Agent, simulation_state_: SimulationState) -> list:
     actions = agent_.action(simulation_state_=simulation_state_)  # get the action list from the policy
     for action in actions:  # edit each action in place
         if action.mint_time is None:
-            action.mint_time = simulation_state_.time
+            action.mint_time = simulation_state_.time_in_years
     return actions
 
 
@@ -2869,7 +2922,9 @@ def get_liquidation_trades(agent_: Agent, simulation_state_: SimulationState) ->
                 )
             )
     if agent_.wallet.lp > 0:
-        logging.debug("evaluating closing lp: mint_time=%g, position=%s", simulation_state_.time, agent_.wallet.lp)
+        logging.debug(
+            "evaluating closing lp: mint_time=%g, position=%s", simulation_state_.time_in_years, agent_.wallet.lp
+        )
         action_list.append(
             MarketAction(
                 action_type=MarketActionType.REMOVE_LIQUIDITY,
@@ -2904,8 +2959,8 @@ def log_final_report(agent_: Agent, simulation_state_: SimulationState) -> None:
     # Calculated spending statistics.
     spend = weighted_average_spend(agent_=agent_, simulation_state_=simulation_state_)
     holding_period_rate = profit_and_loss / spend if spend != 0 else 0
-    if simulation_state_.time > 0:
-        annual_percentage_rate = holding_period_rate / simulation_state_.time
+    if simulation_state_.time_in_years > 0:
+        annual_percentage_rate = holding_period_rate / simulation_state_.time_in_years
     else:
         annual_percentage_rate = np.nan
 
@@ -2923,7 +2978,7 @@ def log_final_report(agent_: Agent, simulation_state_: SimulationState) -> None:
         spend,
         annual_percentage_rate,
         holding_period_rate,
-        simulation_state_.time,
+        simulation_state_.time_in_years,
         total_value,
         base,
         sum(long.balance for long in longs),
@@ -2961,7 +3016,7 @@ class LPandWithdraw(Agent):
         if not has_lp and can_lp:
             action_list.append(MarketAction(action_type=MarketActionType.ADD_LIQUIDITY, trade_amount=self.amount_to_lp))
         elif has_lp:
-            enough_time_has_passed = simulation_state_.time > self.time_to_withdraw
+            enough_time_has_passed = simulation_state_.time_in_years > self.time_to_withdraw
             if enough_time_has_passed:
                 action_list.append(
                     MarketAction(action_type=MarketActionType.REMOVE_LIQUIDITY, trade_amount=self.wallet.lp)
@@ -2979,7 +3034,7 @@ class SingleLong(Agent):
         action_list = []
         if has_opened_long:
             mint_time = list(self.wallet.longs)[-1]
-            enough_time_has_passed = simulation_state_.time - mint_time > 0.01
+            enough_time_has_passed = simulation_state_.time_in_years - mint_time > 0.01
             if enough_time_has_passed:
                 action_list.append(
                     MarketAction(
