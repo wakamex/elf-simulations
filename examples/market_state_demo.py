@@ -176,8 +176,14 @@ hyper_trades["prefix"], hyper_trades["maturity_timestamp"] = zip(*tuple_series)
 hyper_trades["trade_type"] = hyper_trades["prefix"].apply(lambda x: hyperdrive_assets.AssetIdPrefix(x).name)
 hyper_trades["value"] = hyper_trades["value"]
 print(f"processed in {(time() - start_time)*1e3:0.1f}ms")
+
+# %% inspect for address 0x42d211e3B53E460D7122464Cd888d83310c455A5
+address = "0x42d211e3B53E460D7122464Cd888d83310c455A5"
+hyper_trades[hyper_trades["operator"] == address].style.format({"value": "{:0,.2f}"})
+
 # %% display head
 hyper_trades.head(2).style.format({"value": "{:0,.2f}"})
+addresses = hyper_trades["operator"].unique().tolist()
 
 # %% get unique maturities
 unique_maturities = hyper_trades["maturity_timestamp"].unique()
@@ -222,7 +228,7 @@ for address in addresses:
         query_balance = hyperdrive.balanceOf(id_, address)
         asset_prefix, maturity = hyperdrive_assets.decode_asset_id(id_)
         asset_type = hyperdrive_assets.AssetIdPrefix(asset_prefix).name
-        assert abs(balance - query_balance) < 3, f"events {balance=} != {query_balance=}"
+        assert abs(balance - query_balance) < 3, f"events {balance=} != {query_balance=} for address {address}"
         if balance != 0 or query_balance != 0:
             # right align balance
             balance_str = f"{balance:0,.2f}".rjust(10)
