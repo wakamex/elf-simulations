@@ -187,19 +187,24 @@ def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance
     return pool_state
 
 
-def get_agent_deltas(tx_receipt: ReceiptAPI):
-    agent = tx_receipt["operator"]
-    event_args = tx_receipt["event_arguments"]
+def get_agent_deltas(
+    tx_receipt: ReceiptAPI, start_time, block_time, trade, addresses, trade_type, hyper_config, market_state
+):
+    """Get the change in an agent's wallet from a transaction receipt."""
+    agent = tx_receipt["operator"]  # type: ignore
+    event_args = tx_receipt["event_arguments"]  # type: ignore
     event_args |= {k: v for k, v in tx_receipt.items() if k in ["block_number", "event_name"]}
-    txn_events = [e.dict() for e in tx_receipt.events if agent in [e.get("from"), e.get("to")]]
+    # txn_events = [e.dict() for e in tx_receipt.events if agent in [e.get("from"), e.get("to")]]
     dai_events = [e.dict() for e in tx_receipt.events if agent in [e.get("src"), e.get("dst")]]
     dai_in = sum(int(e["event_arguments"]["wad"]) for e in dai_events if e["event_arguments"]["src"] == agent) / 1e18
-    dai_out = sum(int(e["event_arguments"]["wad"]) for e in dai_events if e["event_arguments"]["dst"] == agent) / 1e18
+    # dai_out = sum(int(e["event_arguments"]["wad"]) for e in dai_events if e["event_arguments"]["dst"] == agent) / 1e18
     prefix, maturity_timestamp = hyperdrive_assets.decode_asset_id(int(trade["id"]))
-    mint_time = ((maturity_timestamp - SECONDS_IN_YEAR * hyper_config["term_length"]) - start_time) / SECONDS_IN_YEAR
-    token_type = hyperdrive_assets.AssetIdPrefix(prefix)  # look up prefix in AssetIdPrefix
+    mint_time = (
+        (maturity_timestamp - elfpy.SECONDS_IN_YEAR * hyper_config["term_length"]) - start_time
+    ) / elfpy.SECONDS_IN_YEAR
+    # token_type = hyperdrive_assets.AssetIdPrefix(prefix)  # look up prefix in AssetIdPrefix
     address_index = addresses.index(agent)
-    if trade_type == "addLiquidity":  # sourcery skip: switch
+    if trade_type == "addLiquidity":  # sourcery skip: lift-return-into-if, switch
         # agent_deltas = wallet.Wallet(
         #     address=wallet_address,
         #     balance=-types.Quantity(amount=d_base_reserves, unit=types.TokenType.BASE),
@@ -264,7 +269,7 @@ def get_agent_deltas(tx_receipt: ReceiptAPI):
             shorts={
                 block_time: Short(
                     balance=trade["value"],  # trade output
-                    open_share_price=params["market_state"].share_price,
+                    open_share_price=market_state.share_price,
                 )
             },
         )
@@ -421,8 +426,7 @@ def ape_trade(
 
     try:  # attempt to execute the transaction, allowing for a specified number of retries (default is 1)
         tx_receipt = attempt_txn(agent, contract_txn, *args, **kwargs)
-        if tx_receipt is None:
-            return None, None
+        assert tx_receipt is not None, "Transaction failed"
         return get_pool_state(tx_receipt=tx_receipt, hyperdrive_contract=hyperdrive), tx_receipt
     except TransactionError as exc:
         var = trade_type, exc, fmt(amount), agent, hyperdrive.getPoolInfo().__dict__
@@ -467,6 +471,9 @@ def attempt_txn(
     each subsequent attempt multiples the max_fee by "mult"
     that is, the second attempt will have a max_fee of 2 * max_fee, the third will have a max_fee of 3 * max_fee, etc.
     """
+    # allow inconsistent return, since we throw an error if the transaction fails after all attempts
+    # pylint: disable=inconsistent-return-statements
+
     mult = kwargs.pop("mult") if hasattr(kwargs, "mult") else 2
     priority_fee_multiple = kwargs.pop("priority_fee_multiple") if hasattr(kwargs, "priority_fee_multiple") else 5
     if isinstance(contract_txn, ContractTransactionHandler):

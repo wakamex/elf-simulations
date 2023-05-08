@@ -291,15 +291,22 @@ for trade_num, trade in enumerate(trades):
     block_time = (ape.chain.blocks[block_number].timestamp - start_time) / SECONDS_IN_YEAR
     params |= {"market_state": ape_utils.get_market_state_from_contract(hyperdrive, block_number=block_number)}
     params |= {"block_time": elfpy_time.BlockTime(time=block_time)}
-    # for k, v in params.items():
-    #     print(f"{k}: {v}")
     market: hyperdrive_market.Market = hyperdrive_market.Market(**params)  # type: ignore
 
     # get trade info
     trade_type = trade["function_name"]
     agent = trade["operator"]
     tx_receipt: ReceiptAPI = provider.get_receipt(txn_hash=str(trade["hash"]))
-    agent_deltas = get_agent_deltas(tx_receipt=tx_receipt)
+    agent_deltas = ape_utils.get_agent_deltas(
+        tx_receipt=tx_receipt,
+        start_time=start_time,
+        block_time=block_time,
+        trade=trade,
+        addresses=addresses,
+        trade_type=trade_type,
+        hyper_config=hyper_config,
+        market_state=params["market_state"],
+    )
     agent_wallet = agent_wallets[agent]
     print(f"starting wallet = {agent_wallet}")
     print(f"deltas wallet = {agent_deltas}")
