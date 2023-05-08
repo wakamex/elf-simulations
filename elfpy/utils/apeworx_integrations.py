@@ -187,9 +187,10 @@ def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance
     return pool_state
 
 
-def get_agent_deltas(
-    tx_receipt: ReceiptAPI, start_time, block_time, trade, addresses, trade_type, hyper_config, market_state
-):
+PoolInfo = namedtuple("PoolInfo", ["start_time", "block_time", "term_length", "market_state"])
+
+
+def get_agent_deltas(tx_receipt: ReceiptAPI, trade, addresses, trade_type, pool_info: PoolInfo):
     """Get the change in an agent's wallet from a transaction receipt."""
     agent = tx_receipt["operator"]  # type: ignore
     event_args = tx_receipt["event_arguments"]  # type: ignore
@@ -198,12 +199,11 @@ def get_agent_deltas(
     dai_events = [e.dict() for e in tx_receipt.events if agent in [e.get("src"), e.get("dst")]]
     dai_in = sum(int(e["event_arguments"]["wad"]) for e in dai_events if e["event_arguments"]["src"] == agent) / 1e18
     # dai_out = sum(int(e["event_arguments"]["wad"]) for e in dai_events if e["event_arguments"]["dst"] == agent) / 1e18
-    prefix, maturity_timestamp = hyperdrive_assets.decode_asset_id(int(trade["id"]))
+    _, maturity_timestamp = hyperdrive_assets.decode_asset_id(int(trade["id"]))
     mint_time = (
-        (maturity_timestamp - elfpy.SECONDS_IN_YEAR * hyper_config["term_length"]) - start_time
+        (maturity_timestamp - elfpy.SECONDS_IN_YEAR * pool_info.term_length) - pool_info.start_time
     ) / elfpy.SECONDS_IN_YEAR
     # token_type = hyperdrive_assets.AssetIdPrefix(prefix)  # look up prefix in AssetIdPrefix
-    address_index = addresses.index(agent)
     if trade_type == "addLiquidity":  # sourcery skip: lift-return-into-if, switch
         # agent_deltas = wallet.Wallet(
         #     address=wallet_address,
@@ -211,7 +211,7 @@ def get_agent_deltas(
         #     lp_tokens=lp_out,
         # )
         agent_deltas = Wallet(
-            address=address_index,
+            address=addresses.index(agent),
             balance=-types.Quantity(amount=trade["_contribution"], unit=types.TokenType.BASE),
             lp_tokens=trade["value"],  # trade output
         )
@@ -223,7 +223,7 @@ def get_agent_deltas(
         #     withdraw_shares=withdraw_shares,
         # )
         agent_deltas = Wallet(
-            address=address_index,
+            address=addresses.index(agent),
             balance=types.Quantity(amount=trade["value"], unit=types.TokenType.BASE),  # trade output
             lp_tokens=-trade["_shares"],  # negative, decreasing
             withdraw_shares=trade["_shares"],  # positive, increasing
@@ -236,9 +236,9 @@ def get_agent_deltas(
         #     fees_paid=trade_result.breakdown.fee,
         # )
         agent_deltas = Wallet(
-            address=address_index,
+            address=addresses.index(agent),
             balance=types.Quantity(amount=-trade["_baseAmount"], unit=types.TokenType.BASE),  # negative, decreasing
-            longs={block_time: Long(trade["value"])},  # trade output, increasing
+            longs={pool_info.block_time: Long(trade["value"])},  # trade output, increasing
         )
     elif trade_type == "closeLong":
         # agent_deltas = wallet.Wallet(
@@ -248,7 +248,7 @@ def get_agent_deltas(
         #     fees_paid=fee,
         # )
         agent_deltas = Wallet(
-            address=address_index,
+            address=addresses.index(agent),
             balance=types.Quantity(amount=trade["value"], unit=types.TokenType.BASE),  # trade output
             longs={mint_time: Long(-trade["_bondAmount"])},  # negative, decreasing
         )
@@ -264,12 +264,12 @@ def get_agent_deltas(
         #     fees_paid=trade_result.breakdown.fee,
         # )
         agent_deltas = Wallet(
-            address=address_index,
+            address=addresses.index(agent),
             balance=types.Quantity(amount=-dai_in, unit=types.TokenType.BASE),  # negative, decreasing
             shorts={
-                block_time: Short(
+                pool_info.block_time: Short(
                     balance=trade["value"],  # trade output
-                    open_share_price=market_state.share_price,
+                    open_share_price=pool_info.market_state.share_price,
                 )
             },
         )
@@ -290,7 +290,7 @@ def get_agent_deltas(
         #     fees_paid=trade_result.breakdown.fee,
         # )
         agent_deltas = Wallet(
-            address=address_index,
+            address=addresses.index(agent),
             balance=types.Quantity(amount=trade["value"], unit=types.TokenType.BASE),
             shorts={
                 mint_time: Short(

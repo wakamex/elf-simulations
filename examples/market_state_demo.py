@@ -293,26 +293,24 @@ for trade_num, trade in enumerate(trades):
     params |= {"block_time": elfpy_time.BlockTime(time=block_time)}
     market: hyperdrive_market.Market = hyperdrive_market.Market(**params)  # type: ignore
 
-    # get trade info
-    trade_type = trade["function_name"]
-    agent = trade["operator"]
-    tx_receipt: ReceiptAPI = provider.get_receipt(txn_hash=str(trade["hash"]))
     agent_deltas = ape_utils.get_agent_deltas(
-        tx_receipt=tx_receipt,
-        start_time=start_time,
-        block_time=block_time,
+        tx_receipt=provider.get_receipt(txn_hash=str(trade["hash"])),
         trade=trade,
         addresses=addresses,
-        trade_type=trade_type,
-        hyper_config=hyper_config,
-        market_state=params["market_state"],
+        trade_type=trade["function_name"],
+        pool_info=ape_utils.PoolInfo(
+            start_time=start_time,
+            block_time=block_time,
+            term_length=hyper_config["term_length"],
+            market_state=params["market_state"],
+        ),
     )
-    agent_wallet = agent_wallets[agent]
+    agent_wallet = agent_wallets[trade["operator"]]
     print(f"starting wallet = {agent_wallet}")
     print(f"deltas wallet = {agent_deltas}")
     agent_wallet.update(agent_deltas)
     print(f"resulting wallet = {agent_wallet}")
-    print(f"{trade_num=} {trade_type=} {agent=}")
+    print(f"{trade_num=} {trade['function_name']=} {trade['operator']=}")
     pnl_after_this_trade = []
     for address in addresses:
         address_index = addresses.index(address)
