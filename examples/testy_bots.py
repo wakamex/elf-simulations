@@ -208,7 +208,22 @@ class LongLouie(agentlib.Agent):
 
 
 def get_argparser() -> argparse.ArgumentParser:
-    """Define & parse arguments from stdin."""
+    """Construct and return an argparse.ArgumentParser object to parse command line arguments for the TestnetBots program.
+
+    The following command line arguments are defined:
+        log_filename (str): Optional. Specifies the output filename for logging. Default is "testnet_bots".
+        log_level (str): Optional. Sets the logging level, should be one of ["DEBUG", "INFO", "WARNING"]. Default is "INFO".
+        max_bytes (int): Optional. Maximum size of the log file in bytes. Default is the value of elfpy.DEFAULT_LOG_MAXBYTES.
+        num_louie (int): Optional. Number of Long Louie agents to run. Default is 0.
+        num_frida (int): Optional. Number of Fixed Rate Frida agents to run. Default is 0.
+        num_random (int): Optional. Number of Random agents to run. Default is 4.
+        trade_chance (float): Optional. Chance for an agent to execute a trade. Default is 0.1.
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        A configured ArgumentParser object ready to parse command line arguments.
+    """
     parser = argparse.ArgumentParser(
         prog="TestnetBots",
         description="Execute bots on testnet",
