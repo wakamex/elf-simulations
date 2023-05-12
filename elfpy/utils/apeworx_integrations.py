@@ -47,9 +47,7 @@ class HyperdriveProject(ProjectManager):
         return self.hyperdrive.at(self.conversion_manager.convert(self.address, AddressType))
 
 
-def get_market_state_from_contract(
-    contract: ContractInstance, block: Optional[BlockAPI] = None, block_number: Optional[Union[int, float]] = None
-) -> hyperdrive_market.MarketState:
+def get_market_state_from_contract(contract: ContractInstance, **kwargs) -> hyperdrive_market.MarketState:
     """Return the current market state from the smart contract.
 
     Parameters
@@ -61,15 +59,8 @@ def get_market_state_from_contract(
     -------
     hyperdrive_market.MarketState
     """
-    if block is None and block_number is None:
-        pool_state = contract.getPoolInfo().__dict__
-        hyper_config = contract.getPoolConfig().__dict__
-    elif block is not None:
-        pool_state = contract.getPoolInfo(block=block).__dict__
-        hyper_config = contract.getPoolConfig(block=block).__dict__
-    else:
-        pool_state = contract.getPoolInfo(block_number=block_number).__dict__
-        hyper_config = contract.getPoolConfig(block_number=block_number).__dict__
+    pool_state = contract.getPoolInfo(**kwargs).__dict__
+    hyper_config = contract.getPoolConfig(**kwargs).__dict__
     hyper_config["timeStretch"] = 1 / (hyper_config["timeStretch"] / 1e18)
     hyper_config["term_length"] = 365  # days
     asset_id = hyperdrive_assets.encode_asset_id(
