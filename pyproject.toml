@@ -1,6 +1,6 @@
 [project]
 name = "elfpy"
-version = "0.1.0"
+version = "0.1.420"
 authors = [
     { name = "Dylan Paiton", email = "dylan@element.fi" },
     { name = "Jonny Rhea", email = "jonny@element.fi" },
@@ -30,9 +30,7 @@ requires = ["flit_core>=3.2"]
 build-backend = "flit_core.buildapi"
 
 [tool.pytest.ini_options]
-addopts = [
-    "--import-mode=importlib",
-]
+addopts = ["--import-mode=importlib"]
 
 [tool.pylint.format]
 max-line-length = "120"
@@ -42,7 +40,4 @@ line-length = "120"
 extend-exclude = "\\.ipynb"
 
 [tool.pyright]
-exclude = [
-    "hyperdrive_solidity",
-    ".venv",
-]
+exclude = ["hyperdrive_solidity", ".venv"]
