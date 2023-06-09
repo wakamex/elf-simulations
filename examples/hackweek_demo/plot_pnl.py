@@ -32,88 +32,86 @@ from matplotlib import ticker as mpl_ticker
 from matplotlib import dates as mdates
 from matplotlib import pyplot as plt
 
-# %% read in data
-# hard coding location for now
-with open("hyperTransRecs_updated.json", "r", encoding="utf8") as f:
-    json_data = json.load(f)
-data = pd.DataFrame(json_data)
-timestamps = data["timestamp"]
-decoded_logs = data["decoded_logs"].str[0]
+def get_data_from_file(filename: str):
+    # hard coding location for now
+    with open(filename, "r", encoding="utf8") as infile:
+        json_data = json.load(infile)
+    data = pd.DataFrame(json_data)
+    timestamps = data["timestamp"]
+    decoded_logs = data["decoded_logs"].str[0]
 
-# %%
-data = pd.concat([timestamps, pd.json_normalize(decoded_logs), pd.json_normalize(data["decoded_input"])], axis=1)
-data = data[~data["args.id"].isna()]
-data = data.reset_index(drop=True)
-prefix, maturity_timestamp = hyperdrive_assets.decode_asset_id(data["args.id"].values)
-trade_type = pd.DataFrame(prefix).apply(lambda x: hyperdrive_assets.AssetIdPrefix(x.values).name, axis=1)
+    data = pd.concat([timestamps, pd.json_normalize(decoded_logs), pd.json_normalize(data["decoded_input"])], axis=1)
+    data = data[~data["args.id"].isna()]
+    data = data.reset_index(drop=True)
+    prefix, maturity_timestamp = hyperdrive_assets.decode_asset_id(data["args.id"].values)
+    trade_type = pd.DataFrame(prefix).apply(lambda x: hyperdrive_assets.AssetIdPrefix(x.values).name, axis=1)
 
-# %%
-data["prefix"] = prefix
-data["maturity_timestamp"] = maturity_timestamp
-data["trade_type"] = trade_type
-data["timestamp"] = data["timestamp"].astype(int)
+    data["prefix"] = prefix
+    data["maturity_timestamp"] = maturity_timestamp
+    data["trade_type"] = trade_type
+    data["timestamp"] = data["timestamp"].astype(int)
 
-# %%
-columns = [
-    "event",
-    "address",
-    "transactionHash",
-    "blockNumber",
-    "blockHash",
-    "logIndex",
-    "transactionIndex",
-    "args.operator",
-    "args.from",
-    "args.to",
-    "args.id",
-    "args.value",
-    "prefix",
-    "maturity_timestamp",
-    "trade_type",
-    "timestamp",
-]
+    columns = [
+        "event",
+        "address",
+        "transactionHash",
+        "blockNumber",
+        "blockHash",
+        "logIndex",
+        "transactionIndex",
+        "args.operator",
+        "args.from",
+        "args.to",
+        "args.id",
+        "args.value",
+        "prefix",
+        "maturity_timestamp",
+        "trade_type",
+        "timestamp",
+    ]
 
-# %%
-rename_columns = [
-    "event_name",
-    "contract_address",
-    "transaction_hash",
-    "block_number",
-    "block_hash",
-    "log_index",
-    "transaction_index",
-    "operator",
-    "from",
-    "to",
-    "id",
-    "value",
-    "prefix",
-    "maturity_timestamp",
-    "trade_type",
-    "block_timestamp",
-]
+    rename_columns = [
+        "event_name",
+        "contract_address",
+        "transaction_hash",
+        "block_number",
+        "block_hash",
+        "log_index",
+        "transaction_index",
+        "operator",
+        "from",
+        "to",
+        "id",
+        "value",
+        "prefix",
+        "maturity_timestamp",
+        "trade_type",
+        "block_timestamp",
+    ]
 
-# %%
-renamed_data = data[columns]
-renamed_data.columns = rename_columns
-block_info_data = data[[c for c in data.columns if "block_info." in c]]
+    renamed_data = data[columns]
+    renamed_data.columns = rename_columns
+    block_info_data = data[[c for c in data.columns if "block_info." in c]]
 
-# %%
-block_info_data.columns = [
-    "share_reserves",
-    "bond_reserves",
-    "lp_total_supply",
-    "share_price",
-    "longs_outstanding",
-    "average_maturity_time",
-    "long_base_volume",
-    "shorts_outstanding",
-    "short_average_maturity_time",
-    "short_base_volume",
-]
+    block_info_data.columns = [
+        "share_reserves",
+        "bond_reserves",
+        "lp_total_supply",
+        "share_price",
+        "longs_outstanding",
+        "average_maturity_time",
+        "long_base_volume",
+        "shorts_outstanding",
+        "short_average_maturity_time",
+        "short_base_volume",
+    ]
 
-# %%
-trade_data = pd.concat([renamed_data, block_info_data], axis=1)
+    trade_data = pd.concat([renamed_data, block_info_data], axis=1)
+
+    return trade_data
+
+# %% get data
+trade_data = get_data_from_file("hyperTransRecs_updated.json")
 
 # %%
 def get_wallet_from_onchain_trade_info(
