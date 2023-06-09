@@ -18,6 +18,7 @@ import ape
 import numpy as np
 import requests
 import tqdm
+import pandas as pd
 from ape import accounts
 from ape.api import ProviderAPI, ReceiptAPI
 from ape.contracts import ContractInstance
@@ -134,7 +135,6 @@ def get_accounts(experiment_config: Config) -> list[KeyfileAccount]:
     logging.disable(logging.NOTSET)  # re-enable logging warnings
     return dev_accounts
 
-
 def create_agent(
     bot: BotInfo,
     dev_accounts: list[KeyfileAccount],
@@ -237,7 +237,8 @@ def set_up_agents(
     base_instance: ContractInstance,
     addresses: dict[str, str],
     deployer_account: KeyfileAccount,
-) -> tuple[dict[str, Agent], ape_utils.OnChainTradeInfo]:
+    on_chain_trade_info: ape_utils.OnChainTradeInfo,
+) -> dict[str, Agent]:
     """Set up python agents & corresponding on-chain accounts.
 
     Parameters
@@ -256,13 +257,13 @@ def set_up_agents(
         Addresses of deployed contracts.
     deployer_account : KeyfileAccount
         The deployer account.
+    on_chain_trade_info : ape_utils.OnChainTradeInfo
+        Information about on-chain trades.
 
     Returns
     -------
     sim_agents : dict[str, Agent]
         Dict of agents used in the simulation.
-    on_chain_trade_info : ape_utils.OnChainTradeInfo
-        Information about on-chain trades.
     """
     # pylint: disable=too-many-arguments, too-many-locals
     dev_accounts: list[KeyfileAccount] = get_accounts(experiment_config)
@@ -281,9 +282,6 @@ def set_up_agents(
         bot_num += experiment_config.scratch[f"num_{bot_name}"]
     sim_agents = {}
     start_time_ = now()
-    on_chain_trade_info: ape_utils.OnChainTradeInfo = ape_utils.get_on_chain_trade_info(
-        hyperdrive_contract=hyperdrive_instance
-    )
     logging.debug("Getting on-chain trade info took %s seconds", fmt(now() - start_time_))
     for bot_name in [
         name for name in experiment_config.scratch["bot_names"] if experiment_config.scratch[f"num_{name}"] > 0
@@ -305,7 +303,7 @@ def set_up_agents(
                 deployer_account=deployer_account,
             )
             sim_agents[f"agent_{agent.wallet.address}"] = agent
-    return sim_agents, on_chain_trade_info
+    return sim_agents
 
 
 def do_trade(
@@ -557,17 +555,20 @@ def do_policy(
     hyperdrive_instance: ContractInstance,
     base_instance: ContractInstance,
     args: EnvironmentArguments,
-):  # pylint: disable=too-many-arguments
+) -> tuple[int, pd.DataFrame]:
     """Execute an agent's policy."""
+    # pylint: disable=too-many-arguments
     trades: list[types.Trade] = agent.get_trades(market=elfpy_market)
-    for trade_object in trades:
-        try:
+    marginal_on_chain_trade_info = None
+    for trade_object in trades:  # for each trade retrieved from agents
+        try:  # try to execute the trade
             logging.debug(trade_object)
             do_trade(trade_object, sim_agents, hyperdrive_instance, base_instance)
             # marginal update to wallet
+            marginal_on_chain_trade_info = ape_utils.get_on_chain_trade_info(hyperdrive_instance, ape.chain.blocks[-1].number)
             agent.wallet = ape_utils.get_wallet_from_onchain_trade_info(
                 address=agent.contract.address,
-                info=ape_utils.get_on_chain_trade_info(hyperdrive_instance, ape.chain.blocks[-1].number),
+                info=marginal_on_chain_trade_info,
                 hyperdrive_contract=hyperdrive_instance,
                 base_contract=base_instance,
                 add_to_existing_wallet=agent.wallet,
@@ -579,7 +580,8 @@ def do_policy(
             no_crash_streak = set_days_without_crashing(no_crash_streak, crash_file, reset=True)  # set and save to file
             if args.halt_on_errors:
                 raise exc
-    return no_crash_streak
+    marginal_trades = marginal_on_chain_trade_info.trades if marginal_on_chain_trade_info else None
+    return no_crash_streak, marginal_trades
 
 
 def main():
@@ -592,17 +594,21 @@ def main():
     no_crash_streak = 0
     last_executed_block = 0
     output_utils.setup_logging(
-        log_filename=experiment_config.log_filename, log_level=experiment_config.log_level, max_bytes=args.max_bytes
+        log_filename=experiment_config.log_filename, log_level=experiment_config.log_level, max_bytes=args.max_bytes, log_file_and_stdout=True
     )
     provider, automine, base_instance, hyperdrive_instance, hyperdrive_config, deployer_account = set_up_ape(
         experiment_config, args, provider_settings, addresses, network_choice, pricing_model
     )
-    sim_agents, _ = set_up_agents(
-        experiment_config, args, provider, hyperdrive_instance, base_instance, addresses, deployer_account
+    on_chain_trade_info: ape_utils.OnChainTradeInfo = ape_utils.get_on_chain_trade_info(
+        hyperdrive_contract=hyperdrive_instance
+    )
+    sim_agents = set_up_agents(
+        experiment_config, args, provider, hyperdrive_instance, base_instance, addresses, deployer_account, on_chain_trade_info
     )
     ape_utils.dump_agent_info(sim_agents, experiment_config)
 
     start_timestamp = ape.chain.blocks[-1].timestamp
+    on_chain_trade_info.trades.to_csv("trade_data.csv", index=False)
     while True:  # hyper drive forever into the sunset
         latest_block = ape.chain.blocks[-1]
         block_number = latest_block.number
@@ -613,7 +619,7 @@ def main():
                 pricing_model, hyperdrive_instance, hyperdrive_config, block_number, block_timestamp, start_timestamp
             )
             for agent in sim_agents.values():
-                no_crash_streak = do_policy(
+                no_crash_streak, marginal_trades = do_policy(
                     agent,
                     elfpy_market,
                     no_crash_streak,
@@ -623,6 +629,8 @@ def main():
                     base_instance,
                     args,
                 )
+                if marginal_trades is not None:
+                    marginal_trades.to_csv("trade_data.csv", index=False, mode='a', header=False)
             last_executed_block = block_number
         if args.devnet and automine:  # anvil automatically mines after you send a transaction. or manually.
             ape.chain.mine()
