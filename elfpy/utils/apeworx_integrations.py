@@ -1,8 +1,9 @@
 """Helper functions for integrating the sim repo with solidity contracts via Apeworx."""
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 
 import os
+import re
 import json
 import logging
 from collections import namedtuple
@@ -593,14 +594,13 @@ def get_pool_state(txn_receipt: ReceiptAPI, hyperdrive_contract: ContractInstanc
     return PoolState(**hyper_dict)
 
 
-def _snake_to_camel(_snake):
+def snake_to_camel(_snake: str) -> str:
     """Convert snake_case to camelCase."""
     return "".join(word.capitalize() for word in _snake.split("_"))
 
-
-def _camel_to_snake(_camel):
-    """Convert camelCase to snake_case."""
-    return _camel.lower().replace(" ", "_")
+def camel_to_snake(camel_string: str) -> str:
+    snake_string = re.sub(r"(?<!^)(?=[A-Z])", "_", camel_string)
+    return snake_string.lower()
 
 
 @dataclass
@@ -624,12 +624,18 @@ class PoolState:
     prefix: str
     maturity_timestamp: int
 
+    def to_dict(self):
+        """Convert to dict."""
+        return asdict(self)
+
     def __getattribute__(self, __snake: str) -> Any:
         """Convert from snake_case to camelCase for the dataclass."""
-        return super().__getattribute__(_snake_to_camel(__snake))
+        if __snake == 'to_dict' or __snake.startswith("_"):
+            return object.__getattribute__(self, __snake)
+        return super().__getattribute__(snake_to_camel(__snake))
 
     def __setattr__(self, __snake: str, __value: Any) -> None:
-        super().__setattr__(_snake_to_camel(__snake), __value)
+        super().__setattr__(snake_to_camel(__snake), __value)
 
 
 PoolInfo = namedtuple("PoolInfo", ["start_time", "block_time", "term_length", "market_state"])
@@ -648,7 +654,7 @@ def get_agent_deltas(txn_receipt: ReceiptAPI, trade, addresses, trade_type, pool
     mint_time = ((maturity_timestamp - int(SECONDS_IN_YEAR) * pool_info.term_length) - pool_info.start_time) / int(
         SECONDS_IN_YEAR
     )
-    if trade_type == "addLiquidity":  # sourcery skip: lift-return-into-if, switch
+    if trade_type == "addLiquidity":
         agent_deltas = Wallet(
             address=addresses.index(agent),
             balance=-types.Quantity(amount=trade["_contribution"], unit=types.TokenType.BASE),

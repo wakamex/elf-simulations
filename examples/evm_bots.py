@@ -555,15 +555,16 @@ def do_policy(
     hyperdrive_instance: ContractInstance,
     base_instance: ContractInstance,
     args: EnvironmentArguments,
-) -> tuple[int, pd.DataFrame]:
+) -> tuple[int, pd.DataFrame | None, ape_utils.PoolState | None]:
     """Execute an agent's policy."""
     # pylint: disable=too-many-arguments
     trades: list[types.Trade] = agent.get_trades(market=elfpy_market)
     marginal_on_chain_trade_info = None
+    pool_state = None
     for trade_object in trades:  # for each trade retrieved from agents
         try:  # try to execute the trade
             logging.debug(trade_object)
-            do_trade(trade_object, sim_agents, hyperdrive_instance, base_instance)
+            pool_state = do_trade(trade_object, sim_agents, hyperdrive_instance, base_instance)
             # marginal update to wallet
             marginal_on_chain_trade_info = ape_utils.get_on_chain_trade_info(hyperdrive_instance, ape.chain.blocks[-1].number)
             agent.wallet = ape_utils.get_wallet_from_onchain_trade_info(
@@ -581,8 +582,7 @@ def do_policy(
             if args.halt_on_errors:
                 raise exc
     marginal_trades = marginal_on_chain_trade_info.trades if marginal_on_chain_trade_info else None
-    return no_crash_streak, marginal_trades
-
+    return no_crash_streak, marginal_trades, pool_state
 
 def main():
     """Run the simulation."""
@@ -609,6 +609,8 @@ def main():
 
     start_timestamp = ape.chain.blocks[-1].timestamp
     on_chain_trade_info.trades.to_csv("trade_data.csv", index=False)
+    if os.path.exists('pool_state.csv'):
+        os.remove('pool_state.csv')
     while True:  # hyper drive forever into the sunset
         latest_block = ape.chain.blocks[-1]
         block_number = latest_block.number
@@ -619,7 +621,7 @@ def main():
                 pricing_model, hyperdrive_instance, hyperdrive_config, block_number, block_timestamp, start_timestamp
             )
             for agent in sim_agents.values():
-                no_crash_streak, marginal_trades = do_policy(
+                no_crash_streak, marginal_trades, pool_state = do_policy(
                     agent,
                     elfpy_market,
                     no_crash_streak,
@@ -631,6 +633,9 @@ def main():
                 )
                 if marginal_trades is not None:
                     marginal_trades.to_csv("trade_data.csv", index=False, mode='a', header=False)
+                if pool_state is not None:
+                    pool_state_df = pd.DataFrame(pool_state.to_dict(), index=[0])
+                    pool_state_df.to_csv("pool_state.csv", index=False, mode='a', header=os.path.exists('pool_state.csv') is False)
             last_executed_block = block_number
         if args.devnet and automine:  # anvil automatically mines after you send a transaction. or manually.
             ape.chain.mine()
