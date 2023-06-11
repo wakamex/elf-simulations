@@ -30,6 +30,7 @@ class EnvironmentArguments:
     # Env passed in is a string "true"
     alchemy: bool = False
     artifacts_url: str = "http://localhost:80"
+    recompile: bool = False
 
 
 def get_env_args() -> EnvironmentArguments:
@@ -51,7 +52,7 @@ def get_env_args() -> EnvironmentArguments:
     log_level_str: str = os.environ.get("BOT_LOG_LEVEL", "INFO")
     log_level: int = logging.getLevelName(log_level_str)
 
-    args = EnvironmentArguments(
+    return EnvironmentArguments(
         # Env passed in is a string "true"
         halt_on_errors=(os.environ.get("HALT_ON_ERRORS", "false") == "true"),
         devnet=(os.environ.get("BOT_DEVNET", "true") == "true"),
@@ -66,6 +67,5 @@ def get_env_args() -> EnvironmentArguments:
         # Env passed in is a string "true"
         alchemy=(os.environ.get("BOT_ALCHEMY", "false") == "true"),
         artifacts_url=os.environ.get("BOT_ARTIFACTS_URL", "http://localhost:80"),
+        recompile=(os.environ.get("RECOMPILE", "false") == "true")
     )
-
-    return args
