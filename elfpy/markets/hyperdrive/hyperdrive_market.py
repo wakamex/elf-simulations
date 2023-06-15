@@ -416,11 +416,15 @@ class Market(
             mint_time=mint_time,
             open_share_price=open_share_price,
         )
+        print(f"{market_deltas=}")
         # apply deltas
+        print(f"before apply_delta {self.market_state.short_base_volume}")
         self.market_state.apply_delta(market_deltas)
-        agent_wallet.update(agent_deltas)
+        print(f"after  apply_delta {self.market_state.short_base_volume}")
         # apply checkpointing
         self.apply_close_checkpointing(mint_time, bond_amount, "short")
+        print(f"after apply_close_checkpointing {self.market_state.short_base_volume}")
+        agent_wallet.update(agent_deltas)
         return market_deltas, agent_deltas
 
     def open_long(
@@ -576,17 +580,22 @@ class Market(
         base_volume = "short_base_volume" if position == "short" else "long_base_volume"
 
         checkpoint_amount = self.market_state[total_supply][mint_time]
+        print(f"apply_close_checkpointing: {checkpoint_amount=}")
         maturity_time = mint_time + self.position_duration.days / 365
         if self.block_time.time < maturity_time:
             checkpoint_amount += bond_amount
         # If all of the shorts in the checkpoint are being closed, delete the base volume in the
         # checkpoint. Otherwise, decrease the base volume aggregates by a proportional amount.
+        print(f"checking for equality between {bond_amount=} and {checkpoint_amount=} to see if we're closing all")
         if bond_amount == checkpoint_amount:
+            print("apply_close_checkpointing: all of the shorts in the checkpoint are being closed")
             self.market_state[base_volume] -= self.market_state.checkpoints[mint_time][base_volume]
             self.market_state.checkpoints[mint_time][base_volume] = 0
         else:
+            print("apply_close_checkpointing: decrease the base volume aggregates by a proportional amount")
             proportional_base_volume = (
                 self.market_state.checkpoints[mint_time][base_volume] * (bond_amount) / (checkpoint_amount)
             )
+            print(f"{proportional_base_volume=}")
             self.market_state[base_volume] -= proportional_base_volume
             self.market_state.checkpoints[mint_time][base_volume] -= proportional_base_volume

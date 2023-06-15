@@ -129,7 +129,6 @@ class TestCloseShort(unittest.TestCase):
         # TODO: once we add checkpointing we will need to switch to this
         # self.hyperdrive.market_state.long_base_volume_checkpoints(checkpoint_time),
 
-    @pytest.mark.skip(reason="TODO: fix this test, skipping for now since it's not included in Solidity")
     def test_close_short_halfway_through_term_zero_variable_interest(self):
         """Open a position, advance time halfway through the term, close it, receiving zero variable interest"""
         # Bob opens a long
@@ -137,10 +136,12 @@ class TestCloseShort(unittest.TestCase):
         self.bob.budget = trade_amount
         self.bob.wallet.balance = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
         _ = self.hyperdrive.market_state.copy()
+        print(f"short_base_volume before open_short {self.hyperdrive.market_state.short_base_volume}")
         market_deltas, agent_deltas_open = self.hyperdrive.open_short(
             agent_wallet=self.bob.wallet,
             bond_amount=trade_amount,
         )
+        print(f"short_base_volume after  open_short {self.hyperdrive.market_state.short_base_volume}")
         max_loss_open = abs(agent_deltas_open.balance.amount)
         trade_amount_base = trade_amount - max_loss_open
         trade_amount_base_2 = abs(market_deltas.d_base_asset)
@@ -162,6 +163,7 @@ class TestCloseShort(unittest.TestCase):
             mint_time=0,
             open_share_price=1,
         )
+        print(f"short_base_volume after  close_short {self.hyperdrive.market_state.short_base_volume}")
         market_base_proceeds = market_deltas_close.d_base_asset
         _ = abs(agent_deltas_open.balance.amount)
         # Ensure that the realized APR (how much money you made over the time duration)
