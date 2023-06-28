@@ -55,37 +55,13 @@ def display(*args, **kwargs):  # pylint: disable=missing-function-docstring
 
 
 # %% read it in
-url = "https://gist.githubusercontent.com/wakamex/30a8e92327526a5b9cb66c091377af59/raw/9402e87e13bb639b20b888fb77c143e708116409/hyperDcdTL.json"
 # download into variable ephemerally
-j = json.loads(requests.get(url).text)
+j = json.load(open("hyperTransRecs_updated.json",mode="r",encoding="utf-8"))
+
+# %%
 # j = json.load(fp=open(f"{examples_dir}/hyperDcdTL.json", "r", encoding="utf-8"))
 j = [i for i in j if "decoded_input" in i]
 j2 = [i for i in j if "decoded_event_logs" in i and len(i["decoded_event_logs"]) > 0]
-
-# pool_info = getPoolInfo
-# market_state = MarketState(pool_info)
-# agent.get_wallet_sate(market_state)
-
-# %% STRUCTURE FOR ELFPY
-# ALL-IN-ONE VERSION
-# def spoof_run_simulation(trade_tape):
-#     # initialize market
-#     # initialize agents
-#     for trade in trade_tape:
-#         update_market & agent wallets from receipt
-#         compute pnl (get_wallet_sate)
-#         write to pnl.json
-#         wait(random_value(10,30))
-# show it in streamlit ==> streamlit.py
-
-# FUTURE VERSION (separate process: one runs the bots, the other processes data and plots things)
-# streamlit.py:
-# listen to pnl.json
-# if new_row:
-#     update_plot()
-
-# %% JSON from records, craziest comprehension
-# 374 µs ± 3.06 µs per loop (mean ± std. dev. of 7 runs, 1,000 loops each)
 start_time = time()
 trades = [
     {"block_number": int(i["blockNumber"], 16)}
