@@ -568,10 +568,10 @@ def set_up_experiment(
         "devnet" if bot_config.devnet else network_choice,
         provider.get_block("latest").number,
     )
-    agent_addresses, trade_history, sim_agents, random_state = None, None, None, None
+    agent_addresses, trade_history, sim_agents, random_state, block_number = None, None, None, None, None
     if config.load_state_id is not None:  # load state from specified id
         logging.info("Loading state from id: %s", config.load_state_id)
-        addresses, agent_addresses, trade_history, rng, sim_agents, random_state = load_state(bot_config, rng)
+        addresses, agent_addresses, trade_history, rng, sim_agents, random_state, block_number = load_state(bot_config, rng)
     project: ape_utils.HyperdriveProject = ape_utils.HyperdriveProject(
         path=Path.cwd(),
         hyperdrive_address=addresses["hyperdrive"] if bot_config.devnet else addresses["goerli_hyperdrive"],
@@ -580,6 +580,10 @@ def set_up_experiment(
         base_instance, hyperdrive_instance, addresses = set_up_devnet(
             addresses, project, provider, bot_config, pricing_model
         )
+        if provider.auto_mine and config.load_state_id is not None:
+            while ape.chain.blocks[-1].number < block_number:
+                ape.chain.mine()
+                logging.info("Mined devnet block forward to %s", ape.chain.blocks[-1].number)
     else:  # not on devnet, means we're on goerli, so we use known goerli addresses
         base_instance: ContractInstance = ape_utils.get_instance(
             addresses["goerli_sdai"],
@@ -677,7 +681,7 @@ def process_crash(
     bot_config : BotConfig
         The bot configuration.
     block_number : int
-        The block number to load the state from.
+        The most recent block number.
     addresses : dict
         List of deployed contract addresses.
     sim_agents : dict[str, Agent]
@@ -693,7 +697,7 @@ def process_crash(
     start_time = now()
     if trade_history is None:
         trade_history = ape_utils.get_trade_history(hyperdrive_instance)
-    elfpy_crash = bot_config.scratch["project_dir"] / "elfpy_crash.json"
+    elfpy_crash = bot_config.scratch["logging_dir"] / "elfpy_crash.json"
     dump_dict = {
         "rand_seed": bot_config.random_seed,
         "rand_state": random_state_at_start_of_block,
@@ -706,13 +710,15 @@ def process_crash(
     with open(elfpy_crash, "w", encoding="utf-8") as file:
         json.dump(dump_dict, fp=file)
     for agent_key, agent in sim_agents.items():
-        with open(bot_config.scratch["project_dir"] / f"{agent_key}.pickle", "wb") as file:
+        with open(bot_config.scratch["logging_dir"] / f"{agent_key}.pickle", "wb") as file:
             pickle.dump(agent, file)
     logging.info("Dumped state in %s seconds", now() - start_time)
-    anvil_regular = bot_config.scratch["project_dir"] / "anvil_regular.json"
-    anvil_crash = bot_config.scratch["project_dir"] / "anvil_crash.json"
-    shutil.copy(anvil_regular, anvil_crash)  # save anvil's state, so we can reproduce the crash
-    logging.info(" => anvil state saved to %s\n => elfpy state saved to %s", anvil_crash, elfpy_crash)
+    anvil_regular = bot_config.scratch["logging_dir"] / "anvil_regular.json"
+    anvil_crash = bot_config.scratch["logging_dir"] / "anvil_crash.json"
+    shutil.copy(anvil_regular, anvil_crash)  # save anvil's state, so we can reproduce the crash (1 block before)
+    logging.info("Anvil state saved to %s", anvil_crash)
+    logging.info("Elfpy state saved to %s", elfpy_crash)
+
 
 
 def load_state(bot_config, rng) -> tuple[list[str], list[str], pd.DataFrame, NumpyGenerator]:
@@ -737,9 +743,11 @@ def load_state(bot_config, rng) -> tuple[list[str], list[str], pd.DataFrame, Num
         The random number generator.
     state["rand_state"] : dict
         The state of the random number generator, from the start of the latest block.
+    state["block_number"] : int
+        The most recent block number.
     """
     state_id = bot_config.load_state_id.replace(".json", "")
-    file_path = bot_config.scratch["project_dir"] / f"{state_id}.json"
+    file_path = bot_config.scratch["logging_dir"] / f"{state_id}.json"
     with open(file_path, "r", encoding="utf-8") as file:
         state = json.load(file)
     bot_config.random_seed = state["rand_seed"]
@@ -748,7 +756,7 @@ def load_state(bot_config, rng) -> tuple[list[str], list[str], pd.DataFrame, Num
     trade_history = pd.DataFrame(state["trade_history"])
     sim_agents = {}
     for agent_key in state["agent_keys"]:
-        with open(bot_config.scratch["project_dir"] / f"{agent_key}.pickle", "rb") as file:
+        with open(bot_config.scratch["logging_dir"] / f"{agent_key}.pickle", "rb") as file:
             agent = pickle.load(file)
             agent.policy.rng = rng
             sim_agents[agent_key] = agent
@@ -759,7 +767,7 @@ def load_state(bot_config, rng) -> tuple[list[str], list[str], pd.DataFrame, Num
         rng.bit_generator.state,
         len(trade_history),
     )
-    return state["addresses"], state["agent_addresses"], trade_history, rng, sim_agents, state["rand_state"]
+    return state["addresses"], state["agent_addresses"], trade_history, rng, sim_agents, state["rand_state"], state["block_number"]
 
 
 def check_rng_matches(rng, _random_state, bot_config, agent=None):
@@ -812,8 +820,9 @@ def main(
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
     # Custom parameters for this experiment
     bot_config.scratch["project_dir"] = Path.cwd().parent if Path.cwd().name == "examples" else Path.cwd()
+    bot_config.scratch["logging_dir"] = bot_config.scratch["project_dir"] / ".logging"
     bot_config.scratch["trade_streak"] = (
-        bot_config.scratch["project_dir"] / f".logging/trade_streak{'_devnet' if config.devnet else ''}.txt"
+        bot_config.scratch["logging_dir"] / f"trade_streak{'_devnet' if config.devnet else ''}.txt"
     )
     if "num_louie" not in bot_config.scratch:
         bot_config.scratch["num_louie"]: int = 1
@@ -898,17 +907,18 @@ def main(
                 trade_streak = save_trade_streak(
                     trade_streak, bot_config.scratch["trade_streak"], reset=True
                 )  # set and save to file
-                process_crash(
-                    bot_config,
-                    block_number,
-                    addresses,
-                    sim_agents,
-                    hyperdrive_instance,
-                    random_state_at_start_of_block,
-                    trade_history,
-                )
                 if bot_config.halt_on_errors:
+                    process_crash(
+                        bot_config,
+                        block_number,
+                        addresses,
+                        sim_agents,
+                        hyperdrive_instance,
+                        random_state_at_start_of_block,
+                        trade_history,
+                    )
                     raise exc
+                # rewrite anvil_regular.json to anvil_success.json
             last_executed_block = block_number
         if bot_config.devnet and automine:
             # "automine" means anvil automatically mines a new block after you send a transaction, not time-based.
