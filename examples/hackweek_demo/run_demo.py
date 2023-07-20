@@ -1,4 +1,4 @@
-""" Script to run the streamlab demo """
+"""The streamlit demo."""
 
 from __future__ import annotations
 
@@ -12,6 +12,7 @@ from extract_data_logs import get_combined_data
 from plot_fixed_rate import calc_fixed_rate, plot_fixed_rate
 from plot_ohlcv import calc_ohlcv, plot_ohlcv
 from plot_pnl import calculate_pnl, plot_pnl
+from streamlit.runtime.scriptrunner import get_script_run_ctx
 
 from elfpy.data import postgres
 
@@ -22,10 +23,25 @@ from elfpy.data import postgres
 view_window = None
 
 
+def is_streamlit():
+    """Check whether python code is run within streamlit.
+
+    Returns
+    -------
+    use_streamlit : boolean
+        True if code is run within streamlit, else False
+    """
+    try:
+        return get_script_run_ctx() is not None
+    except ModuleNotFoundError:
+        use_streamlit = False
+    return use_streamlit
+
+
 # Helper functions
 # TODO should likely move these functions to another file
 def get_ticker(data: pd.DataFrame) -> pd.DataFrame:
-    """Given transaction data, return a ticker dataframe showing recent trades
+    """Given transaction data, return a ticker dataframe showing recent trades.
 
     Arguments
     ---------
@@ -42,7 +58,7 @@ def get_ticker(data: pd.DataFrame) -> pd.DataFrame:
 
 
 def get_user_lookup() -> pd.DataFrame:
-    """Helper function to generate username -> agents mapping
+    """Generate a mapping from username to agents.
 
     Returns
     -------
@@ -68,7 +84,7 @@ def get_user_lookup() -> pd.DataFrame:
 
 
 def username_to_address(lookup: pd.DataFrame, selected_list: list[str]) -> list[str]:
-    """Helper function to lookup selected users/addrs to all addresses
+    """Look up selected users/addrs to all addresses.
 
     Arguments
     ---------
@@ -105,16 +121,17 @@ st.session_state.options = []
 
 # Initialize select options for filtering
 user_lookup = get_user_lookup()
-if "agent_list" not in st.session_state:
-    st.session_state["agent_list"] = user_lookup["username"].unique().tolist()
-if "selected_agents" not in st.session_state:
-    st.session_state["selected_agents"] = []
-if "all_checkbox" not in st.session_state:
-    st.session_state.all_checkbox = False
+state = st.session_state if is_streamlit() else {}
+if "agent_list" not in state:
+    state["agent_list"] = user_lookup["username"].unique().tolist()
+if "selected_agents" not in state:
+    state["selected_agents"] = []
+if "all_checkbox" not in state:
+    state["all_checkbox"] = False
 
-st.session_state.selected_agents = st.multiselect("PNL Agents", st.session_state.agent_list, key="agent_select")
+state["selected_agents"] = st.multiselect("PNL Agents", state["agent_list"], key="agent_select")
 # All checkbox
-st.session_state.all_checkbox = st.checkbox("View all", value=True)
+state["all_checkbox"] = st.checkbox("View all", value=True)
 
 # TODO Seperate out these figures
 # TODO abstract out creating a streamlit container + adding a figure
@@ -141,10 +158,10 @@ while True:
     txn_data = postgres.get_transactions(session, start_block=start_block)
     pool_info_data = postgres.get_pool_info(session, start_block=start_block)
     checkpoint_info = postgres.get_checkpoint_info(session, start_block=start_block)
-    if st.session_state.all_checkbox:
+    if state["all_checkbox"]:
         agent_positions = postgres.get_agent_positions(session)
     else:
-        selected_addrs = username_to_address(user_lookup, st.session_state.selected_agents)
+        selected_addrs = username_to_address(user_lookup, state["selected_agents"])
         agent_positions = postgres.get_agent_positions(session, selected_addrs)
 
     # No data, wait
@@ -189,7 +206,7 @@ while True:
         num_lp_tokens = [ap.positions.loc[:, "LP"] for ap in agent_positions.values()]
         if len(num_lp_tokens) > 0:
             lp_data = pd.concat(num_lp_tokens, axis=1)
-            lp_data.columns = [addr for addr in agent_positions.keys()]
+            lp_data.columns = list(agent_positions.keys())
             lp_data["lpTotalSupply"] = pool_info_data["lpTotalSupply"]
         else:
             lp_data = pool_info_data["lpTotalSupply"].to_frame()
