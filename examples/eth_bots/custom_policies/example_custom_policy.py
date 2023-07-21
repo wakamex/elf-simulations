@@ -19,7 +19,6 @@ if TYPE_CHECKING:
 
 # pylint: disable=too-few-public-methods
 
-
 class ExampleCustomPolicy(BasePolicy):
     """Example custom agent"""
 
@@ -32,7 +31,7 @@ class ExampleCustomPolicy(BasePolicy):
         super().__init__(budget, rng)
 
     def action(self, market: HyperdriveMarket, wallet: Wallet) -> list[Trade]:
-        """Specify actions.
+        """Pick a random action from all eligible actions.
 
         Arguments
         ---------
