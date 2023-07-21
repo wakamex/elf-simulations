@@ -1,4 +1,4 @@
-"""Hyperdrive market config fixture."""
+"""Hyperdrive market config fixture"""
 from dataclasses import dataclass
 
 import pytest
@@ -7,7 +7,7 @@ from fixedpointmath import FixedPoint
 
 @dataclass
 class HyperdriveConfig:
-    """Configuration variables to setup hyperdrive fixtures."""
+    """Configuration variables to setup hyperdrive fixtures"""
 
     # pylint: disable=too-many-instance-attributes
 
@@ -27,6 +27,5 @@ class HyperdriveConfig:
 @pytest.fixture(scope="function")
 def hyperdrive_config() -> HyperdriveConfig:
     """Returns a hyperdrive configuration dataclass with default values.  This fixture should be
-    overridden as needed in test classes.
-    """
+    overridden as needed in test classes"""
     return HyperdriveConfig()
