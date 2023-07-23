@@ -1,4 +1,4 @@
-"""Example custom agent strategy"""
+"""Example custom agent strategy."""
 from __future__ import annotations
 
 import logging
@@ -23,17 +23,22 @@ if TYPE_CHECKING:
 def long_action(amount: int, wallet):
     return HyperdriveMarketAction(MarketActionType.OPEN_LONG, trade_amount=FixedPoint(amount), wallet=wallet)
 
+
 def short_action(amount: int, wallet):
     return HyperdriveMarketAction(MarketActionType.OPEN_SHORT, trade_amount=FixedPoint(amount), wallet=wallet)
+
 
 def LP_action(amount: int, wallet):
     return HyperdriveMarketAction(MarketActionType.ADD_LIQUIDITY, trade_amount=FixedPoint(amount), wallet=wallet)
 
+
 def long(amount: int, wallet) -> Trade:
     return Trade(market=MarketType.HYPERDRIVE, trade=long_action(amount, wallet))
 
+
 def short(amount: int, wallet) -> Trade:
     return Trade(market=MarketType.HYPERDRIVE, trade=short_action(amount, wallet))
+
 
 def LP(amount: int, wallet):
     return Trade(market=MarketType.HYPERDRIVE, trade=LP_action(amount, wallet))
@@ -63,4 +68,5 @@ class DBot(BasePolicy):
         if self.trade_count >= len(self.trade_list):
             return []
         trade, amount = self.trade_list[self.trade_count]
+        self.trade_count += 1
         return [trade(amount, wallet)]
