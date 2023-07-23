@@ -15,7 +15,7 @@ class AppInfo:
     """App Info"""
 
     # TODO: don't use hard-coded values, pull these from constants
-    eth_port: int = 8545
+    eth_port: int = 8546
     artifact_port: int = 80
     ui_port: int = 5173
     botserver_port: int = 5001
