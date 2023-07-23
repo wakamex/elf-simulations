@@ -1,13 +1,25 @@
-"""Main script for running bots on Hyperdrive"""
+"""Main script for running bots on Hyperdrive."""
 from __future__ import annotations
 
+import logging
+import os
+import warnings
+from datetime import datetime
+
+import numpy as np
+import requests
 from eth_typing import BlockNumber
 
-# TODO: Move configs into a dedicated config folder with the other elfpy configs
+from elfpy import eth, hyperdrive_interface
+from elfpy.bots import DEFAULT_USERNAME
+from elfpy.utils import logs
+from elfpy.utils.format import format_numeric_string as fmt
 from examples.eth_bots.config import agent_config, environment_config
 from examples.eth_bots.setup_experiment import setup_experiment
 from examples.eth_bots.trade_loop import trade_if_new_block
 
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+warnings.filterwarnings('ignore', category=UserWarning, module='web3.contract.base_contract')
 
 def main():
     """Entrypoint to load all configurations and run agents."""
