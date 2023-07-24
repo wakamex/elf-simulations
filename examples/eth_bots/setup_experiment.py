@@ -17,7 +17,7 @@ from examples.eth_bots.setup_agents import get_agent_accounts
 
 
 def register_username(register_url: str, wallet_addrs: list[str], username: str) -> None:
-    """Registers the username with the flask server."""
+    """Register the username with the flask server."""
     # TODO: use the json schema from the server.
     json_data = {"wallet_addrs": wallet_addrs, "username": username}
     result = requests.post(register_url + "/register_bots", json=json_data, timeout=3)
@@ -59,7 +59,7 @@ def setup_experiment(
         log_stdout=environment_config.log_stdout,
         log_format_string=environment_config.log_formatter,
     )
-    # logs.setup_hyperdrive_crash_report_logging()
+    logs.setup_hyperdrive_crash_report_logging()
     # Check for default name and exit if is default
     if environment_config.username == DEFAULT_USERNAME:
         raise ValueError("Default username detected, please update 'username' in config.py")
