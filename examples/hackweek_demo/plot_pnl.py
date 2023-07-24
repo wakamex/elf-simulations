@@ -1,11 +1,12 @@
 """Plots the pnl."""
 from __future__ import annotations
+
 import time
 
 import pandas as pd
+from extract_data_logs import calculate_spot_price_from_state
 
 from elfpy.data import postgres as pg
-from extract_data_logs import calculate_spot_price_from_state
 
 
 def calculate_pnl(
@@ -49,7 +50,8 @@ def calculate_pnl(
 
             # calculate spot price of the bond, specific to the current maturity
             spot_price = calculate_spot_price_from_state(state, maturity, ap.timestamp[block], position_duration)
-            print(f"{spot_price=}")
+            print(f"=== block {block} === spot price is {spot_price=}")
+            print("\n")
 
             # add up the pnl for the agent based on all of their positions.
             # TODO: vectorize this. also store the vector of pnl per position. in postgres?
@@ -57,16 +59,20 @@ def calculate_pnl(
             for position_name in ap.positions.columns:
                 if position_name.startswith("LP"):
                     # LP value
-                    total_lp_value = state.shareReserves * state.sharePrice + state.bondReserves * spot_price
+                    total_lp_value = state.shareReserves * state.sharePrice
                     share_of_pool = ap.positions.loc[block, "LP"] / state.lpTotalSupply
                     # TODO this assertion is breaking due to positions having higher LP than supply
                     # assert share_of_pool < 1, "share_of_pool must be less than 1"
                     ap.pnl.loc[block] += share_of_pool * total_lp_value
-                    print(f"at block {block} an LP position adds to PNL {share_of_pool * total_lp_value}")
+                    print(f"at block {block} an LP position of {ap.positions.loc[block, position_name]} adds to PNL {share_of_pool * total_lp_value}")
+                    # print(f" = share_of_pool({share_of_pool}) * total_lp_value({total_lp_value})")
+                    # print(f" A = shareReserves({state.shareReserves}) * sharePrice({state.sharePrice}) = {state.shareReserves*state.sharePrice}")
+                    # print(f" B = bondReserves({state.bondReserves}) * spot_price({spot_price}) = {state.bondReserves*spot_price}")
+                    # print(" total_lp_value = ???")
                 elif position_name.startswith("LONG"):
                     # LONG value
                     ap.pnl.loc[block] += ap.positions.loc[block, position_name] * spot_price
-                    print(f"at block {block} a LONG position adds to PNL {ap.positions.loc[block, position_name] * spot_price}")
+                    print(f"at block {block} a LONG position of {ap.positions.loc[block, position_name]} adds to PNL {ap.positions.loc[block, position_name] * spot_price}")
                 elif position_name.startswith("SHORT"):
                     # SHORT value is calculated as the:
                     # total amount paid for the position (position * 1)
@@ -74,10 +80,12 @@ def calculate_pnl(
                     # minus the closing cost (position * spot_price)
                     # this means the current position value equals position * (1 - spot_price)
                     ap.pnl.loc[block] += ap.positions.loc[block, position_name] * (1 - spot_price)
-                    print(f"at block {block} a SHORT position adds to PNL {ap.positions.loc[block, position_name] * (1 - spot_price)}")
+                    print(f"at block {block} a SHORT position of {ap.positions.loc[block, position_name]} adds to PNL {ap.positions.loc[block, position_name] * (1 - spot_price)}")
                 elif position_name.startswith("BASE"):
                     ap.pnl.loc[block] += ap.positions.loc[block, position_name]
                     print(f"at block {block} BASE adds to PNL {ap.positions.loc[block, position_name]}")
+                print(f"total PNL is {ap.pnl.loc[block]}", end="")
+                print(".")
         print(f"loop finished in {time.time() - start_time} seconds")
         # ===================== VECTORIZE =====================
         # start_time = time.time()
