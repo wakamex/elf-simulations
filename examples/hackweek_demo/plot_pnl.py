@@ -1,6 +1,7 @@
 """Plots the pnl."""
 from __future__ import annotations
 
+import logging
 import time
 
 import pandas as pd
@@ -106,21 +107,19 @@ def calculate_pnl(
             ap.pnl.loc[block] = 0
             for position_name in ap.positions.columns:
                 if position_name.startswith("LP"):
+                    position = ap.positions.loc[block, position_name]
                     # LP value
                     total_lp_value = state.shareReserves * state.sharePrice
-                    share_of_pool = ap.positions.loc[block, "LP"] / state.lpTotalSupply
-                    # TODO this assertion is breaking due to positions having higher LP than supply
-                    # assert share_of_pool < 1, "share_of_pool must be less than 1"
-                    ap.pnl.loc[block] += share_of_pool * total_lp_value
-                    print(f"at block {block} an LP position of {ap.positions.loc[block, position_name]} adds to PNL {share_of_pool * total_lp_value}")
-                    # print(f" = share_of_pool({share_of_pool}) * total_lp_value({total_lp_value})")
-                    # print(f" A = shareReserves({state.shareReserves}) * sharePrice({state.sharePrice}) = {state.shareReserves*state.sharePrice}")
-                    # print(f" B = bondReserves({state.bondReserves}) * spot_price({spot_price}) = {state.bondReserves*spot_price}")
-                    # print(" total_lp_value = ???")
+                    share_of_pool = position / state.lpTotalSupply
+                    agent_lp_pnl_approx = share_of_pool * total_lp_value
+                    agent_lp_pnl = position * state.sharePrice
+                    ap.pnl.loc[block] += agent_lp_pnl
+                    log_block_pnl(block, "LP", position, agent_lp_pnl)
                 elif position_name.startswith("LONG"):
                     # LONG value
-                    ap.pnl.loc[block] += ap.positions.loc[block, position_name] * spot_price
-                    print(f"at block {block} a LONG position of {ap.positions.loc[block, position_name]} adds to PNL {ap.positions.loc[block, position_name] * spot_price}")
+                    position = ap.positions.loc[block, position_name]
+                    ap.pnl.loc[block] += position * spot_price
+                    log_block_pnl(block, "LONG", position, position * spot_price)
                 elif position_name.startswith("SHORT"):
                     # SHORT value is calculated as the:
                     # total amount paid for the position (position * 1)
@@ -128,7 +127,8 @@ def calculate_pnl(
                     # minus the closing cost (position * spot_price)
                     # this means the current position value equals position * (1 - spot_price)
                     ap.pnl.loc[block] += ap.positions.loc[block, position_name] * (1 - spot_price)
-                    print(f"at block {block} a SHORT position of {ap.positions.loc[block, position_name]} adds to PNL {ap.positions.loc[block, position_name] * (1 - spot_price)}")
+                    position = ap.positions.loc[block, position_name]
+                    log_block_pnl(block, "SHORT", position, position * (1 - spot_price))
                 elif position_name.startswith("BASE"):
                     ap.pnl.loc[block] += ap.positions.loc[block, position_name]
                     print(f"at block {block} BASE adds to PNL {ap.positions.loc[block, position_name]}")
@@ -150,7 +150,8 @@ def calculate_pnl(
         # base_positions = ap.positions.filter(like='BASE')
 
         # # Calculate PNL for each type
-        # lp_pnl = (lp_positions / state.lpTotalSupply) * (state.shareReserves * state.sharePrice + state.bondReserves * spot_price)
+        # lp_pnl = (lp_positions / state.lpTotalSupply) *
+        #   (state.shareReserves * state.sharePrice + state.bondReserves * spot_price)
         # long_pnl = long_positions * spot_price
         # short_pnl = short_positions * (1 - spot_price)
         # base_pnl = base_positions

@@ -57,7 +57,7 @@ agent_config: list[AgentConfig] = [
         ),
         init_kwargs={"trade_amount": FixedPoint(100)},
     ),
-    BotInfo(policy=DBot, number_of_agents=1),
+    AgentConfig(policy=DBot, number_of_agents=1),
 ]
 
 environment_config = EnvironmentConfig(
