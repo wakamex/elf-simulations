@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
 
-from elfpy import WEI
 from elfpy.agents.policies import BasePolicy
 from elfpy.markets.hyperdrive import HyperdriveMarketAction, MarketActionType
 from elfpy.types import MarketType, Trade

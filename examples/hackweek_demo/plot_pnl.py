@@ -1,11 +1,8 @@
 """Plots the pnl."""
 from __future__ import annotations
-
-import logging
+import time
 
 import pandas as pd
-from extract_data_logs import calculate_spot_price_from_state
-import time
 
 from elfpy.data import postgres as pg
 
@@ -130,28 +127,30 @@ def calculate_pnl(
                     ap.pnl.loc[block] += ap.positions.loc[block, position_name]
                     print(f"at block {block} BASE adds to PNL {ap.positions.loc[block, position_name]}")
         print(f"loop finished in {time.time() - start_time} seconds")
-        start_time = time.time()
-        maturities = checkpoint_info.loc[ap.timestamp.index,:]["timestamp"]
-        spot_price_by_maturity_dict = {}
-        for maturity in maturities.unique():
-            state = pool_info.loc[maturity]
-            spot_price = calculate_spot_price_from_state(state, maturity, ap.timestamp[maturity], position_duration)
-            spot_price_by_maturity_dict[maturity] = spot_price
-        # Separate positions into different DataFrames
-        lp_positions = ap.positions.filter(like='LP')
-        long_positions = ap.positions.filter(like='LONG')
-        short_positions = ap.positions.filter(like='SHORT')
-        base_positions = ap.positions.filter(like='BASE')
+        # ===================== VECTORIZE =====================
+        # start_time = time.time()
+        # maturities = checkpoint_info.loc[ap.timestamp.index,:]["timestamp"]
+        # spot_price_by_maturity_dict = {}
+        # for maturity in maturities.unique():
+        #     state = pool_info.loc[maturity]
+        #     spot_price = calculate_spot_price_from_state(state, maturity, ap.timestamp[maturity], position_duration)
+        #     spot_price_by_maturity_dict[maturity] = spot_price
+        # # Separate positions into different DataFrames
+        # lp_positions = ap.positions.filter(like='LP')
+        # long_positions = ap.positions.filter(like='LONG')
+        # short_positions = ap.positions.filter(like='SHORT')
+        # base_positions = ap.positions.filter(like='BASE')
 
-        # Calculate PNL for each type
-        lp_pnl = (lp_positions / state.lpTotalSupply) * (state.shareReserves * state.sharePrice + state.bondReserves * spot_price)
-        long_pnl = long_positions * spot_price
-        short_pnl = short_positions * (1 - spot_price)
-        base_pnl = base_positions
+        # # Calculate PNL for each type
+        # lp_pnl = (lp_positions / state.lpTotalSupply) * (state.shareReserves * state.sharePrice + state.bondReserves * spot_price)
+        # long_pnl = long_positions * spot_price
+        # short_pnl = short_positions * (1 - spot_price)
+        # base_pnl = base_positions
 
-        # Sum PNLs
-        ap.pnl.loc[block] = lp_pnl.sum(axis=1) + long_pnl.sum(axis=1) + short_pnl.sum(axis=1) + base_pnl.sum(axis=1)
-        print(f"loop finished in {time.time() - start_time} seconds")
+        # # Sum PNLs
+        # ap.pnl.loc[block] = lp_pnl.sum(axis=1) + long_pnl.sum(axis=1) + short_pnl.sum(axis=1) + base_pnl.sum(axis=1)
+        # print(f"loop finished in {time.time() - start_time} seconds")
+        # =====================================================
     return agent_positions
 
 
