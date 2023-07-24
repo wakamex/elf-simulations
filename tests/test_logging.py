@@ -1,4 +1,4 @@
-"""Testing for logging in the ElfPy package modules"""
+"""Testing for logging in the ElfPy package modules."""
 from __future__ import annotations
 
 import itertools
@@ -17,10 +17,10 @@ from elfpy.utils import sim_utils
 
 
 class TestLogging(unittest.TestCase):
-    """Run the logging tests"""
+    """Run the logging tests."""
 
     def test_logging(self):
-        """Tests logging"""
+        """Tests logging."""
         log_dir = ".logging"
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
@@ -59,7 +59,7 @@ class TestLogging(unittest.TestCase):
                 log_utils.close_logging()
 
     def test_log_config_variables(self):
-        """Verfies that the config variables are successfully logged"""
+        """Verfies that the config variables are successfully logged."""
         log_filename = ".logging/test_logging.log"
         log_utils.setup_logging(log_filename, log_level=logging.INFO)
         config = Config()
@@ -68,23 +68,23 @@ class TestLogging(unittest.TestCase):
         log_utils.close_logging()
 
     def test_multiple_handlers(self):
-        """Verfies that two handlers are created if we log to file and stdout"""
+        """Verfies that two handlers are created if we log to file and stdout."""
         log_filename = ".logging/test_logging.log"
         # one handler because we're logging to file only
-        log_utils.setup_logging(log_filename, log_stdout=False)
+        log_utils.setup_logging(log_filename=log_filename)
         self.assertEqual(len(logging.getLogger().handlers), 1)
         log_utils.close_logging()
         # one handler because we're logging to stdout only
-        log_utils.setup_logging()
+        log_utils.setup_logging(log_stdout=True)
         self.assertEqual(len(logging.getLogger().handlers), 1)
         log_utils.close_logging()
         # two handlers because we're logging to file and stdout
-        log_utils.setup_logging(log_filename, log_stdout=True)
+        log_utils.setup_logging(log_filename=log_filename, log_stdout=True)
         self.assertEqual(len(logging.getLogger().handlers), 2)
         log_utils.close_logging()
 
     def test_hyperdrive_crash_report_logging(self):
-        """Tests logging"""
+        """Tests logging."""
         log_utils.setup_hyperdrive_crash_report_logging()
         config = Config()
         config.pricing_model_name = "Yieldspace"
