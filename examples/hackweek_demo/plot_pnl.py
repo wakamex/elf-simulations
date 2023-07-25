@@ -12,7 +12,8 @@ from elfpy.data import postgres as pg
 
 def log_block_pnl(block, position, size, value):
     """Log block pnl."""
-    logging.debug("at block %s an %s position of %s adds to PNL %s", block, position, size, value)
+    # logging.debug("at block %s an %s position of %s adds to PNL %s", block, position, size, value)
+    print(f"at block {block} an {position} position of {size} adds to PNL {value}")
 
 
 def calculate_pnl(
@@ -70,6 +71,7 @@ def calculate_pnl(
                     share_of_pool = position / state.lpTotalSupply
                     agent_lp_pnl_approx = share_of_pool * total_lp_value
                     agent_lp_pnl = position * state.sharePrice
+                    print(f"agent_lp_pnl_approx({agent_lp_pnl_approx}) is {(agent_lp_pnl_approx-agent_lp_pnl)/agent_lp_pnl:.1%} vs. agent_lp_pnl({agent_lp_pnl})")
                     ap.pnl.loc[block] += agent_lp_pnl
                     log_block_pnl(block, "LP", position, agent_lp_pnl)
                 elif position_name.startswith("LONG"):
@@ -88,9 +90,10 @@ def calculate_pnl(
                     log_block_pnl(block, "SHORT", position, position * (1 - spot_price))
                 elif position_name.startswith("BASE"):
                     ap.pnl.loc[block] += ap.positions.loc[block, position_name]
-                    print(f"at block {block} BASE adds to PNL {ap.positions.loc[block, position_name]}")
-                print(f"total PNL is {ap.pnl.loc[block]}", end="")
-                print(".")
+                    log_block_pnl(block, "BASE", ap.positions.loc[block, position_name], ap.positions.loc[block, position_name])
+                # logging.debug("total PNL is %s", ap.pnl.loc[block])
+                print(f"total PNL is {ap.pnl.loc[block]}")
+                print("kek") if 0 > 1 else None
         print(f"loop finished in {time.time() - start_time} seconds")
         # ===================== VECTORIZE =====================
         # start_time = time.time()
