@@ -19,10 +19,12 @@ def calc_fixed_rate(trade_data, config_data):
             row.share_reserves,
             row.bond_reserves,
             row.lp_total_supply,
+            position_duration=config_data["positionDuration"],
             stretch_time=config_data["invTimeStretch"],
             initial_share_price=config_data["initialSharePrice"],
         )
-        trade_data.loc[idx, "rate"] = (1 - spot_price) / spot_price
+        annualized_time = config_data["positionDuration"] / (60*60*24*365)
+        trade_data.loc[idx, "rate"] = (1 - spot_price) / (spot_price * annualized_time)
 
     x_data = trade_data.loc[:, "timestamp"]
     col_names = ["rate"]
