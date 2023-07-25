@@ -56,6 +56,10 @@ def calculate_spot_price_for_position(
     )
 
     return full_term_spot_price * time_left_in_years + 1 * (1 - time_left_in_years)
+def log_block_pnl(block, position, size, value):
+    """Log block pnl."""
+    # logging.debug("at block %s an %s position of %s adds to PNL %s", block, position, size, value)
+    print(f"at block {block} an {position} position of {size} adds to PNL {value}")
 
 
 def calculate_pnl(
@@ -98,9 +102,8 @@ def calculate_pnl(
                 maturity = None
 
             # calculate spot price of the bond, specific to the current maturity
-            spot_price = calculate_spot_price_from_state(state, maturity, ap.timestamp[block], position_duration)
+            spot_price = calculate_spot_price_from_state(state, maturity, ap.timestamp[block], pool_config)
             print(f"=== block {block} === spot price is {spot_price=}")
-            print("\n")
 
             # add up the pnl for the agent based on all of their positions.
             # TODO: vectorize this. also store the vector of pnl per position. in postgres?
@@ -113,6 +116,7 @@ def calculate_pnl(
                     share_of_pool = position / state.lpTotalSupply
                     agent_lp_pnl_approx = share_of_pool * total_lp_value
                     agent_lp_pnl = position * state.sharePrice
+                    print(f"agent_lp_pnl_approx({agent_lp_pnl_approx}) is {(agent_lp_pnl_approx-agent_lp_pnl)/agent_lp_pnl:.1%} vs. agent_lp_pnl({agent_lp_pnl})")
                     ap.pnl.loc[block] += agent_lp_pnl
                     log_block_pnl(block, "LP", position, agent_lp_pnl)
                 elif position_name.startswith("LONG"):
@@ -126,14 +130,15 @@ def calculate_pnl(
                     # remember this payment is comprised of the spot price (p) and the max loss (1-p) set as margin
                     # minus the closing cost (position * spot_price)
                     # this means the current position value equals position * (1 - spot_price)
-                    ap.pnl.loc[block] += ap.positions.loc[block, position_name] * (1 - spot_price)
                     position = ap.positions.loc[block, position_name]
+                    ap.pnl.loc[block] += position * (1 - spot_price)
                     log_block_pnl(block, "SHORT", position, position * (1 - spot_price))
                 elif position_name.startswith("BASE"):
                     ap.pnl.loc[block] += ap.positions.loc[block, position_name]
-                    print(f"at block {block} BASE adds to PNL {ap.positions.loc[block, position_name]}")
-                print(f"total PNL is {ap.pnl.loc[block]}", end="")
-                print(".")
+                    log_block_pnl(block, "BASE", ap.positions.loc[block, position_name], ap.positions.loc[block, position_name])
+                # logging.debug("total PNL is %s", ap.pnl.loc[block])
+                print(f"total PNL is {ap.pnl.loc[block]}")
+                print("kek") if 0 > 1 else None
         print(f"loop finished in {time.time() - start_time} seconds")
         # ===================== VECTORIZE =====================
         # start_time = time.time()
