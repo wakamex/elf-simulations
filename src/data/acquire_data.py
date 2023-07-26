@@ -221,14 +221,13 @@ class EthConfig:
 
 def build_eth_config() -> EthConfig:
     """Build an eth that looks for environmental variables.
-    If env var exists, use that, otherwise, default
+    If env var exists, use that, otherwise, default.
 
     Returns
     -------
     EthConfig
         Config settings required to connect to the eth node
     """
-
     contracts_url = os.getenv("CONTRACTS_URL")
     ethereum_node = os.getenv("ETHEREUM_NODE")
     abi_dir = os.getenv("ABI_DIR")
