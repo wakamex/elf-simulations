@@ -44,10 +44,10 @@ class EnvironmentConfig(types.FrozenClass):
     # int to be used for the random seed
     random_seed: int = 1
     # abi filenames
-    hyperdrive_abi = "IHyperdrive"
-    base_abi = "ERC20Mintable"
-    # build location
-    build_folder = "./hyperdrive_solidity/out"
+    hyperdrive_abi: str = "IHyperdrive"
+    base_abi: str = "ERC20Mintable"
+    # ABI location
+    abi_folder: str = "packages/hyperdrive/src/abis/"
 
     def __getitem__(self, attrib) -> None:
         return getattr(self, attrib)
