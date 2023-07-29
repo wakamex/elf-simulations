@@ -6,6 +6,7 @@ import time
 import mplfinance as mpf
 import pandas as pd
 import streamlit as st
+from calc_pnl import calc_total_returns
 from dotenv import load_dotenv
 
 from eth_bots.data import postgres
@@ -245,12 +246,15 @@ while True:
     (fixed_rate_x, fixed_rate_y) = calc_fixed_rate(combined_data, config_data)
     ohlcv = calc_ohlcv(combined_data, config_data, freq="5T")
 
-    current_returns = calc_total_returns(config_data, pool_info_data, wallet_deltas)
-    ## TODO: FIX BOT RESTARTS
-    ## Add initial budget column to bots
-    ## when bot restarts, use initial budget for bot's wallet address to set "budget" in Agent.Wallet
+    # temporary hack because we know they started with 1e6 base.
+    current_reutrns = calc_total_returns(config_data, pool_info_data, wallets)
+    # TODO: FIX PNL CALCULATIONS TO INCLUDE DEPOSITS
+    #   agent PNL is their click trade pnl + bot pnls
+    # TODO: FIX BOT RESTARTS
+    # Add initial budget column to bots
+    # when bot restarts, use initial budget for bot's wallet address to set "budget" in Agent.Wallet
 
-    comb_rank, ind_rank = get_leaderboard(current_returns, user_lookup)
+    comb_rank, ind_rank = get_leaderboard(current_reutrns, user_lookup)
 
     with ticker_placeholder.container():
         st.header("Ticker")
