@@ -250,7 +250,7 @@ while True:
     current_returns, current_wallet = calc_total_returns(config_data, pool_info_data, wallet_deltas)
     print(f"finished current_returns in {time.time() - start_time}")
     start_time = time.time()
-    add_unrealized_pnl_closeout(current_wallet)  # add unrealized_pnl column using closeout pnl valuation method
+    add_unrealized_pnl_closeout(current_wallet, pool_info_data)  # add unrealized_pnl column using closeout pnl valuation method
     print(f"finished add_unrealized_pnl_closeout in {time.time() - start_time}")
     ## TODO: FIX BOT RESTARTS
     ## Add initial budget column to bots

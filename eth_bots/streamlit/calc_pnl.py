@@ -16,7 +16,7 @@ from eth_bots import hyperdrive_interface
 from eth_bots.hyperdrive_interface.hyperdrive_assets import encode_asset_id, AssetIdPrefix
 
 
-def add_unrealized_pnl_closeout(current_wallet: pd.DataFrame):
+def add_unrealized_pnl_closeout(current_wallet: pd.DataFrame, pool_info: pd.DataFrame):
     """Calculate closeout value of agent positions."""
 
     web3: Web3 = eth.initialize_web3_with_http_provider("http://localhost:8546", request_kwargs={"timeout": 60})
@@ -44,7 +44,8 @@ def add_unrealized_pnl_closeout(current_wallet: pd.DataFrame):
             assert isinstance(maturity, float)
             maturity = int(maturity)
             assert isinstance(maturity, int)
-        token_id = encode_asset_id(AssetIdPrefix.LONG, maturity)
+        assert isinstance(tokentype, str)
+        token_id = encode_asset_id(AssetIdPrefix[tokentype], maturity)
         balance = smart_contract_read(contract, "balanceOf", *(token_id, address))["value"]
         if balance != amount:
             print(f"{balance=}")
@@ -62,10 +63,18 @@ def add_unrealized_pnl_closeout(current_wallet: pd.DataFrame):
         elif tokentype == "LP":
             fn_args = (amount, min_output, address, as_underlying)
             preview_result = smart_contract_preview_transaction(contract, sender, "removeLiquidity", *fn_args)
+            print(f"i tried to remove {amount} liquidity and all I got was: {preview_result}")
+            actual_withdrawn_lp = amount - preview_result["withdrawalShares"]
+            actual_withdrawn_base = preview_result["baseProceeds"]
+            implied_lp_share_price = actual_withdrawn_base / actual_withdrawn_lp
+            observed_lp_share_price = pool_info["lpSharePrice"]
+            print(f"{implied_lp_share_price=} vs. {observed_lp_share_price=}, diff={implied_lp_share_price - observed_lp_share_price=}")
+            print("kek")
         elif tokentype == "WITHDRAWAL_SHARE":
             fn_args = (amount, min_output, address, as_underlying)
             preview_result = smart_contract_preview_transaction(contract, sender, "redeemWithdrawalShares", *fn_args)
         assert isinstance(preview_result, dict)
+        print(f"{preview_result=}")
         assert "value" in preview_result
 
         # Set the calculated value for the entire group
