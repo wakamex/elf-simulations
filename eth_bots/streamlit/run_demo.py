@@ -6,7 +6,7 @@ import time
 import mplfinance as mpf
 import pandas as pd
 import streamlit as st
-from calc_pnl import calc_total_returns
+from calc_pnl import add_unrealized_pnl_closeout, calc_total_returns
 from dotenv import load_dotenv
 
 from eth_bots.data import postgres
@@ -246,7 +246,12 @@ while True:
     (fixed_rate_x, fixed_rate_y) = calc_fixed_rate(combined_data, config_data)
     ohlcv = calc_ohlcv(combined_data, config_data, freq="5T")
 
-    current_returns = calc_total_returns(config_data, pool_info_data, wallet_deltas)
+    start_time = time.time()
+    current_returns, current_wallet = calc_total_returns(config_data, pool_info_data, wallet_deltas)
+    print(f"finished current_returns in {time.time() - start_time}")
+    start_time = time.time()
+    add_unrealized_pnl_closeout(current_wallet)  # add unrealized_pnl column using closeout pnl valuation method
+    print(f"finished add_unrealized_pnl_closeout in {time.time() - start_time}")
     ## TODO: FIX BOT RESTARTS
     ## Add initial budget column to bots
     ## when bot restarts, use initial budget for bot's wallet address to set "budget" in Agent.Wallet

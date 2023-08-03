@@ -2,13 +2,92 @@
 from __future__ import annotations
 
 import logging
+from eth_typing import ChecksumAddress, HexAddress, HexStr
+from fixedpointmath import FixedPoint
 
+from web3 import Web3
 import pandas as pd
 
+import numpy as np
+from elfpy import eth
+from elfpy.eth.transactions import smart_contract_preview_transaction, smart_contract_read
 from eth_bots.streamlit.extract_data_logs import calculate_spot_price
+from eth_bots import hyperdrive_interface
+from eth_bots.hyperdrive_interface.hyperdrive_assets import encode_asset_id, AssetIdPrefix
 
 
-def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, wallet_deltas: pd.DataFrame) -> pd.Series:
+def add_unrealized_pnl_closeout(current_wallet: pd.DataFrame):
+    """Calculate closeout value of agent positions."""
+
+    web3: Web3 = eth.initialize_web3_with_http_provider("http://localhost:8546", request_kwargs={"timeout": 60})
+
+    # send a request to the local server to fetch the deployed contract addresses and
+    # all Hyperdrive contract addresses from the server response
+    addresses = hyperdrive_interface.fetch_hyperdrive_address_from_url("http://localhost:8080")
+    abis = eth.abi.load_all_abis("./packages/hyperdrive/src/")
+    contract = hyperdrive_interface.get_hyperdrive_contract(web3, abis, addresses)
+
+    # Define a function to handle the calculation for each group
+    def calculate_unrealized_pnl(position: pd.DataFrame, min_output: int, as_underlying: bool):
+        # Extract the relevant values (you can adjust this part to match your logic)
+        print(f"{position=}")
+        print(f"{position.shape=}")
+        assert len(position.shape) == 1, "Only one position at a time for add_unrealized_pnl_closeout"
+        address = str(position["walletAddress"])
+        amount = FixedPoint(str(position["delta"])).scaled_value
+        tokentype = position["baseTokenType"]
+        sender = ChecksumAddress(HexAddress(HexStr(address)))
+        preview_result = None
+        maturity = 0
+        if tokentype in ["LONG", "SHORT"]:
+            maturity = position["maturityTime"]
+            assert isinstance(maturity, float)
+            maturity = int(maturity)
+            assert isinstance(maturity, int)
+        token_id = encode_asset_id(AssetIdPrefix.LONG, maturity)
+        balance = smart_contract_read(contract, "balanceOf", *(token_id, address))["value"]
+        if balance != amount:
+            print(f"{balance=}")
+            print(f"{amount =}")
+            print(f"{(balance - amount)=}")
+            amount = balance
+        if amount == 0:
+            return position
+        if tokentype == "LONG":
+            fn_args = (maturity, amount, min_output, address, as_underlying)
+            preview_result = smart_contract_preview_transaction(contract, sender, "closeLong", *fn_args)
+        elif tokentype == "SHORT":
+            fn_args = (maturity, amount, min_output, address, as_underlying)
+            preview_result = smart_contract_preview_transaction(contract, sender, "closeShort", *fn_args)
+        elif tokentype == "LP":
+            fn_args = (amount, min_output, address, as_underlying)
+            preview_result = smart_contract_preview_transaction(contract, sender, "removeLiquidity", *fn_args)
+        elif tokentype == "WITHDRAWAL_SHARE":
+            fn_args = (amount, min_output, address, as_underlying)
+            preview_result = smart_contract_preview_transaction(contract, sender, "redeemWithdrawalShares", *fn_args)
+        assert isinstance(preview_result, dict)
+        assert "value" in preview_result
+
+        # Set the calculated value for the entire group
+        position["unrealized_pnl"] = preview_result["value"]
+
+        return position
+
+    # get unique positions by (baseTokenType, maturity)
+    unique_positions = current_wallet.reset_index().drop_duplicates(subset=["baseTokenType", "maturityTime", "delta"])
+    unique_positions = unique_positions.loc[unique_positions["baseTokenType"] != "BASE", :]
+    print(f"{unique_positions=}")
+    unique_positions["unrealized_pnl"] = np.nan
+    print(f"{len(unique_positions)} unique positions")
+
+    # Group by "baseTokenType" and "maturityTime" and apply the calculation function
+    current_wallet = unique_positions.apply(calculate_unrealized_pnl, min_output=0, as_underlying=True, axis=1)  # type: ignore
+    print(f"{current_wallet=}")
+
+
+def calc_total_returns(
+    pool_config: pd.Series, pool_info: pd.DataFrame, wallet_deltas: pd.DataFrame
+) -> tuple[pd.Series, pd.DataFrame]:
     """Calculate the most current pnl values.
 
     Calculate_spot_price_for_position calculates the spot price for a position that has matured by some amount.
@@ -96,7 +175,7 @@ def calc_total_returns(pool_config: pd.Series, pool_info: pd.DataFrame, wallet_d
     current_wallet.loc[shorts_returns.index, "pnl"] = shorts_returns
     current_wallet.loc[long_returns.index, "pnl"] = long_returns
     current_wallet.loc[withdrawal_returns.index, "pnl"] = withdrawal_returns
-    return current_wallet.reset_index().groupby("walletAddress")["pnl"].sum()
+    return current_wallet.reset_index().groupby("walletAddress")["pnl"].sum(), current_wallet
 
 
 def calculate_spot_price_for_position(
