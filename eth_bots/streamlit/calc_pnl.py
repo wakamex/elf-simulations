@@ -1,5 +1,6 @@
 """Plots the pnl."""
 from __future__ import annotations
+from decimal import Decimal
 
 import logging
 from eth_typing import ChecksumAddress, HexAddress, HexStr
@@ -10,10 +11,9 @@ import pandas as pd
 
 import numpy as np
 from elfpy import eth
-from elfpy.eth.transactions import smart_contract_preview_transaction, smart_contract_read
+from elfpy.eth.transactions import smart_contract_preview_transaction
 from eth_bots.streamlit.extract_data_logs import calculate_spot_price
 from eth_bots import hyperdrive_interface
-from eth_bots.hyperdrive_interface.hyperdrive_assets import encode_asset_id, AssetIdPrefix
 
 
 def add_unrealized_pnl_closeout(current_wallet: pd.DataFrame, pool_info: pd.DataFrame):
@@ -30,69 +30,54 @@ def add_unrealized_pnl_closeout(current_wallet: pd.DataFrame, pool_info: pd.Data
     # Define a function to handle the calculation for each group
     def calculate_unrealized_pnl(position: pd.DataFrame, min_output: int, as_underlying: bool):
         # Extract the relevant values (you can adjust this part to match your logic)
-        print(f"{position=}")
-        print(f"{position.shape=}")
         assert len(position.shape) == 1, "Only one position at a time for add_unrealized_pnl_closeout"
-        address = str(position["walletAddress"])
         amount = FixedPoint(str(position["delta"])).scaled_value
+        if amount == 0:
+            return position
+        address = str(position["walletAddress"])
         tokentype = position["baseTokenType"]
         sender = ChecksumAddress(HexAddress(HexStr(address)))
         preview_result = None
         maturity = 0
         if tokentype in ["LONG", "SHORT"]:
             maturity = position["maturityTime"]
-            assert isinstance(maturity, float)
+            assert isinstance(maturity, Decimal)
             maturity = int(maturity)
             assert isinstance(maturity, int)
         assert isinstance(tokentype, str)
-        token_id = encode_asset_id(AssetIdPrefix[tokentype], maturity)
-        balance = smart_contract_read(contract, "balanceOf", *(token_id, address))["value"]
-        if balance != amount:
-            print(f"{balance=}")
-            print(f"{amount =}")
-            print(f"{(balance - amount)=}")
-            amount = balance
-        if amount == 0:
-            return position
         if tokentype == "LONG":
             fn_args = (maturity, amount, min_output, address, as_underlying)
             preview_result = smart_contract_preview_transaction(contract, sender, "closeLong", *fn_args)
+            position["unrealized_pnl"] = Decimal(preview_result["value"])/Decimal(1e18)
         elif tokentype == "SHORT":
             fn_args = (maturity, amount, min_output, address, as_underlying)
             preview_result = smart_contract_preview_transaction(contract, sender, "closeShort", *fn_args)
+            position["unrealized_pnl"] = preview_result["value"]
         elif tokentype == "LP":
             fn_args = (amount, min_output, address, as_underlying)
             preview_result = smart_contract_preview_transaction(contract, sender, "removeLiquidity", *fn_args)
-            print(f"i tried to remove {amount} liquidity and all I got was: {preview_result}")
-            actual_withdrawn_lp = amount - preview_result["withdrawalShares"]
-            actual_withdrawn_base = preview_result["baseProceeds"]
-            implied_lp_share_price = actual_withdrawn_base / actual_withdrawn_lp
-            observed_lp_share_price = pool_info["lpSharePrice"]
-            print(f"{implied_lp_share_price=} vs. {observed_lp_share_price=}, diff={implied_lp_share_price - observed_lp_share_price=}")
-            print("kek")
+            position["unrealized_pnl"] = Decimal(
+                preview_result["baseProceeds"]
+                + preview_result["withdrawalShares"]
+                * pool_info["sharePrice"].values[-1]
+                * pool_info["lpSharePrice"].values[-1]
+            )/Decimal(1e18)
         elif tokentype == "WITHDRAWAL_SHARE":
             fn_args = (amount, min_output, address, as_underlying)
             preview_result = smart_contract_preview_transaction(contract, sender, "redeemWithdrawalShares", *fn_args)
-        assert isinstance(preview_result, dict)
-        print(f"{preview_result=}")
-        assert "value" in preview_result
-
-        # Set the calculated value for the entire group
-        position["unrealized_pnl"] = preview_result["value"]
-
+            position["unrealized_pnl"] = preview_result["proceeds"]
         return position
 
-    # get unique positions by (baseTokenType, maturity)
+    # get unique positions by (baseTokenType, maturityTime, delta)
     unique_positions = current_wallet.reset_index().drop_duplicates(subset=["baseTokenType", "maturityTime", "delta"])
+    unique_positions = unique_positions[["walletAddress", "baseTokenType", "maturityTime", "delta"]]
     unique_positions = unique_positions.loc[unique_positions["baseTokenType"] != "BASE", :]
-    print(f"{unique_positions=}")
+    unique_positions = unique_positions.loc[unique_positions["delta"] != 0, :]
     unique_positions["unrealized_pnl"] = np.nan
-    print(f"{len(unique_positions)} unique positions")
 
-    # Group by "baseTokenType" and "maturityTime" and apply the calculation function
-    current_wallet = unique_positions.apply(calculate_unrealized_pnl, min_output=0, as_underlying=True, axis=1)  # type: ignore
-    print(f"{current_wallet=}")
-
+    # calculate unrealized pnl for each unique position
+    unique_positions = unique_positions.apply(calculate_unrealized_pnl, 0, True, axis=1)  # type: ignore
+    return current_wallet.merge(unique_positions, how="left", on=["baseTokenType", "maturityTime", "delta"])
 
 def calc_total_returns(
     pool_config: pd.Series, pool_info: pd.DataFrame, wallet_deltas: pd.DataFrame
@@ -118,7 +103,7 @@ def calc_total_returns(
     # pylint: disable=too-many-locals
     # Most current block timestamp
     latest_pool_info = pool_info.loc[pool_info.index.max()]
-    block_timestamp = latest_pool_info["timestamp"].timestamp()
+    block_timestamp = Decimal(latest_pool_info["timestamp"].timestamp())
 
     # Calculate unrealized gains
     current_wallet = wallet_deltas.groupby(["walletAddress", "tokenType"]).agg(

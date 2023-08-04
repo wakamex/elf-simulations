@@ -215,7 +215,7 @@ load_dotenv()
 session = postgres.initialize_session()
 
 # pool config data is static, so just read once
-config_data = postgres.get_pool_config(session)
+config_data = postgres.get_pool_config(session, coerce_float=False)
 
 # TODO fix input invTimeStretch to be unscaled in ingestion into postgres
 config_data["invTimeStretch"] = config_data["invTimeStretch"] / 10**18
@@ -238,9 +238,9 @@ while True:
     # Place data and plots
     user_lookup = get_user_lookup()
     txn_data = postgres.get_transactions(session, -max_live_blocks)
-    pool_info_data = postgres.get_pool_info(session, -max_live_blocks)
+    pool_info_data = postgres.get_pool_info(session, -max_live_blocks, coerce_float=False)
     combined_data = get_combined_data(txn_data, pool_info_data)
-    wallet_deltas = postgres.get_wallet_deltas(session)
+    wallet_deltas = postgres.get_wallet_deltas(session, coerce_float=False)
     ticker = get_ticker(wallet_deltas, txn_data, pool_info_data, user_lookup)
 
     (fixed_rate_x, fixed_rate_y) = calc_fixed_rate(combined_data, config_data)
