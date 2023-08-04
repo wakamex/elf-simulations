@@ -6,7 +6,7 @@ import time
 import mplfinance as mpf
 import pandas as pd
 import streamlit as st
-from calc_pnl import add_unrealized_pnl_closeout, calc_total_returns
+from calc_pnl import calc_closeout_pnl, calc_total_returns
 from dotenv import load_dotenv
 
 from eth_bots.data import postgres
@@ -250,7 +250,10 @@ while True:
     current_returns, current_wallet = calc_total_returns(config_data, pool_info_data, wallet_deltas)
     print(f"finished current_returns in {time.time() - start_time}")
     start_time = time.time()
-    add_unrealized_pnl_closeout(current_wallet, pool_info_data)  # add unrealized_pnl column using closeout pnl valuation method
+    current_wallet = calc_closeout_pnl(current_wallet, pool_info_data)  # add unrealized_pnl column using closeout pnl valuation method
+    current_wallet.delta = current_wallet.delta.astype(float)
+    current_wallet.pnl = current_wallet.pnl.astype(float)
+    current_wallet.closeout_pnl = current_wallet.closeout_pnl.astype(float)
     print(f"finished add_unrealized_pnl_closeout in {time.time() - start_time}")
     ## TODO: FIX BOT RESTARTS
     ## Add initial budget column to bots
@@ -261,6 +264,8 @@ while True:
     with ticker_placeholder.container():
         st.header("Ticker")
         st.dataframe(ticker, height=200, use_container_width=True)
+        st.header("PNL")
+        st.dataframe(current_wallet, height=500, use_container_width=True)
         st.header("Total Leaderboard")
         st.dataframe(comb_rank, height=500, use_container_width=True)
         st.header("Wallet Leaderboard")
