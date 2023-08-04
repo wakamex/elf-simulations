@@ -3,13 +3,13 @@ from __future__ import annotations
 
 import logging
 
-from elfpy.agents.policies import Policies
 from fixedpointmath import FixedPoint
 
+from elfpy.agents.policies import Policies
 from src.eth_bots.core import AgentConfig, Budget, EnvironmentConfig
 
 # You can import custom policies here. For example:
-from src.eth_bots.custom_policies import ExampleCustomPolicy, DBot
+from src.eth_bots.custom_policies import DBot, ExampleCustomPolicy
 
 
 def get_eth_bots_config() -> tuple[EnvironmentConfig, list[AgentConfig]]:
@@ -34,7 +34,7 @@ def get_eth_bots_config() -> tuple[EnvironmentConfig, list[AgentConfig]]:
         hyperdrive_abi="IHyperdrive",
         base_abi="ERC20Mintable",
         username_register_url="http://localhost:5002",
-        artifacts_url="http://localhost:80",
+        artifacts_url="http://localhost:8080",
         rpc_url="http://localhost:8546",
         username="Mihai",
     )
@@ -51,7 +51,7 @@ def get_eth_bots_config() -> tuple[EnvironmentConfig, list[AgentConfig]]:
                 max_wei=int(100_000e18),  # 100k base
             ),
             eth_budget=Budget(min_wei=int(1e18), max_wei=int(1e18)),
-            init_kwargs={"trade_chance": FixedPoint(0.8)},
+            init_kwargs={"trade_chance": FixedPoint(1/50)},
         ),
         AgentConfig(
             policy=Policies.long_louie,
@@ -89,7 +89,7 @@ def get_eth_bots_config() -> tuple[EnvironmentConfig, list[AgentConfig]]:
             eth_budget=Budget(min_wei=int(1e18), max_wei=int(1e18)),
             init_kwargs={"trade_amount": FixedPoint(100)},
         ),
-        AgentConfig(policy=DBot, number_of_agents=1),
+        AgentConfig(policy=DBot, number_of_agents=0),
     ]
 
     return environment_config, agent_config
