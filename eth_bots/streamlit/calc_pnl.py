@@ -1,24 +1,23 @@
 """Plots the pnl."""
 from __future__ import annotations
-from decimal import Decimal
 
 import logging
-from eth_typing import ChecksumAddress, HexAddress, HexStr
-from fixedpointmath import FixedPoint
-
-from web3 import Web3
-import pandas as pd
+from decimal import Decimal
 
 import numpy as np
+import pandas as pd
+from eth_typing import ChecksumAddress, HexAddress, HexStr
+from fixedpointmath import FixedPoint
+from web3 import Web3
+
 from elfpy import eth
 from elfpy.eth.transactions import smart_contract_preview_transaction
-from eth_bots.streamlit.extract_data_logs import calculate_spot_price
 from eth_bots import hyperdrive_interface
+from eth_bots.streamlit.extract_data_logs import calculate_spot_price
 
 
 def calc_closeout_pnl(current_wallet: pd.DataFrame, pool_info: pd.DataFrame):
     """Calculate closeout value of agent positions."""
-
     web3: Web3 = eth.initialize_web3_with_http_provider("http://localhost:8546", request_kwargs={"timeout": 60})
 
     # send a request to the local server to fetch the deployed contract addresses and
@@ -70,7 +69,7 @@ def calc_closeout_pnl(current_wallet: pd.DataFrame, pool_info: pd.DataFrame):
         return position
 
     current_wallet["closeout_pnl"] = np.nan
-    return current_wallet.apply(calc_single_closeout, min_output=0, as_underlying=True, axis=1)
+    return current_wallet.apply(calc_single_closeout, min_output=0, as_underlying=True, axis=1)  # type: ignore
 
 def calc_total_returns(
     pool_config: pd.Series, pool_info: pd.DataFrame, wallet_deltas: pd.DataFrame
