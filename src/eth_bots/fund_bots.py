@@ -59,6 +59,16 @@ if __name__ == "__main__":
     base_token_contract = web3.eth.contract(
         abi=base_contract_abi, address=web3.to_checksum_address(addresses.base_token)
     )
+
+    # mint base to user account
+    eth.smart_contract_transact(
+        web3,
+        base_token_contract,
+        user_account,
+        "mint(uint256)",
+        int(1e18*1e9),  # 1 billion
+    )
+
     for agent_account, agent_eth_budget, agent_base_budget in zip(
         agent_accounts, agent_eth_budgets, agent_base_budgets
     ):

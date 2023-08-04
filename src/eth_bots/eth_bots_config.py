@@ -89,7 +89,7 @@ def get_eth_bots_config() -> tuple[EnvironmentConfig, list[AgentConfig]]:
             eth_budget=Budget(min_wei=int(1e18), max_wei=int(1e18)),
             init_kwargs={"trade_amount": FixedPoint(100)},
         ),
-        AgentConfig(policy=DBot, number_of_agents=0),
+        AgentConfig(policy=DBot, number_of_agents=1, eth_budget=Budget(min_wei=int(1e18), max_wei=int(1e18))),
     ]
 
     return environment_config, agent_config

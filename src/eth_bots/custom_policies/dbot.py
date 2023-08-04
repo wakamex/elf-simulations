@@ -16,11 +16,12 @@ LP, CLOSE_LP, LONG, SHORT, CLOSE_LONG, CLOSE_SHORT = "add_liquidity", "remove_li
 def new_trade(action_type: str, amount: FixedPoint | int, wallet: Wallet, mint_time=None) -> Trade:
     amount = amount if isinstance(amount, FixedPoint) else FixedPoint(amount)
     action = HyperdriveMarketAction(MarketActionType(action_type), wallet, amount, FixedPoint(0), mint_time)
-    return Trade(market=MarketType.HYPERDRIVE, trade=action)
+    return Trade(market_type=MarketType.HYPERDRIVE, market_action=action)
 
 class DBot(BasePolicy):
-    def __init__(self, budget: FixedPoint, rng: NumpyGenerator | None = None, amount: FixedPoint | None = None):
+    def __init__(self, budget: FixedPoint, rng: NumpyGenerator | None = None, amount: FixedPoint | None = None, slippage_tolerance: FixedPoint | None = None):
         self.amount = FixedPoint(100) if amount is None else amount
+        self.slippage_tolerance = FixedPoint(0) if slippage_tolerance is None else slippage_tolerance
         self.trade_count = 0
         self.trade_list = [(LP, 100), (LONG, 100), (SHORT, 100), (CLOSE_SHORT, 100)]
         super().__init__(budget, rng)
