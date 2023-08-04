@@ -3,13 +3,13 @@ from __future__ import annotations
 
 import logging
 
+from elfpy.agents.policies import Policies
 from fixedpointmath import FixedPoint
 
-from elfpy.agents.policies import Policies
 from src.eth_bots.core import AgentConfig, Budget, EnvironmentConfig
 
 # You can import custom policies here. For example:
-from src.eth_bots.custom_policies.example_custom_policy import ExampleCustomPolicy
+from src.eth_bots.custom_policies import ExampleCustomPolicy, DBot
 
 
 def get_eth_bots_config() -> tuple[EnvironmentConfig, list[AgentConfig]]:
@@ -24,24 +24,25 @@ def get_eth_bots_config() -> tuple[EnvironmentConfig, list[AgentConfig]]:
             List containing all of the agent specifications
     """
     environment_config = EnvironmentConfig(
-        delete_previous_logs=False,
+        delete_previous_logs=True,
+        log_formatter="%(message)s",
         halt_on_errors=True,
         log_filename="agent0-bots",
-        log_level=logging.INFO,
+        log_level=logging.DEBUG,
         log_stdout=True,
         random_seed=1234,
         hyperdrive_abi="IHyperdrive",
         base_abi="ERC20Mintable",
         username_register_url="http://localhost:5002",
-        artifacts_url="http://localhost:8080",
-        rpc_url="http://localhost:8545",
-        username="changeme",
+        artifacts_url="http://localhost:80",
+        rpc_url="http://localhost:8546",
+        username="Mihai",
     )
 
     agent_config: list[AgentConfig] = [
         AgentConfig(
             policy=Policies.random_agent,
-            number_of_agents=3,
+            number_of_agents=0,
             slippage_tolerance=FixedPoint(0.0001),
             base_budget=Budget(
                 mean_wei=int(5_000e18),  # 5k base
@@ -88,6 +89,7 @@ def get_eth_bots_config() -> tuple[EnvironmentConfig, list[AgentConfig]]:
             eth_budget=Budget(min_wei=int(1e18), max_wei=int(1e18)),
             init_kwargs={"trade_amount": FixedPoint(100)},
         ),
+        AgentConfig(policy=DBot, number_of_agents=1),
     ]
 
     return environment_config, agent_config
