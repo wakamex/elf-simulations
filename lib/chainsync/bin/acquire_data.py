@@ -22,7 +22,6 @@ from chainsync.hyperdrive import (
     get_wallet_info,
 )
 from dotenv import load_dotenv
-from elfpy.utils import logs as log_utils
 from eth_typing import URI, BlockNumber
 from eth_utils import address
 from ethpy.base import fetch_contract_transactions_for_block, initialize_web3_with_http_provider, load_all_abis
@@ -130,7 +129,7 @@ def main(
     # TODO: fewer nested blocks!
     # pylint: disable=too-many-nested-blocks
     while True:
-        latest_mined_block = web3.eth.get_block_number() - 1
+        latest_mined_block = web3.eth.get_block_number()
         # if we are on a new block
         if latest_mined_block > block_number:
             # Backfilling for blocks that need updating
