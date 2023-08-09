@@ -36,6 +36,7 @@ def main():
     # Set sane logging defaults to avoid spam from dependencies
     logging.getLogger("urllib3").setLevel(logging.WARNING)
     logging.getLogger("web3").setLevel(logging.WARNING)
+    logging.getLogger("asyncio").setLevel(logging.WARNING)
     warnings.filterwarnings("ignore", category=UserWarning, module="web3.contract.base_contract")
     # Grab stdin args, fund bots if requested
     args = parse_args()

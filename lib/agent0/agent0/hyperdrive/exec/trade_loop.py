@@ -1,6 +1,7 @@
 """Helper function for executing a set of trades"""
 from __future__ import annotations
 
+import sys
 import asyncio
 import logging
 from datetime import datetime
@@ -63,8 +64,13 @@ def trade_if_new_block(
                 )
             )
             last_executed_block = latest_block_number
-        # we want to catch all exceptions
-        # pylint: disable=broad-exception-caught
+        except IndexError as exc:
+            if any(error_msg in str(exc) for error_msg in ["index out of range", "pop from empty list"]):
+                logging.info("Ran out of trades.")
+                if halt_on_errors:
+                    sys.exit(1)
+            elif halt_on_errors:
+                raise exc
         except Exception as exc:
             logging.info("Trade crashed with error: %s", exc)
             # TODO: Crash reporting

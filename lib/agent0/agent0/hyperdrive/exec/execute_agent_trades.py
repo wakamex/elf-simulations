@@ -148,8 +148,8 @@ async def async_execute_single_agent_trade(
     trades: list[types.Trade[HyperdriveMarketAction]] = agent.get_trades(market=hyperdrive_market)
     for trade_object in trades:
         logging.info(
-            "AGENT %s to perform %s for %g",
-            str(agent.checksum_address),
+            "🤖%s to perform %s for %g",
+            agent.checksum_address.lower()[2:8],
             trade_object.market_action.action_type,
             float(trade_object.market_action.trade_amount),
         )
