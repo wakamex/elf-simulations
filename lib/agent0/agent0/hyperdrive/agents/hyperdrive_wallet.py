@@ -131,13 +131,15 @@ class HyperdriveWallet(EthWallet):
                 case "frozen" | "no_new_attribs" | "borrows":
                     continue
                 case "lp_tokens" | "withdraw_shares":
-                    logging.debug(
-                        " => %s, pre-trade = %s, post-trade = %s, delta = %s",
-                        key,
-                        getattr(self, key),
-                        getattr(self, key) + value_or_dict,
-                        value_or_dict,
-                    )
+                    if getattr(self, key) != 0 or value_or_dict != 0:
+                        logging.debug(
+                            " => %s%s, pre-trade = %s, post-trade = %s, delta = %s",
+                            "🌊" if key=="lp_tokens" else "",
+                            key,
+                            getattr(self, key),
+                            getattr(self, key) + value_or_dict,
+                            value_or_dict,
+                        )
                     self[key] += value_or_dict
                 # handle updating a Quantity
                 case "balance":
