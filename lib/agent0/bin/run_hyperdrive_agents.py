@@ -15,7 +15,7 @@ from eth_typing import BlockNumber
 # pylint: disable=unused-variable
 
 
-def parse_args():
+def parse_args(args=None):
     """Define and parse arguments from stdin"""
     parser = argparse.ArgumentParser(
         prog="run_hyperdrive_agents",
@@ -28,10 +28,10 @@ def parse_args():
         help="If set, then bots will get funded automatically by minting Ethereum and Base",
     )
 
-    return parser.parse_args()
+    return parser.parse_args(args)
 
 
-def main():
+def main(args=None):
     """Entrypoint to load all configurations and run agents."""
     # Set sane logging defaults to avoid spam from dependencies
     logging.getLogger("urllib3").setLevel(logging.WARNING)
@@ -39,7 +39,7 @@ def main():
     logging.getLogger("asyncio").setLevel(logging.WARNING)
     warnings.filterwarnings("ignore", category=UserWarning, module="web3.contract.base_contract")
     # Grab stdin args, fund bots if requested
-    args = parse_args()
+    args = parse_args(args)
     if args.develop:  # setup env automatically & fund the bots
         # exposing the user account for debugging purposes
         user_account = create_and_fund_user_account()
