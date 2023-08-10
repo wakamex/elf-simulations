@@ -74,7 +74,8 @@ def get_agent_accounts(
                 kwargs["budget"] = FixedPoint(scaled_value=agent_base_budgets[agent_count])
             else:
                 kwargs["budget"] = agent_info.base_budget.sample_budget(rng)
-            kwargs["slippage_tolerance"] = agent_info.slippage_tolerance
+            if agent_info.slippage_tolerance is not None:
+                kwargs["slippage_tolerance"] = agent_info.slippage_tolerance
             eth_agent = HyperdriveAgent(
                 Account().from_key(agent_private_keys[agent_count]), policy=agent_info.policy(**kwargs)
             )
