@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 
 from agent0.base.config import AgentConfig, Budget, EnvironmentConfig
-from agent0.hyperdrive.policies import Policies
+from agent0.hyperdrive.policies.zoo import Policies
 from fixedpointmath import FixedPoint
 
 
@@ -38,7 +38,7 @@ def get_eth_bots_config() -> tuple[EnvironmentConfig, list[AgentConfig]]:
     agent_config: list[AgentConfig] = [
         AgentConfig(
             policy=Policies.random_agent,
-            number_of_agents=3,
+            number_of_agents=0,
             slippage_tolerance=FixedPoint(0.0001),
             base_budget=Budget(
                 mean_wei=int(5_000e18),  # 5k base
@@ -59,7 +59,10 @@ def get_eth_bots_config() -> tuple[EnvironmentConfig, list[AgentConfig]]:
                 max_wei=int(100_000e18),  # 100k base
             ),
             eth_budget=Budget(min_wei=int(1e18), max_wei=int(1e18)),
-            init_kwargs={"trade_chance": FixedPoint(0.8), "risk_threshold": FixedPoint(0.9)},
+            init_kwargs={
+                "trade_chance": FixedPoint(0.8),
+                "risk_threshold": FixedPoint(0.9),
+            },
         ),
         AgentConfig(
             policy=Policies.short_sally,
@@ -71,8 +74,31 @@ def get_eth_bots_config() -> tuple[EnvironmentConfig, list[AgentConfig]]:
                 max_wei=int(100_000e18),  # 100k base
             ),
             eth_budget=Budget(min_wei=int(1e18), max_wei=int(1e18)),
-            init_kwargs={"trade_chance": FixedPoint(0.8), "risk_threshold": FixedPoint(0.8)},
+            init_kwargs={
+                "trade_chance": FixedPoint(0.8),
+                "risk_threshold": FixedPoint(0.8),
+            },
         ),
+        AgentConfig(
+            policy=Policies.deterministic,
+            number_of_agents=1,
+            init_kwargs={
+                "trade_list": [
+                    ("add_liquidity", 100),
+                    ("open_long", 100),
+                    ("open_short", 100),
+                    ("close_short", 100),
+                ]
+            },
+        ),
+        AgentConfig(
+            policy=Policies.minimal,
+            number_of_agents=0,
+        ),
+        AgentConfig(
+            policy=Policies.oneline,
+            number_of_agents=0,
+        )
     ]
 
     return environment_config, agent_config
