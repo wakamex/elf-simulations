@@ -19,7 +19,7 @@ from ethpy.base import (
 from ethpy.hyperdrive import fetch_hyperdrive_address_from_url
 
 
-def fund_bots():
+def fund_bots(**config_params):
     """Fund bots using config settings"""
     # pylint: disable=too-many-locals
     # USER PRIVATE KEY
@@ -49,7 +49,7 @@ def fund_bots():
         raise AssertionError(
             f"{len(agent_accounts)=} must equal {len(agent_eth_budgets)=} and {len(agent_base_budgets)=}"
         )
-    environment_config, _ = get_eth_bots_config()
+    environment_config, _ = get_eth_bots_config(**config_params)
     # setup web3 & contracts
     web3 = initialize_web3_with_http_provider(environment_config.rpc_url)
     abi_file_loc = os.path.join(

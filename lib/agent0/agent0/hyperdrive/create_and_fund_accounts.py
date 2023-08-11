@@ -13,8 +13,13 @@ from eth_account.account import Account
 from ethpy.base import set_anvil_account_balance, smart_contract_transact
 
 
-def create_and_fund_user_account() -> HyperdriveAgent:
+def create_and_fund_user_account(**config_params) -> HyperdriveAgent:
     """Helper function for funding a fake user account
+
+    Arguments
+    ---------
+    **config_params
+        Override parameters passed to the EnvironmentConfig
 
     Returns
     -------
@@ -30,7 +35,7 @@ def create_and_fund_user_account() -> HyperdriveAgent:
     # the environment variables are used elsewhere in the run_hyperdrive_agents pipeline
     set_env(env_string)
     # get required contracts
-    environment_config, _ = get_eth_bots_config()
+    environment_config, _ = get_eth_bots_config(**config_params)
     web3, base_token_contract, _ = get_web3_and_contracts(environment_config)
     # fund the user with ETH
     eth_budget_string = os.environ.get("AGENT_ETH_BUDGETS")

@@ -8,8 +8,13 @@ from agent0.hyperdrive.policies.zoo import Policies
 from fixedpointmath import FixedPoint
 
 
-def get_eth_bots_config() -> tuple[EnvironmentConfig, list[AgentConfig]]:
+def get_eth_bots_config(**config_params) -> tuple[EnvironmentConfig, list[AgentConfig]]:
     """Get the instantiated config objects for the ETH bots demo.
+
+    Arguments
+    ---------
+    **config_params
+        Override parameters passed to the EnvironmentConfig
 
     Returns
     -------
@@ -19,22 +24,24 @@ def get_eth_bots_config() -> tuple[EnvironmentConfig, list[AgentConfig]]:
         agent_config : list[BotInfo]
             List containing all of the agent specifications
     """
-    environment_config = EnvironmentConfig(
-        delete_previous_logs=True,
-        halt_on_errors=True,
-        log_formatter="%(message)s",
-        log_filename="agent0-bots",
-        log_level=logging.DEBUG,
-        log_stdout=True,
-        random_seed=1234,
-        hyperdrive_abi="IHyperdrive",
-        base_abi="ERC20Mintable",
-        username_register_url="http://localhost:5002",
-        artifacts_url="http://localhost:8080",
-        rpc_url="http://localhost:8546",
-        username="Mihai",
-    )
-
+    config_dict = {
+        "delete_previous_logs": True,
+        "halt_on_errors": True,
+        "log_formatter": "%(message)s",
+        "log_filename": "agent0-bots",
+        "log_level": logging.DEBUG,
+        "log_stdout": True,
+        "random_seed": 1234,
+        "hyperdrive_abi": "IHyperdrive",
+        "base_abi": "ERC20Mintable",
+        "username_register_url": "http://localhost:5002",
+        "artifacts_url": "http://localhost:8080",
+        "rpc_url": "http://localhost:8546",
+        "username": "Mihai",
+    }
+    for key, value in config_params.items():
+        config_dict[key] = value
+    environment_config = EnvironmentConfig(**config_dict)
     agent_config: list[AgentConfig] = [
         AgentConfig(
             policy=Policies.random_agent,

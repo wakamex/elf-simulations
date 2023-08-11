@@ -18,7 +18,7 @@ from web3 import Web3
 from web3.contract.contract import Contract
 
 
-def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, list[HyperdriveAgent]]:
+def setup_experiment(**config_params) -> tuple[Web3, Contract, Contract, EnvironmentConfig, list[HyperdriveAgent]]:
     """Get agents according to provided config, provide eth, base token and approve hyperdrive.
 
     Returns
@@ -32,7 +32,7 @@ def setup_experiment() -> tuple[Web3, Contract, Contract, EnvironmentConfig, lis
             - A list of HyperdriveAgent objects that contain a wallet address and Elfpy Agent for determining trades
     """
     # get the user defined config variables
-    environment_config, agent_config = get_eth_bots_config()
+    environment_config, agent_config = get_eth_bots_config(**config_params)
     # this random number generator should be used everywhere so that the experiment is repeatable
     # rng stores the state of the random number generator, so that we can pause and restart experiments from any point
     rng = np.random.default_rng(environment_config.random_seed)

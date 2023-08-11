@@ -31,7 +31,7 @@ def parse_args(args=None):
     return parser.parse_args(args)
 
 
-def main(args=None):
+def main(args=None, **config_params):
     """Entrypoint to load all configurations and run agents."""
     # Set sane logging defaults to avoid spam from dependencies
     logging.getLogger("urllib3").setLevel(logging.WARNING)
@@ -42,12 +42,12 @@ def main(args=None):
     args = parse_args(args)
     if args.develop:  # setup env automatically & fund the bots
         # exposing the user account for debugging purposes
-        user_account = create_and_fund_user_account()
-        fund_bots()  # uses env variables created above as inputs
+        user_account = create_and_fund_user_account(**config_params)
+        fund_bots(**config_params)  # uses env variables created above as inputs
     # exposing the base_token_contract for debugging purposes.
-    web3, base_token_contract, hyperdrive_contract, environment_config, agent_accounts = setup_experiment()
+    web3, base_token_contract, hyperdrive_contract, env_config, agent_accounts = setup_experiment(**config_params)
     if not args.develop:
-        if environment_config.username == DEFAULT_USERNAME:
+        if env_config.username == DEFAULT_USERNAME:
             # Check for default name and exit if is default
             raise ValueError(
                 "Default username detected, please update 'username' in "
@@ -56,14 +56,14 @@ def main(args=None):
         # Set up postgres to write username to agent wallet addr
         # initialize the postgres session
         wallet_addrs = [str(agent.checksum_address) for agent in agent_accounts]
-        register_username(environment_config.username_register_url, wallet_addrs, environment_config.username)
+        register_username(env_config.username_register_url, wallet_addrs, env_config.username)
     last_executed_block = BlockNumber(0)
     while True:
         last_executed_block = trade_if_new_block(
             web3,
             hyperdrive_contract,
             agent_accounts,
-            environment_config.halt_on_errors,
+            env_config.halt_on_errors,
             last_executed_block,
         )
 
