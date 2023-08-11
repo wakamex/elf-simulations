@@ -84,6 +84,9 @@ def trade_if_new_block(
             #     pool_config=pool_config,
             # )
             if halt_on_errors:
+                if "0x512095c7" in str(exc):
+                    logging.info("Pool can't open any more longs.")
+                    sys.exit(1)
                 raise exc
     return last_executed_block
 
