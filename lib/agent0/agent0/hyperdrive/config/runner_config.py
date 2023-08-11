@@ -24,24 +24,25 @@ def get_eth_bots_config(**config_params) -> tuple[EnvironmentConfig, list[AgentC
         agent_config : list[BotInfo]
             List containing all of the agent specifications
     """
-    config_dict = {
-        "delete_previous_logs": True,
-        "halt_on_errors": True,
-        "log_formatter": "%(message)s",
-        "log_filename": "agent0-bots",
-        "log_level": logging.DEBUG,
-        "log_stdout": True,
-        "random_seed": 1234,
-        "hyperdrive_abi": "IHyperdrive",
-        "base_abi": "ERC20Mintable",
-        "username_register_url": "http://localhost:5002",
-        "artifacts_url": "http://localhost:8080",
-        "rpc_url": "http://localhost:8546",
-        "username": "Mihai",
-    }
+    trade_list = config_params.pop("trade_list") if "trade_list" in config_params else None
+    environment_config = EnvironmentConfig(
+        delete_previous_logs = True,
+        halt_on_errors = True,
+        log_formatter = "%(message)s",
+        log_filename = "agent0-bots",
+        log_level = logging.DEBUG,
+        log_stdout = True,
+        random_seed = 1234,
+        hyperdrive_abi = "IHyperdrive",
+        base_abi = "ERC20Mintable",
+        username_register_url = "http://localhost:5002",
+        artifacts_url = "http://localhost:8080",
+        rpc_url = "http://localhost:8546",
+        username = "Mihai",
+    )
+    # apply overrides for config parameters
     for key, value in config_params.items():
-        config_dict[key] = value
-    environment_config = EnvironmentConfig(**config_dict)
+        environment_config[key] = value
     agent_config: list[AgentConfig] = [
         AgentConfig(
             policy=Policies.random_agent,
@@ -89,13 +90,16 @@ def get_eth_bots_config(**config_params) -> tuple[EnvironmentConfig, list[AgentC
         AgentConfig(
             policy=Policies.deterministic,
             number_of_agents=1,
+            base_budget=Budget(min_wei=int(1e9*1e18),max_wei=int(1e9*1e18)),
             init_kwargs={
-                "trade_list": [
-                    ("add_liquidity", 100),
-                    ("open_long", 100),
-                    ("open_short", 100),
-                    ("close_short", 100),
-                ]
+                # "trade_list": [
+                #     ("add_liquidity", 100),
+                #     ("open_long", 100),
+                #     ("open_short", 100),
+                #     ("close_short", 100),
+                # ]
+                "trade_list": trade_list or [("open_long", 100_000)]*100
+                # "trade_list": [("open_long", 10_000)]*100
             },
         ),
         AgentConfig(
