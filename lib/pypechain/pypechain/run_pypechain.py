@@ -24,6 +24,9 @@ from web3.types import ABIFunction
 def format_and_write_code(path, code):
     """save to specified path the provided code after formatting it with Black on default settings."""
     with open(path, "w", encoding="utf-8") as output_file:
+        while '\n\n' in code:
+            code = code.replace('\n\n', '\n')  # remove all whitespace and let Black sort it out
+        code = code.replace(', )', ')')  # remove trailing comma, it's weird
         try:
             linted_code = black.format_file_contents(code, fast=False, mode=black.mode.Mode())
         except ValueError as exc:
