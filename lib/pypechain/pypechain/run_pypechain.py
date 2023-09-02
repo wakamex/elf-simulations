@@ -21,6 +21,16 @@ from pypechain.utilities.types import solidity_to_python_type
 from web3.types import ABIFunction
 
 
+def format_and_write_code(path, code):
+    """save to specified path the provided code after formatting it with Black on default settings."""
+    with open(path, "w", encoding="utf-8") as output_file:
+        try:
+            linted_code = black.format_file_contents(code, fast=False, mode=black.mode.Mode())
+        except ValueError as exc:
+            raise ValueError(f"cannot format with Black\n code:\n{code}") from exc
+        output_file.write(linted_code)
+
+
 def main(abi_file_path: str, output_dir: str) -> None:
     """Generates class files for a given abi.
 
@@ -37,6 +47,7 @@ def main(abi_file_path: str, output_dir: str) -> None:
     file_path = Path(abi_file_path)
     filename = file_path.name
     contract_name = os.path.splitext(filename)[0]
+    contract_path = Path(output_dir).joinpath(f"{contract_name}")
 
     # grab the templates
     contract_template, types_template = setup_templates()
@@ -49,14 +60,8 @@ def main(abi_file_path: str, output_dir: str) -> None:
     # TODO:  events
 
     # Write the renders to a file
-    types_output_file_path = Path(output_dir).joinpath(f"{contract_name}Types.py")
-    contract_output_file_path = Path(output_dir).joinpath(f"{contract_name}Contract.py")
-    with open(contract_output_file_path, "w", encoding="utf-8") as output_file:
-        linted_code = black.format_file_contents(rendered_contract_code, fast=False, mode=black.mode.Mode())
-        output_file.write(linted_code)
-    with open(types_output_file_path, "w", encoding="utf-8") as output_file:
-        linted_code = black.format_file_contents(rendered_types_code, fast=False, mode=black.mode.Mode())
-        output_file.write(linted_code)
+    format_and_write_code(f"{contract_path}Contract.py", rendered_contract_code)
+    format_and_write_code(f"{contract_path}Types.py", rendered_types_code)
 
 
 def render_contract_file(contract_name: str, contract_template: Template, abi_file_path: Path) -> str:
@@ -91,7 +96,7 @@ def render_contract_file(contract_name: str, contract_template: Template, abi_fi
                 "capitalized_name": capitalize_first_letter_only(name),
                 "input_names_and_types": get(abi_function, "inputs", include_types=True),
                 "input_names": get(abi_function, "inputs", include_types=False),
-                "outputs": get(abi_function, "outputs", include_types=True),
+                "outputs": get(abi_function, "outputs", include_types=False),
             }
             function_datas.append(function_data)
     # Render the template
@@ -124,7 +129,7 @@ def render_types_file(contract_name: str, types_template: Template, abi_file_pat
 def get(function: ABIFunction, param_type, include_types: bool = True) -> list[str] | dict[str, str]:
     """Returns function inputs or outputs, optionally including types."""
     params = get_params(param_type, function)
-    return params if include_types else [f"{k}: {v}" for k,v in params.items()]
+    return [f"{k}: {v}" for k,v in params.items()] if include_types else list(params.keys())
 
 
 def get_params(param_type, function) -> dict[str, str]:
