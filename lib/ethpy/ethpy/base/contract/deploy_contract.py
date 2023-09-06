@@ -71,7 +71,7 @@ def deploy_contract(
     if args is None:
         args = []
     contract = web3.eth.contract(abi=abi, bytecode=bytecode)
-    tx_hash = contract.constructor(*args).transact({"from": deploy_account_addr})
+    tx_hash = contract.constructor(*args).transact({"from": deploy_account_addr, "gas": 9999999})
     tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
     if tx_receipt["contractAddress"] is not None:
         contract_addr = tx_receipt["contractAddress"]
