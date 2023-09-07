@@ -7,6 +7,8 @@ from agent0 import initialize_accounts
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
 from agent0.hyperdrive.policies import Zoo
+from eth_typing import URI
+from ethpy.eth_config import build_eth_config
 from fixedpointmath import FixedPoint
 
 # NOTE be sure to adjust `eth.env` to connect to a specific chain
@@ -26,12 +28,13 @@ LIQUIDATE = False
 # Build configuration
 env_config = EnvironmentConfig(
     delete_previous_logs=True,
-    halt_on_errors=False,
-    log_filename=".logging/agent0_logs.log",
-    log_level=logging.CRITICAL,
+    halt_on_errors=True,
+    log_formatter="%(message)s",
+    log_filename="agent0-logs",
+    log_level=logging.DEBUG,
     log_stdout=True,
     random_seed=1234,
-    username=USERNAME,
+    username="Mihai",
 )
 
 agent_config: list[AgentConfig] = [
@@ -79,6 +82,9 @@ agent_config: list[AgentConfig] = [
 # (If os.environ["DEVELOP"] is False, will clean exit and print instructions on how to fund agent)
 # If it does exist, read it in and use it
 account_key_config = initialize_accounts(agent_config, env_file=ENV_FILE, random_seed=env_config.random_seed)
+
+eth_config = build_eth_config()
+eth_config.rpc_uri = URI("http://localhost:8546")
 
 # Run agents
 run_agents(env_config, agent_config, account_key_config, liquidate=LIQUIDATE)
