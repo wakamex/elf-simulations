@@ -64,7 +64,8 @@ def get_agent_accounts(
                 raise AssertionError("Private keys must be specified. Did you list them in your .env?")
             # Get the budget from the env file
             kwargs["budget"] = FixedPoint(scaled_value=agent_base_budgets[agent_count])
-            kwargs["slippage_tolerance"] = agent_info.slippage_tolerance
+            if agent_info.slippage_tolerance is not None:
+                kwargs["slippage_tolerance"] = agent_info.slippage_tolerance
             kwargs["policy_config"] = agent_info.policy_config
             eth_agent = HyperdriveAgent(
                 Account().from_key(account_key_config.AGENT_KEYS[agent_count]), policy=agent_info.policy(**kwargs)
