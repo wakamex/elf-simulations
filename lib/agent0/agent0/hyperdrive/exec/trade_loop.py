@@ -1,6 +1,7 @@
 """Helper function for executing a set of trades"""
 from __future__ import annotations
 
+import sys
 import asyncio
 import logging
 from datetime import datetime
@@ -54,9 +55,14 @@ def trade_if_new_block(
         try:
             asyncio.run(async_execute_agent_trades(hyperdrive, agent_accounts))
             last_executed_block = latest_block_number
-        # we want to catch all exceptions
-        # pylint: disable=broad-exception-caught
-        except Exception as exc:
+        except IndexError as exc:
+            if any(error_msg in str(exc) for error_msg in ["index out of range", "pop from empty list"]):
+                logging.info("Ran out of trades.")
+                if halt_on_errors:
+                    sys.exit(1)
+            elif halt_on_errors:
+                raise exc
+        except Exception as exc:  # pylint: disable=broad-exception-caught
             logging.info("Trade crashed with error: %s", exc)
             # TODO: Crash reporting
             # We don't have all of the variables we need here -- this report needs to be generated at a lower level
@@ -69,6 +75,9 @@ def trade_if_new_block(
             #     pool_config=pool_config,
             # )
             if halt_on_errors:
+                if "0x512095c7" in str(exc):
+                    logging.info("Pool can't open any more longs.")
+                    sys.exit(1)
                 raise exc
     return last_executed_block
 
