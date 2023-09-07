@@ -1,6 +1,7 @@
 """Helper function for executing a set of trades"""
 from __future__ import annotations
 
+import sys
 import asyncio
 import logging
 from datetime import datetime
@@ -69,6 +70,12 @@ def trade_if_new_block(
                     float(trade_result.trade_object.market_action.trade_amount),
                 )
             elif trade_result.status == TradeStatus.FAIL:
+                if any(error_msg in str(trade_result.status) for error_msg in ["index out of range", "pop from empty list"]):
+                    logging.info("Ran out of trades.")
+                    if halt_on_errors:
+                        sys.exit(1)
+                elif halt_on_errors:
+                    raise trade_result.exception
                 logging.info(
                     "AGENT %s (%s) attempted %s for %g\nCrashed with error: %s",
                     str(trade_result.agent.checksum_address),
@@ -89,6 +96,9 @@ def trade_if_new_block(
                 if halt_on_errors:
                     # TODO do individual handeling of crash reporting
                     # e.g., don't crash if slippage is too high
+                    if "0x512095c7" in str(trade_result.exception):
+                        logging.info("Pool can't open any more longs.")
+                        sys.exit(1)
                     raise trade_result.exception
             else:
                 # Should never get here
