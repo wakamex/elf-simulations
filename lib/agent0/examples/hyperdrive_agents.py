@@ -6,8 +6,8 @@ import logging
 from agent0 import initialize_accounts
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
-from agent0.hyperdrive.policies import Policies
 from ethpy import EthConfig
+from agent0.hyperdrive.policies.zoo import Policies
 from fixedpointmath import FixedPoint
 
 # Define the unique env filename to use for this script
@@ -54,6 +54,26 @@ agent_config: list[AgentConfig] = [
         eth_budget_wei=FixedPoint(1).scaled_value,  # 1 base
         init_kwargs={"trade_chance": FixedPoint("0.8")},
     ),
+    AgentConfig(
+        policy=Policies.deterministic,
+        number_of_agents=1,
+        init_kwargs={
+            "trade_list": [
+                ("add_liquidity", 100),
+                ("open_long", 100),
+                ("open_short", 100),
+                ("close_short", 100),
+            ]
+        },
+    ),
+    AgentConfig(
+        policy=Policies.minimal,
+        number_of_agents=0,
+    ),
+    AgentConfig(
+        policy=Policies.oneline,
+        number_of_agents=0,
+    )
 ]
 
 
