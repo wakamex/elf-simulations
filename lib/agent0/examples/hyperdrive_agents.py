@@ -19,13 +19,14 @@ DEVELOP = True
 ENV_FILE = "hyperdrive_agents.account.env"
 
 env_config = EnvironmentConfig(
-    delete_previous_logs=False,
+    delete_previous_logs=True,
     halt_on_errors=True,
+    log_formatter="%(message)s",
     log_filename="agent0-logs",
-    log_level=logging.INFO,
+    log_level=logging.DEBUG,
     log_stdout=True,
     random_seed=1234,
-    username="changeme",
+    username="Mihai",
 )
 
 agent_config: list[AgentConfig] = [
