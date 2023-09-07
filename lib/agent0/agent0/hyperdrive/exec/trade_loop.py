@@ -1,6 +1,7 @@
 """Helper function for executing a set of trades"""
 from __future__ import annotations
 
+import sys
 import asyncio
 import logging
 from datetime import datetime
@@ -94,6 +95,11 @@ def trade_if_new_block(
                     )
                 )
 
+                if any(error_msg in str(trade_result.status) for error_msg in ["index out of range", "pop from empty list"]):
+                    logging.info("Ran out of trades.")
+                    if halt_on_errors:
+                        sys.exit(1)
+
                 if is_slippage:
                     logging.warning(
                         "AGENT %s (%s) attempted %s for %g\nSlippage detected: %s",
@@ -118,6 +124,11 @@ def trade_if_new_block(
                 assert trade_result.exception is not None
                 assert trade_result.pool_config is not None
                 assert trade_result.pool_info is not None
+
+                if "0x512095c7" in str(trade_result.exception):
+                    logging.info("Pool can't open any more longs.")
+                    if halt_on_errors:
+                        sys.exit(1)
 
                 # Crash reporting
                 log_hyperdrive_crash_report(trade_result)
