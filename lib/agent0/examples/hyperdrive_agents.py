@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from agent0 import initialize_accounts
 from agent0.base.config import AgentConfig, Budget, EnvironmentConfig
 from agent0.hyperdrive.exec import run_agents
-from agent0.hyperdrive.policies import Policies
+from agent0.hyperdrive.policies.zoo import Policies
 from fixedpointmath import FixedPoint
 
 if TYPE_CHECKING:
@@ -32,7 +32,7 @@ env_config = EnvironmentConfig(
 agent_config: list[AgentConfig] = [
     AgentConfig(
         policy=Policies.random_agent,
-        number_of_agents=3,
+        number_of_agents=0,
         slippage_tolerance=FixedPoint("0.0001"),
         base_budget_wei=Budget(
             mean_wei=FixedPoint(5_000).scaled_value,  # 5k base
@@ -63,6 +63,26 @@ agent_config: list[AgentConfig] = [
         eth_budget_wei=Budget(min_wei=FixedPoint(1).scaled_value, max_wei=FixedPoint(1).scaled_value),
         init_kwargs={"trade_chance": FixedPoint("0.8"), "risk_threshold": FixedPoint("0.8")},
     ),
+    AgentConfig(
+        policy=Policies.deterministic,
+        number_of_agents=1,
+        init_kwargs={
+            "trade_list": [
+                ("add_liquidity", 100),
+                ("open_long", 100),
+                ("open_short", 100),
+                ("close_short", 100),
+            ]
+        },
+    ),
+    AgentConfig(
+        policy=Policies.minimal,
+        number_of_agents=0,
+    ),
+    AgentConfig(
+        policy=Policies.oneline,
+        number_of_agents=0,
+    )
 ]
 
 
