@@ -1,6 +1,7 @@
 """Helper function for executing a set of trades"""
 from __future__ import annotations
 
+import sys
 import asyncio
 import logging
 from datetime import datetime
@@ -96,11 +97,21 @@ def trade_if_new_block(
                 _, trade_result = check_for_invalid_balance(trade_result)
                 is_slippage, trade_result = check_for_slippage(trade_result)
 
+                if any(error_msg in str(trade_result.status) for error_msg in ["index out of range", "pop from empty list"]):
+                    logging.info("Ran out of trades.")
+                    if halt_on_errors:
+                        sys.exit(1)
+
                 # Sanity check: exception should not be none if trade failed
                 # Additionally, crash reporting information should exist
                 assert trade_result.exception is not None
                 assert trade_result.pool_config is not None
                 assert trade_result.pool_info is not None
+
+                if "0x512095c7" in str(trade_result.exception):
+                    logging.info("Pool can't open any more longs.")
+                    if halt_on_errors:
+                        sys.exit(1)
 
                 # Crash reporting
                 if is_slippage:

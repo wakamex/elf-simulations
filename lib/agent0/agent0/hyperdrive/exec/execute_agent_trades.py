@@ -1,6 +1,7 @@
 """Main script for running agents on Hyperdrive."""
 from __future__ import annotations
 
+import logging
 import asyncio
 from typing import TYPE_CHECKING, NoReturn
 
@@ -87,6 +88,13 @@ async def async_execute_single_agent_trade(
         raise AssertionError(
             "The number of wallet deltas should match the number of trades, but does not."
             f"\n{wallet_deltas_or_exception=}\n{trades=}"
+        )
+    for trade_object in trades:
+        logging.info(
+            "🤖%s to perform %s for %g",
+            agent.checksum_address.lower()[2:8],
+            trade_object.market_action.action_type,
+            float(trade_object.market_action.trade_amount),
         )
 
     # The wallet update after should be fine, since we can see what trades went through

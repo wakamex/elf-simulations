@@ -74,6 +74,7 @@ def run_agents(
     # set sane logging defaults to avoid spam from dependencies
     logging.getLogger("urllib3").setLevel(logging.WARNING)
     logging.getLogger("web3").setLevel(logging.WARNING)
+    logging.getLogger("asyncio").setLevel(logging.WARNING)
     warnings.filterwarnings("ignore", category=UserWarning, module="web3.contract.base_contract")
     # defaults to looking for eth_config env
     if eth_config is None:
