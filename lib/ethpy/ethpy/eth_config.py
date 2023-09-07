@@ -23,7 +23,7 @@ class EthConfig:
     """
 
     artifacts_uri: URI | str = URI("http://localhost:8080")
-    rpc_uri: URI | str = URI("http://localhost:8545")
+    rpc_uri: URI | str = URI("http://localhost:8546")
     abi_dir: str = "./packages/hyperdrive/src/abis"
 
     def __post_init__(self):
