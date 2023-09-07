@@ -25,7 +25,7 @@ class EthConfig:
     # Matching environment variables to search for
     # pylint: disable=invalid-name
     ARTIFACTS_URL: str = "http://localhost:8080"
-    RPC_URL: URI = URI("http://localhost:8545")
+    RPC_URL: URI = URI("http://localhost:8546")
     ABI_DIR: str = "./packages/hyperdrive/src/abis"
 
 
