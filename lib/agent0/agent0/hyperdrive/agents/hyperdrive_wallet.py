@@ -51,17 +51,19 @@ class HyperdriveWallet(EthWallet):
         """
         for maturity_time, long in longs:
             if long.balance != FixedPoint(0):
-                logging.debug(
-                    "agent %s trade longs, maturity_time = %g\npre-trade amount = %s\ntrade delta = %s",
-                    self.address.hex(),
-                    maturity_time,
-                    self.longs,
-                    long,
-                )
+                old_balance = None
                 if maturity_time in self.longs:  #  entry already exists for this maturity_time, so add to it
-                    self.longs[maturity_time].balance += long.balance
+                    old_balance = self.longs[maturity_time].balance
+                    self.longs[maturity_time].balance = old_balance + long.balance
                 else:
                     self.longs.update({maturity_time: long})
+                logging.debug(
+                    " => 🪘long-%.0f, pre-trade = %s post-trade = %s delta = %s",
+                    maturity_time,
+                    old_balance,
+                    self.longs[maturity_time].balance,
+                    self.longs[maturity_time].balance - (old_balance or 0),
+                )
             if self.longs[maturity_time].balance == FixedPoint(0):
                 # Removing the empty dictionary entries allows us to check existance
                 # of open longs using `if wallet.longs`
@@ -80,16 +82,10 @@ class HyperdriveWallet(EthWallet):
         """
         for maturity_time, short in shorts:
             if short.balance != FixedPoint(0):
-                logging.debug(
-                    "agent %s trade shorts, maturity_time = %s\npre-trade amount = %s\ntrade delta = %s",
-                    self.address.hex(),
-                    maturity_time,
-                    self.shorts,
-                    short,
-                )
+                old_balance = None
                 if maturity_time in self.shorts:  #  entry already exists for this maturity_time, so add to it
                     old_balance = self.shorts[maturity_time].balance
-                    self.shorts[maturity_time].balance += short.balance
+                    self.shorts[maturity_time].balance = old_balance + short.balance
                     # If the balance is positive, we are opening a short, therefore do a weighted
                     # mean for the open share price.
                     # This covers an edge case where two shorts are opened for the same account in the same block.
@@ -101,6 +97,13 @@ class HyperdriveWallet(EthWallet):
                         ) / (short.balance + old_balance)
                 else:
                     self.shorts.update({maturity_time: short})
+                logging.debug(
+                    " => 🩳short-%.0f, pre-trade = %s post-trade = %s delta = %s",
+                    maturity_time,
+                    old_balance,
+                    self.shorts[maturity_time].balance,
+                    self.shorts[maturity_time].balance - (old_balance or 0),
+                )
             if self.shorts[maturity_time].balance == FixedPoint(0):
                 # Removing the empty dictionary entries allows us to check existance
                 # of open shorts using `if wallet.shorts`
@@ -128,21 +131,20 @@ class HyperdriveWallet(EthWallet):
                 case "frozen" | "no_new_attribs" | "borrows":
                     continue
                 case "lp_tokens" | "withdraw_shares":
-                    logging.debug(
-                        "agent %s %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
-                        self.address.hex(),
-                        key,
-                        getattr(self, key),
-                        getattr(self, key) + value_or_dict,
-                        value_or_dict,
-                    )
+                    if getattr(self, key) != 0 or value_or_dict != 0:
+                        logging.debug(
+                            " => %s%s, pre-trade = %s, post-trade = %s, delta = %s",
+                            "🌊" if key=="lp_tokens" else "",
+                            key,
+                            getattr(self, key),
+                            getattr(self, key) + value_or_dict,
+                            value_or_dict,
+                        )
                     self[key] += value_or_dict
                 # handle updating a Quantity
                 case "balance":
                     logging.debug(
-                        "agent %s %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
-                        self.address.hex(),
-                        key,
+                        " => 💸base, pre-trade = %s, post-trade = %s, delta = %s",
                         float(getattr(self, key).amount),
                         float(getattr(self, key).amount + value_or_dict.amount),
                         float(value_or_dict.amount),

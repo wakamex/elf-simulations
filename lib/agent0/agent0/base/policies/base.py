@@ -32,7 +32,7 @@ class BasePolicy(Generic[MarketState, Wallet]):
         self.budget: FixedPoint = budget
         self.slippage_tolerance = slippage_tolerance
         if rng is None:  # TODO: Check that multiple agent.rng derefs to the same rng object
-            logging.warning("Policy random number generator (rng) argument not set, using seed of `123`.")
+            logging.debug("Policy random number generator (rng) argument not set, using seed of `123`.")
             self.rng: NumpyGenerator = default_rng(123)
         else:
             self.rng: NumpyGenerator = rng
