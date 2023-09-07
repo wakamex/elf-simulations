@@ -73,6 +73,10 @@ agent_config: list[AgentConfig] = [
             low_fixed_rate_thresh=FixedPoint(0.01),  # Amount below variable rate to arbitrage
         ),
     ),
+    AgentConfig(
+        policy=Zoo.deterministic,
+        number_of_agents=1,
+    )
 ]
 
 
