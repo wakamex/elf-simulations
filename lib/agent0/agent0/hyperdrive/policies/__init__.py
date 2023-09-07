@@ -1,17 +1,14 @@
-"""Policies for expert system trading bots"""
-from __future__ import annotations
+"""Generic bot imports used by every policy, abbreviated to be shorter."""
+from fixedpointmath import FixedPoint
+from numpy.random._generator import Generator as Rng
 
-from typing import NamedTuple
-
-from .arbitrage import ArbitragePolicy
-
-# Base policy to subclass from
+from agent0.base.policies import BasePolicy
+from agent0.hyperdrive.state import HyperdriveMarketAction as Action
+from agent0.hyperdrive.state import HyperdriveActionType as Type
+from elfpy.markets.hyperdrive import HyperdriveMarket as HyperdriveMarketState
+from elfpy.types import MarketType, Trade
 from .hyperdrive_policy import HyperdrivePolicy
-from .random_agent import RandomAgent
 
-
-class Policies(NamedTuple):
-    """All policies in elfpy."""
-
-    random_agent = RandomAgent
-    arbitrage_policy = ArbitragePolicy
+HYPERDRIVE = MarketType.HYPERDRIVE
+fp100 = FixedPoint(100)
+fp0 = FixedPoint(0)
