@@ -21,14 +21,15 @@ USERNAME = "changeme"
 eth_config = EthConfig(artifacts_uri="http://" + HOST + ":8080", rpc_uri="http://" + HOST + ":8545")
 
 env_config = EnvironmentConfig(
-    delete_previous_logs=False,
+    delete_previous_logs=True,
     halt_on_errors=True,
+    log_formatter="%(message)s",
     log_filename="agent0-logs",
-    log_level=logging.INFO,
+    log_level=logging.DEBUG,
     log_stdout=True,
     random_seed=1234,
     database_api_uri="http://" + HOST + ":5002",
-    username=USERNAME,
+    username="Mihai",
 )
 
 agent_config: list[AgentConfig] = [
