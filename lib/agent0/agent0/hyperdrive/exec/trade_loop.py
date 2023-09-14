@@ -21,7 +21,7 @@ def trade_if_new_block(
     agent_accounts: list[HyperdriveAgent],
     halt_on_errors: bool,
     last_executed_block: int,
-) -> int:
+) -> tuple[int, bool]:
     """Execute trades if there is a new block.
 
     Arguments
@@ -37,9 +37,12 @@ def trade_if_new_block(
 
     Returns
     -------
-    int
+    last_executed_block : int
         The block number when a trade last happened
+    exit_flag : bool
+        Whether to exit the trade loop
     """
+    exit_flag = False
     latest_block = hyperdrive.web3.eth.get_block("latest")
     latest_block_number = latest_block.get("number", None)
     latest_block_timestamp = latest_block.get("timestamp", None)
@@ -56,7 +59,11 @@ def trade_if_new_block(
         )
         # To avoid jumbled print statements due to asyncio, we handle all logging and crash reporting
         # here, with inner functions returning trade results.
-        trade_results: list[TradeResult] = asyncio.run(async_execute_agent_trades(hyperdrive, agent_accounts))
+        try:
+            trade_results: list[TradeResult] = asyncio.run(async_execute_agent_trades(hyperdrive, agent_accounts))
+        except SystemExit:
+            exit_flag=True
+            return latest_block_number, exit_flag
         last_executed_block = latest_block_number
 
         for trade_result in trade_results:
@@ -70,12 +77,8 @@ def trade_if_new_block(
                     float(trade_result.trade_object.market_action.trade_amount),
                 )
             elif trade_result.status == TradeStatus.FAIL:
-                if any(error_msg in str(trade_result.status) for error_msg in ["index out of range", "pop from empty list"]):
-                    logging.info("Ran out of trades.")
-                    if halt_on_errors:
-                        sys.exit(1)
-                elif halt_on_errors:
-                    raise trade_result.exception
+                if halt_on_errors:
+                    exit_flag=True
                 logging.info(
                     "AGENT %s (%s) attempted %s for %g\nCrashed with error: %s",
                     str(trade_result.agent.checksum_address),
@@ -94,6 +97,7 @@ def trade_if_new_block(
                 log_hyperdrive_crash_report(trade_result)
 
                 if halt_on_errors:
+                    exit_flag=True
                     # TODO do individual handeling of crash reporting
                     # e.g., don't crash if slippage is too high
                     if "0x512095c7" in str(trade_result.exception):
@@ -103,7 +107,7 @@ def trade_if_new_block(
             else:
                 # Should never get here
                 assert False
-    return last_executed_block
+    return last_executed_block, exit_flag
 
 
 def get_wait_for_new_block(web3: Web3) -> bool:
