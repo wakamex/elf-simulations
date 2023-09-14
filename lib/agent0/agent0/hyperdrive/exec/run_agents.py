@@ -107,8 +107,9 @@ def run_agents(
         )
     # run the trades
     last_executed_block = BlockNumber(0)
-    while True:
-        last_executed_block = trade_if_new_block(
+    exit_flag = False
+    while exit_flag is False:
+        last_executed_block, exit_flag = trade_if_new_block(
             hyperdrive,
             agent_accounts,
             environment_config.halt_on_errors,
