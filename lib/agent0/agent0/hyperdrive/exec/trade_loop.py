@@ -72,9 +72,12 @@ def trade_if_new_block(
         )
         # To avoid jumbled print statements due to asyncio, we handle all logging and crash reporting
         # here, with inner functions returning trade results.
-        trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(hyperdrive, agent_accounts, liquidate)
-        )
+        try:
+            trade_results: list[TradeResult] = asyncio.run(
+                async_execute_agent_trades(hyperdrive, agent_accounts, liquidate)
+            )
+        except SystemExit:
+            sys.exit(1)
         last_executed_block = latest_block_number
 
         for trade_result in trade_results:

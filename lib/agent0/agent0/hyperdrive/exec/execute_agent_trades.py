@@ -1,6 +1,7 @@
 """Main script for running agents on Hyperdrive."""
 from __future__ import annotations
 
+import sys
 import logging
 import asyncio
 from typing import TYPE_CHECKING, NoReturn
@@ -56,10 +57,16 @@ async def async_execute_single_agent_trade(
         Returns a list of TradeResult objects, one for each trade made by the agent
         TradeResult handles any information about the trade, as well as any errors that the trade resulted in
     """
-    if liquidate:
-        trades: list[types.Trade[HyperdriveMarketAction]] = agent.get_liquidation_trades()
-    else:
-        trades: list[types.Trade[HyperdriveMarketAction]] = agent.get_trades(interface=hyperdrive)
+    trades = []
+    try:
+        if liquidate:
+            trades: list[types.Trade[HyperdriveMarketAction]] = agent.get_liquidation_trades()
+        else:
+            trades: list[types.Trade[HyperdriveMarketAction]] = agent.get_trades(interface=hyperdrive)
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        if any(error_msg in str(exc) for error_msg in ["index out of range", "pop from empty list"]):
+            logging.info("Ran out of trades.")
+            sys.exit(1)
 
     # Make trades async for this agent. This way, an agent can submit multiple trades for a single block
     # To do this, we need to manually set the nonce, so we get the base transaction count here
