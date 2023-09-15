@@ -1,7 +1,7 @@
 """Deterministically trade things."""
 # pylint: disable=line-too-long, missing-class-docstring
 from __future__ import annotations
-from agent0 import FixedPoint, Rng, BasePolicy, HyperdriveMarketAction, HyperdriveActionType, HyperdriveWallet, HyperdriveMarketState, MarketType, Trade
+from agent0 import FixedPoint, Rng, BasePolicy, HyperdriveMarketAction, HyperdriveActionType, HyperdriveWallet, HyperdriveMarketState, MarketType, Trade, DoneTrading
 
 class DBot(BasePolicy[HyperdriveMarketState, HyperdriveWallet]):
     def __init__(self, budget: FixedPoint, rng: Rng | None = None, trade_list: list[str] | None = None):
@@ -9,6 +9,8 @@ class DBot(BasePolicy[HyperdriveMarketState, HyperdriveWallet]):
         super().__init__(budget, rng)
 
     def action(self, market: HyperdriveMarketState, wallet: HyperdriveWallet) -> list[Trade]:
+        if len(self.trade_list) == 0:
+            raise DoneTrading
         action_type, amount = self.trade_list.pop(0)
         mint_time = next(iter({"close_long": wallet.longs, "close_short": wallet.shorts}.get(action_type, [])), None)
         action = HyperdriveMarketAction(HyperdriveActionType(action_type), wallet, FixedPoint(amount), None, mint_time)
