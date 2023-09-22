@@ -36,7 +36,7 @@ class AgentConfig:
     # pylint: disable=too-many-instance-attributes
 
     policy: Type[BasePolicy]
-    name: str = "BoringBotty"
+    name: str = "Botty McBotFace"
     base_budget_wei: Budget | int = Budget()
     eth_budget_wei: Budget | int = Budget(min_wei=int(1e18), max_wei=int(1e18))
     slippage_tolerance: FixedPoint | None = None # FixedPoint(0.0001)=0.01%
@@ -49,3 +49,7 @@ class AgentConfig:
             raise ValueError(
                 f"if private_keys is set then {len(self.private_keys)=} must equal {self.number_of_agents=}"
             )
+        try:
+            self.name = self.policy.__name__
+        except AttributeError:
+            pass

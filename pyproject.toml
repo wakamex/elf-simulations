@@ -27,10 +27,10 @@ python_files = "*_test.py test_*.py"
 
 
 [tool.pylint.format]
-max-line-length = "120"
+max-line-length = "9999"
 
 [tool.black]
-line-length = "120"
+line-length = "9999"
 extend-exclude = "\\.ipynb"
 
 [tool.pylint]
@@ -62,7 +62,7 @@ ignore = ["D203", "D213", "D416", "PLR0913", "PLR0915", "PLR0912"]
 fixable = ["A", "D", "I", "N", "PL"]
 unfixable = []
 
-line-length = 120
+line-length = 9999
 
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"

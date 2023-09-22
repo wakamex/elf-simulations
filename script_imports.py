@@ -1,11 +1,16 @@
 """Prepare imports and constants."""
 # pylint: disable=invalid-name, unused-import
-import logging
 import os
-import time
 import json
+import time
+import signal
+import logging
 import warnings
+import selectors
+import subprocess
 from decimal import Decimal
+from typing import Iterator, Tuple
+from eth_typing import URI
 
 from cycler import Cycler
 import numpy as np
@@ -38,5 +43,8 @@ from chainsync.db.hyperdrive import (
 from dotenv import load_dotenv
 from ethpy.eth_config import build_eth_config
 from ethpy.hyperdrive import get_hyperdrive_config, fetch_hyperdrive_address_from_url
-from eth_typing import URI
+from ethpy.test_fixtures.local_chain import create_hyperdrive_chain
 from fixedpointmath import FixedPoint
+
+import nest_asyncio
+nest_asyncio.apply()

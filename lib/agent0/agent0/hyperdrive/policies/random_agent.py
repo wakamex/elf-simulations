@@ -23,22 +23,25 @@ class RandomAgent(HyperdrivePolicy):
 
     def __init__(
         self,
-        budget: FixedPoint = FixedPoint("10_000.0"),
+        budget,
         rng: NumpyGenerator | None = None,
         slippage_tolerance: FixedPoint | None = None,
-        trade_chance: FixedPoint = FixedPoint("1.0"),
+        trade_chance: FixedPoint = FixedPoint("1"),
+        lp: bool = True,
     ) -> None:
         """Adds custom attributes."""
         if not isinstance(trade_chance, FixedPoint):
             raise TypeError(f"{trade_chance=} must be of type `FixedPoint`")
+        self.lp = lp
         self.trade_chance = trade_chance
+        self.percent_of_budget_to_trade = 0.1
         super().__init__(budget, rng, slippage_tolerance)
 
     def get_available_actions(
         self,
         wallet: HyperdriveWallet,
         market: HyperdriveMarketState,
-        disallowed_actions: list[HyperdriveActionType] | None = None,
+        disallowed_actions: list[HyperdriveActionType] | None = None
     ) -> list[HyperdriveActionType]:
         """Get all available actions, excluding those listed in disallowed_actions."""
         # prevent accidental override
@@ -51,8 +54,9 @@ class RandomAgent(HyperdrivePolicy):
             all_available_actions = [
                 HyperdriveActionType.OPEN_LONG,
                 HyperdriveActionType.OPEN_SHORT,
-                HyperdriveActionType.ADD_LIQUIDITY,
             ]
+            if self.lp:
+                all_available_actions += [HyperdriveActionType.ADD_LIQUIDITY]
         if wallet.longs:  # if the agent has open longs
             all_available_actions.append(HyperdriveActionType.CLOSE_LONG)
         if wallet.shorts:  # if the agent has open shorts
@@ -70,9 +74,7 @@ class RandomAgent(HyperdrivePolicy):
         if maximum_trade_amount <= WEI:
             return []
 
-        initial_trade_amount = FixedPoint(
-            self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
-        )
+        initial_trade_amount = FixedPoint(self.rng.normal(loc=float(self.budget) * self.percent_of_budget_to_trade, scale=float(self.budget) * self.percent_of_budget_to_trade/10))
         # WEI <= trade_amount <= max_short
         trade_amount = max(WEI, min(initial_trade_amount, maximum_trade_amount))
         # return a trade using a specification that is parsable by the rest of the sim framework
@@ -115,9 +117,7 @@ class RandomAgent(HyperdrivePolicy):
         if maximum_trade_amount <= WEI:
             return []
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
-        initial_trade_amount = FixedPoint(
-            self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
-        )
+        initial_trade_amount = FixedPoint(self.rng.normal(loc=float(self.budget) * self.percent_of_budget_to_trade, scale=float(self.budget) * self.percent_of_budget_to_trade/10))
         # WEI <= trade_amount <= max long
         trade_amount = max(WEI, min(initial_trade_amount, maximum_trade_amount))
         # return a trade using a specification that is parsable by the rest of the sim framework

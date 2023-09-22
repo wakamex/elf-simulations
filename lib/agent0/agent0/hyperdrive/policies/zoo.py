@@ -7,6 +7,7 @@ from .smart_short import ShortSally
 from .deterministic import DBot
 from .minimal import MBot
 from .oneline import OBot
+from .sheng import ShengTsung
 
 @dataclass
 class Policies:
@@ -16,3 +17,4 @@ class Policies:
     deterministic = DBot
     minimal = MBot
     oneline = OBot
+    ShengTsung = ShengTsung

@@ -11,5 +11,12 @@ class DBot(BasePolicy[HyperdriveMarketState, HyperdriveWallet]):
     def action(self, market: HyperdriveMarketState, wallet: HyperdriveWallet) -> list[Trade]:
         action_type, amount = self.trade_list.pop(0)
         mint_time = next(iter({"close_long": wallet.longs, "close_short": wallet.shorts}.get(action_type, [])), None)
+        if amount == "all":
+            if action_type == "close_long":
+                amount = wallet.longs[mint_time].balance
+            elif action_type == "close_short":
+                amount = wallet.shorts[mint_time].balance
+            elif action_type == "remove_liquidity":
+                amount = wallet.lp_tokens
         action = HyperdriveMarketAction(HyperdriveActionType(action_type), wallet, FixedPoint(amount), None, mint_time)
         return [Trade(market_type=MarketType.HYPERDRIVE, market_action=action)]

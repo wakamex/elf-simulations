@@ -4,7 +4,6 @@
 # %%
 # setup
 import nest_asyncio
-from sqlalchemy import true
 nest_asyncio.apply()
 
 # %%
@@ -12,15 +11,33 @@ nest_asyncio.apply()
 from script_functions import check_docker
 check_docker(restart=True)
 from script_setup import *
+local_chain = create_hyperdrive_chain("http://127.0.0.1:8546", initial_liquidity=int(20*1e18))
 print("\n ==== Pool Config ===")
 for k,v in config_data.items():
     print(f"{k:20} | {v}")
+print("\n ==== Hyperdrive Addresses ===")
+for k,v in local_chain.hyperdrive_contract_addresses.__dict__.items():
+    if not k.startswith("_"):
+        print(f"{k:20} | {v}")
+
+# %%
+# the above loads env_config, agent_config, and account_key_config. let's check them out.
+display(env_config)
+display(agent_config)
+display(account_key_config)
+
+# set private key to the first account in anvil, which is the default LP
+# account_key_config.AGENT_KEYS = ['0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80']
+# make it withdraw all liquidity
+# run_trades(trade_list=[("remove_liquidity", 1e7)])
 
 # %%
 # run trades
+trade_size = 10_000
 n_trades = 108 # max out the market
 # n_trades = 4
-run_trades(trade_list=[("open_long", 10_000)]*n_trades + [("close_long", 10_000)]*n_trades)
+# run_trades(trade_list=[("open_long", trade_size)]*n_trades + [("close_long", trade_size)]*n_trades)
+run_trades(trade_list=[("add_liquidity", trade_size*10)] + [("open_short", trade_size)] + [("remove_liquidity", "all")]+ [("close_short", trade_size)])
 
 # %%
 # get data

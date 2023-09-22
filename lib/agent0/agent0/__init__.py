@@ -6,6 +6,7 @@ from agent0.base.policies import BasePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 from agent0.hyperdrive.agents import HyperdriveWallet
 from elfpy.markets.hyperdrive import HyperdriveMarket as HyperdriveMarketState
+from elfpy import WEI
 from elfpy.types import MarketType, Trade
 
 # Account key config and various helper functions

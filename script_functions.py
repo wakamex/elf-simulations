@@ -54,7 +54,6 @@ def plot_positions(data, ax=None, labelx=True, legend=True):
 def plot_reserves(data, include_buffer=False, ax=None, labelx=True, legend=True):
     """Plot positions."""
     _data, ax1 = _prep_plot(data, ax)
-    print(_data.columns)
     names = ["bond_reserves", "share_reserves"]
     labels1 = [
         f"bonds ({_data.bond_reserves.min()/Decimal(1e3):,.0f}k-{_data.bond_reserves.max()/Decimal(1e3):,.0f}k)",
@@ -85,12 +84,14 @@ def plot_rate(data, ax=None, labelx=True, legend=True):
 def plot_rate_price(data, ax=None, labelx=True, legend=True):
     """Plot positions."""
     _data, ax1 = _prep_plot(data, ax)
-    lines1 = ax1.step(_data.reset_index().blockNumber, _data[["fixed_rate", "spot_price"]])
+    # lines1 = ax1.step(_data.reset_index().blockNumber, _data[["fixed_rate", "spot_price"]])
+    lines1 = ax1.step(_data.reset_index().blockNumber, _data[["fixed_rate"]])
     labels1 = [
         f"fixed rate ({_data.fixed_rate.min():,.1%}-{_data.fixed_rate.max():,.1%})",
-        f"spot price ({_data.spot_price.min():,.2f}-{_data.spot_price.max():,.2f})",
+        # f"spot price ({_data.spot_price.min():,.2f}-{_data.spot_price.max():,.2f})",
     ]
-    ax1 = _label_graph(ax1, lines1, labels1, "Rate and price", None, labelx, legend)
+    ax1 = _label_graph(ax1, lines1, labels1, "Rate", None, labelx, legend=False)
+    plot_secondary(_data, "spot_price", ax1, lines1, labels1)
     return ax1, lines1, labels1
 
 
@@ -138,6 +139,7 @@ def _label_graph(ax, lines, labels, title, ylabel=None, labelx=True, legend=True
 def plot_secondary(data, name, ax1, lines1, labels1):
     """Plot rate."""
     _data = data.copy()
+    _data = _data.reset_index().rename(columns={'index': 'blockNumber'})
     ax2 = ax1.twinx()
     prop_cycler = plt.rcParams["axes.prop_cycle"]
     assert isinstance(prop_cycler, Cycler)
@@ -348,3 +350,69 @@ def calculate_spot_price_for_position(
         1 - time_left_in_years,
     )
     return full_term_spot_price * time_left_in_years + 1 * (1 - time_left_in_years)
+
+def get_anvil(host: str = "127.0.0.1", port=9999) -> Tuple[int, URI]:
+    """Get anvil."""
+    # pylint: disable=consider-using-with
+    sel = selectors.DefaultSelector()
+    stdout, stderr = [], []
+
+    process = subprocess.Popen(["anvil", "--host", host, "--port", str(port), "--accounts", "1", "--code-size-limit", "9999999999"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=0)
+
+    # Register the selector to poll for "read" readiness on stdout and stderr
+    sel.register(process.stdout, selectors.EVENT_READ, lambda: read_output(process.stdout, stdout))  # type: ignore
+    sel.register(process.stderr, selectors.EVENT_READ, lambda: read_output(process.stderr, stderr))  # type: ignore
+
+    while True:
+        # Wait for at least one of the pipes to be ready for reading
+        for key, _ in sel.select():
+            key.data()
+
+        # Check if anvil has started
+        if "Listening on" in "".join(stdout):
+            print("Started anvil on process ", end="")
+            break
+
+        # Check if anvil is already running
+        if "Address already in use" in "".join(stderr):
+            print("Connected to existing anvil on process ", end="")
+            break
+
+    print(pid := pgrep("anvil")[0].pid)
+    return pid, URI(f"http://{host}:{port}")
+
+class PgrepWrapper:
+    """Wrapper for `pgrep`."""
+
+    def __init__(self, pid):
+        self.pid = pid
+
+    def kill(self):
+        """Kill the process."""
+        try:
+            os.kill(self.pid, signal.SIGTERM)
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            print(f"Could not kill process {self.pid}: {exc}")
+
+    def __repr__(self):
+        return f"{self.pid}"
+
+def pgrep(process) -> list[PgrepWrapper]:
+    """Return the output of `pgrep` for the given process."""
+    try:
+        result = subprocess.run(["pgrep", process], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        pids = result.stdout.strip().split("\n")
+        return [PgrepWrapper(int(pid)) for pid in pids]
+    except subprocess.CalledProcessError as exc:
+        raise ValueError(f"Could not find process {process}") from exc
+
+def read_output(pipe, buffer_list, print_output=False):
+    """Read output from a pipe."""
+    while chunk := pipe.read(1):
+        decoded_chunk = chunk.decode("utf-8")
+        if print_output:
+            print(decoded_chunk, end="")
+        buffer_list.append(decoded_chunk)
+        buffer_str = "".join(buffer_list)
+        if "Listening on" in buffer_str or "Address already in use" in buffer_str:
+            break  # End of streams

@@ -48,14 +48,16 @@ fund_agents(user_account, eth_config, account_key_config, contract_addresses)
 web3, base_token_contract, hyperdrive_contract, agent_accounts = setup_experiment(
     eth_config, env_config, agent_config, account_key_config, contract_addresses
 )
-config_data = get_pool_config(session, coerce_float=False)
+config_data = []
+while len(config_data) == 0:
+    config_data = get_pool_config(session, coerce_float=False)
 config_data = config_data.iloc[0]
 
 # %%
-# functions
+# only main wrapper function goes here, because it depends on things that come before it
 
 def run_trades(env_config:EnvironmentConfig|None=None, agent_config:AgentConfig | None =None, account_key_config:AccountKeyConfig|None=None, develop=None, trade_list=None):
-    """Allow running in interactive session."""
+    """Wrapper to run trades in interactive session, pulling in global variables for configuration."""
     if env_config is None:
         env_config = globals().get("env_config")
     if agent_config is None:
