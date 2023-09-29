@@ -4,6 +4,7 @@ import subprocess
 import time
 from pathlib import Path
 from typing import Iterator
+import logging
 
 import docker
 import pytest
@@ -25,7 +26,14 @@ def psql_docker() -> Iterator[PostgresConfig]:
         An iterator that yields a PostgresConfig
     """
     try:
-        client = docker.from_env()
+        home_dir = os.path.expanduser("~")
+        socket_path = Path(f"{home_dir}/.docker/desktop/docker.sock")
+        if socket_path.exists():
+            logging.debug("The socket exists at %s.. using it to connect to docker", socket_path)
+            client = docker.DockerClient(base_url=f"unix://{socket_path}")
+        else:
+            logging.debug("No socket found at %s.. using default socket", socket_path)
+            client = docker.from_env()
     # Skip this test if docker isn't installed
     except DockerException as exc:
         # This env variable gets set when running tests in CI
