@@ -23,7 +23,7 @@ def calc_fixed_rate_df(trade_data, config_data):
         trade_data["share_reserves"],
         trade_data["bond_reserves"],
         config_data["initialSharePrice"],
-        config_data["invTimeStretch"],
+        config_data["timeStretch"],
     )
     fixed_rate = (Decimal(1) - spot_price) / (spot_price * annualized_time)
     x_data = trade_data["timestamp"]
