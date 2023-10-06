@@ -52,6 +52,7 @@ class TestBotToDb:
         """Runs the entire pipeline and checks the database at the end.
         All arguments are fixtures.
         """
+        print("got to here")
         # Run this test with develop mode on
         os.environ["DEVELOP"] = "true"
         # Get hyperdrive chain info
@@ -227,6 +228,7 @@ class TestBotToDb:
         for key, expected_value in expected_pool_config.items():
             assert_val = db_pool_config[key] == expected_value
             assert assert_val, f"Values do not match for {key} ({db_pool_config[key]} != {expected_value})"
+            f"Values match for {key} ({db_pool_config[key]} != {expected_value})"
 
         # Pool info comparison
         db_pool_info: pd.DataFrame = get_pool_info(db_session, coerce_float=False)

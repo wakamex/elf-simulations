@@ -15,7 +15,11 @@ for k,v in config_data.items():
 n_trades = 1 # test
 # n_trades = 108 # max out the market
 # n_trades = 4
-run_trades(trade_list=[("open_long", 10_000)]*n_trades + [("close_long", 10_000)]*n_trades)
+# run_trades(trade_list=[("open_long", 10_000)]*n_trades + [("close_long", 10_000)]*n_trades)
+run_trades(trade_list=[("open_long", 10_000)]*n_trades)
+
+# %%
+run_trades(trade_list=[("close_long", 10_000)]*n_trades)
 
 # %%
 # get data
