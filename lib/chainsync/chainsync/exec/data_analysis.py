@@ -11,10 +11,17 @@ from chainsync.db.hyperdrive import (
     PoolInfo,
     get_latest_block_number_from_analysis_table,
     get_latest_block_number_from_table,
+    get_pool_info,
     get_pool_config,
+    get_pool_analysis,
 )
 from ethpy import EthConfig, build_eth_config
-from ethpy.hyperdrive import HyperdriveAddresses, fetch_hyperdrive_address_from_uri, get_web3_and_hyperdrive_contracts
+from ethpy.hyperdrive import (
+    HyperdriveAddresses,
+    fetch_hyperdrive_address_from_uri,
+    get_web3_and_hyperdrive_contracts,
+)
+from ethpy.hyperdrive.api import HyperdriveInterface
 from sqlalchemy.orm import Session
 
 _SLEEP_AMOUNT = 1
@@ -59,13 +66,19 @@ def data_analysis(
 
     # Get addresses either from artifacts URI defined in eth_config or from contract_addresses
     if contract_addresses is None:
-        contract_addresses = fetch_hyperdrive_address_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
+        contract_addresses = fetch_hyperdrive_address_from_uri(
+            os.path.join(eth_config.artifacts_uri, "addresses.json")
+        )
 
     # Get hyperdrive contract
-    _, _, hyperdrive_contract = get_web3_and_hyperdrive_contracts(eth_config, contract_addresses)
+    _, _, hyperdrive_contract = get_web3_and_hyperdrive_contracts(
+        eth_config, contract_addresses
+    )
 
     ## Get starting point for restarts
-    analysis_latest_block_number = get_latest_block_number_from_analysis_table(db_session)
+    analysis_latest_block_number = get_latest_block_number_from_analysis_table(
+        db_session
+    )
 
     # Using max of latest block in database or specified start block
     block_number = max(start_block, analysis_latest_block_number)
@@ -87,6 +100,9 @@ def data_analysis(
     assert len(pool_config_df) == 1
     pool_config = pool_config_df.iloc[0]
 
+    pool_info = get_pool_info(db_session)
+    hyperdrive = HyperdriveInterface(eth_config, contract_addresses)
+
     # Main data loop
     # monitor for new blocks & add pool info per block
     logging.info("Monitoring database for updates...")
@@ -103,9 +119,54 @@ def data_analysis(
         analysis_start_block = block_number + 1
         analysis_end_block = latest_data_block_number + 1
         logging.info("Running batch %s to %s", analysis_start_block, analysis_end_block)
-        data_to_analysis(analysis_start_block, analysis_end_block, pool_config, db_session, hyperdrive_contract)
+        data_to_analysis(
+            analysis_start_block,
+            analysis_end_block,
+            pool_config,
+            db_session,
+            hyperdrive_contract,
+        )
         block_number = latest_data_block_number
         time.sleep(_SLEEP_AMOUNT)
+
+    # Analysis table should be populated and ready to go
+    analysis = get_pool_analysis(db_session)
+    assert (
+        abs(analysis.fixed_rate.iloc[0] - 0.05) < 1e-16
+    ), "Fixed rate should start at 5%"
+
+    print("\n ==== Pool Config ===")
+    for k, v in pool_config.items():
+        print(f"{k:20} | {v}")
+
+    for k, v in pool_info.items():
+        print(f"{k:30} | {v}")
+    print("\n ==== API ===")
+    key_width = (
+        max(
+            len(k)
+            for k in dir(hyperdrive)
+            if not k.startswith("_")
+            and not k.startswith("pool_")
+            and k != "current_block"
+        )
+        + 2
+    )
+    for k in dir(hyperdrive):  # sourcery skip: no-loop-in-tests
+        if not k.startswith("_"):  # sourcery skip: no-conditionals-in-tests
+            attr = getattr(hyperdrive, k)
+            if (
+                not callable(attr)
+                and not k.startswith("pool_")
+                and k != "current_block"
+            ):
+                if isinstance(attr, dict):
+                    print(f"{k:{key_width}}")
+                    attr_key_width = max(len(k) for k in attr.keys()) + 2
+                    for attr_key, attr_val in attr.items():
+                        print(f" | {attr_key:{attr_key_width}} | {attr_val}")
+                else:
+                    print(f"{k:{key_width}} | {attr}")
 
 
 def get_latest_data_block(db_session: Session):
@@ -122,5 +183,9 @@ def get_latest_data_block(db_session: Session):
 
     # Note to avoid race condition, we add pool info as the last update for the block
     latest_pool_info = get_latest_block_number_from_table(PoolInfo, db_session)
+    latest_wallet_delta = get_latest_block_number_from_table(WalletDelta, db_session)
+    latest_transactions = get_latest_block_number_from_table(
+        HyperdriveTransaction, db_session
+    )
 
     return latest_pool_info

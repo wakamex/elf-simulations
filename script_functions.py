@@ -31,7 +31,7 @@ def get_data(session, config_data) -> tuple[pd.DataFrame, pd.DataFrame]:
         combined_data["share_reserves"],
         combined_data["bond_reserves"],
         config_data["initialSharePrice"],
-        config_data["invTimeStretch"],
+        config_data["timeStretch"],
     )
     combined_data["base_buffer"] = (
         combined_data["longs_outstanding"] / combined_data["share_price"] + config_data["minimumShareReserves"]
