@@ -2,6 +2,11 @@ from script_imports import *
 
 
 def check_docker(restart=False):
+    home_infra = Path(os.path.expanduser("~")) / "code" / "infra"
+    if os.path.exists(home_infra):
+        infra_folder = home_infra
+    else:
+        infra_folder = Path("/code/infra")
     dockerps = os.popen("docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'").read()
     print(dockerps)
     number_of_running_services = dockerps.count("\n") - 1
@@ -10,14 +15,20 @@ def check_docker(restart=False):
         if restart:
             print(", restarting docker...")
             start_time = time.time()
-            os.system("cd /code/infra && docker-compose down -v && docker images | awk '(NR>1) && ($2!~/none/) && ($1 ~ /^ghcr\\.io\\//) {print $1\":\"$2}' | xargs -L1 docker pull && docker-compose up -d")
-            print(f"Restarted docker in {time.time() - start_time:.2f}s")
+            os.system(f"cd {infra_folder}" + " && docker-compose down -v && docker images | awk '(NR>1) && ($2!~/none/) && ($1 ~ /^ghcr\\.io\\//) {print $1\":\"$2}' | xargs -L1 docker pull")
+            print(f"Shut down docker in {time.time() - start_time:.2f}s")
+            start_time = time.time()
+            os.system(f"cd {infra_folder}" + " && docker-compose up -d")
+            print(f"Started docker in {time.time() - start_time:.2f}s")
         else:
             print(", using them.")
     else:
         print("Starting docker.")
         start_time = time.time()
-        os.system("cd /code/infra && docker-compose down -v && docker images | awk '(NR>1) && ($2!~/none/) && ($1 ~ /^ghcr\\.io\\//) {print $1\":\"$2}' | xargs -L1 docker pull && docker-compose up -d")
+        os.system(f"cd {infra_folder}" + " && docker-compose down -v && docker images | awk '(NR>1) && ($2!~/none/) && ($1 ~ /^ghcr\\.io\\//) {print $1\":\"$2}' | xargs -L1 docker pull")
+        print(f"Updated docker in {time.time() - start_time:.2f}s")
+        start_time = time.time()
+        os.system(f"cd {infra_folder}" + " && docker-compose up -d")
         print(f"Started docker in {time.time() - start_time:.2f}s")
 
 def get_data(session, config_data) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -29,6 +40,7 @@ def get_data(session, config_data) -> tuple[pd.DataFrame, pd.DataFrame]:
     combined_data["fixed_rate"] = fixed_rate_y
     combined_data["spot_price"] = calc_spot_price(
         combined_data["share_reserves"],
+        combined_data["share_adjustment"],
         combined_data["bond_reserves"],
         config_data["initialSharePrice"],
         config_data["timeStretch"],
