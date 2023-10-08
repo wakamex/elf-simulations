@@ -31,6 +31,7 @@ def calc_fixed_rate_df(trade_data, config_data):
     annualized_time = config_data["positionDuration"] / Decimal(60 * 60 * 24 * 365)
     spot_price = calc_spot_price(
         trade_data["share_reserves"],
+        trade_data["share_adjustment"],
         trade_data["bond_reserves"],
         config_data["initialSharePrice"],
         config_data["timeStretch"],
