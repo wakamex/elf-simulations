@@ -20,6 +20,7 @@ from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive.exec import create_and_fund_user_account, setup_experiment, fund_agents, run_agents
 from agent0.hyperdrive.policies.zoo import Policies
 from ethpy import EthConfig
+from ethpy.hyperdrive import AssetIdPrefix
 
 # from ethpy.base import initialize_web3_with_http_provider
 # from ethpy.hyperdrive import fetch_hyperdrive_address_from_uri
@@ -29,7 +30,7 @@ from chainsync.analysis import calc_spot_price
 from chainsync.analysis.calc_pnl import calc_closeout_pnl
 from chainsync.analysis.data_to_analysis import get_transactions
 from chainsync.db.base import initialize_session
-from chainsync.dashboard import get_combined_data, plot_fixed_rate, plot_ohlcv
+from chainsync.dashboard import plot_fixed_rate, plot_ohlcv
 from chainsync.db.hyperdrive import (
     get_pool_config,
     get_pool_info,
