@@ -58,14 +58,14 @@ agent_config: list[AgentConfig] = [
     AgentConfig(
         policy=Policies.deterministic,
         number_of_agents=1,
-        init_kwargs={
-            "trade_list": [
+        policy_config=Policies.deterministic.Config(
+            trade_list=[
                 ("add_liquidity", 100),
                 ("open_long", 100),
                 ("open_short", 100),
                 ("close_short", 100),
             ]
-        },
+        ),
     ),
     AgentConfig(
         policy=Policies.minimal,

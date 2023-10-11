@@ -1,4 +1,3 @@
-from agent0.accounts_config import AccountKeyConfig
 from script_functions import *
 
 logging.getLogger("urllib3").setLevel(logging.WARNING)
@@ -38,7 +37,7 @@ agent_config: list[AgentConfig] = [
         number_of_agents=1,
         base_budget_wei=FixedPoint(1e9).scaled_value,  # 1 billion base
         eth_budget_wei=FixedPoint(1).scaled_value,  # 1 Eth
-        init_kwargs={"trade_list": [("open_long", 100)] * 1},  # Open 4 longs
+        policy_config=Policies.deterministic.Config(trade_list=[("open_long", 100)] * 1)
     ),
 ]
 session = initialize_session()  # initialize the postgres session
@@ -80,18 +79,6 @@ def run_trades(env_config:EnvironmentConfig|None=None, agent_config:AgentConfig 
     if eth_config is None:
         eth_config = globals().get("eth_config")
         assert eth_config is not None, "eth_config must be set"
-    # trade_list= [
-    #     ("add_liquidity", 100),
-    #     ("open_long", 100),
-    #     ("open_short", 100),
-    #     ("close_short", 100),
-    # ]
-    # trade_list= [("open_long", 10_000)]*100
-    agent_config[0].init_kwargs = {
-        "trade_list": trade_list or [("open_long", 100_000)]*100
-    }
-    # try:
+    agent_config_list[0].policy_config.trade_list = trade_list
+    assert isinstance(agent_config_list, list)
     run_agents(environment_config=env_config, agent_config=agent_config_list, account_key_config=account_key_config, eth_config=eth_config)
-    # except Exception as exc:
-    #     print(f"Failed to run agents. Exception: {exc}")
-    #     pass
