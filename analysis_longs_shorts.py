@@ -11,15 +11,26 @@ for k,v in config_data.items():
     print(f"{k:20} | {v}")
 
 # %%
-# run trades
-n_trades = 1 # test
-# n_trades = 108 # max out the market
-# n_trades = 4
-# run_trades(trade_list=[("open_long", 10_000)]*n_trades + [("close_long", 10_000)]*n_trades)
+logging.log(10, f" => SCRIPT: try {(n_trades:=108)} OPEN LONG")
 run_trades(trade_list=[("open_long", 10_000)]*n_trades)
 
 # %%
-run_trades(trade_list=[("close_long", 10_000)]*n_trades)
+logging.log(10, " => SCRIPT: try 1 more OPEN LONG")
+time.sleep(1)
+run_trades(trade_list=[("open_long", 10_000)])
+
+# %%
+logging.log(10, f" => SCRIPT: try {n_trades} CLOSE LONG")
+time.sleep(1)
+run_trades(trade_list=[("close_long", 10_000)]*(n_trades))
+
+# %%
+logging.log(10, " => SCRIPT: try 1 more CLOSE LONG")
+time.sleep(1)
+try:
+    run_trades(trade_list=[("close_long", 10_000)])
+except Exception as exc:
+    print("Cannot close another short.")
 
 # %%
 # get data
@@ -29,23 +40,27 @@ print(data.iloc[0].T)
 
 # %%
 plot_reserves(data, include_buffer=True)
+plt.savefig("reserves.png")
 
 # %%
 plot_positions(data)
+plt.savefig("positions.png")
 
 # %%
 ax1, lines1, labels1 = plot_rate_price(data)
-# ax1.set_xlim([0,50])
+plt.savefig("rate_price.png")
 
 # %%
 ax1, lines1, labels1, _data = plot_rate(data, legend=False)
 plot_secondary(_data, "spot_price", ax1, lines1, labels1)
+plt.savefig("rate_price2.png")
 
 # %%
 # plot reserves in zoom mode
 ax1, lines1, labels1 = plot_reserves(data, include_buffer=True)
 # ax1.set_ylim([0,1e8])
 ax1.set_title(f"{ax1.get_title()} zoomed in")
+plt.savefig("reserves_zoom.png")
 
 # %%
 
@@ -70,11 +85,3 @@ ax1.set_title(f"{ax1.get_title()} zoomed in")
 # plot_secondary(data, "fixed_rate", ax1, lines1, labels1)
 # ax1, lines1, labels1 = plot_reserves(data, axes[1,1])
 # plot_secondary(data, "spot_price", ax1, lines1, labels1)
-
-# %%
-data.columns
-
-# %%
-pool_info.columns
-
-# %%

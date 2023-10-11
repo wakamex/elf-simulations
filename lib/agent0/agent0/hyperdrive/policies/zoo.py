@@ -3,11 +3,13 @@ from __future__ import annotations
 
 from typing import NamedTuple
 
-from .arbitrage import Arbitrage
-from .lpandarb import LPandArb
-from .random import Random
-from .smart_long import SmartLong
-from .deterministic import DBot
+from agent0.hyperdrive.policies.arbitrage import Arbitrage
+from agent0.hyperdrive.policies.lpandarb import LPandArb
+from agent0.hyperdrive.policies.random import Random
+from agent0.hyperdrive.policies.smart_long import SmartLong
+from agent0.hyperdrive.policies.deterministic import DBot
+from agent0.hyperdrive.policies.minimal import MBot
+from agent0.hyperdrive.policies.oneline import OBot as OneLineBot
 
 
 # Container for all the policies
@@ -19,6 +21,8 @@ class Zoo(NamedTuple):
     smart_long = SmartLong
     lp_and_arb = LPandArb
     deterministic = DBot
+    minimal = MBot
+    oneline = OneLineBot
 
     def describe(self, policies: list | str | None = None) -> str:
         """Describe policies, either specific ones provided, or all of them."""

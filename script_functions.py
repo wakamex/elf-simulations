@@ -210,8 +210,6 @@ def plot_secondary(data, name, ax1, lines1, labels1):
     # color secondary axis
     ax2.tick_params(axis="y", colors=lines2[0].get_color())
 
-    plt.savefig("output.png")
-
     return ax2, lines2, labels2
 
 

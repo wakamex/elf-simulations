@@ -76,6 +76,22 @@ agent_config: list[AgentConfig] = [
     AgentConfig(
         policy=Zoo.deterministic,
         number_of_agents=1,
+        policy_config=Zoo.deterministic.Config(
+            trade_list=[
+                ("add_liquidity", 100),
+                ("open_long", 100),
+                ("open_short", 100),
+                ("close_short", 100),
+            ]
+        ),
+    ),
+    AgentConfig(
+        policy=Zoo.minimal,
+        number_of_agents=0,
+    ),
+    AgentConfig(
+        policy=Zoo.oneline,
+        number_of_agents=0,
     )
 ]
 
