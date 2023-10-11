@@ -54,8 +54,9 @@ async def async_execute_single_agent_trade(
         Returns a list of TradeResult objects, one for each trade made by the agent
         TradeResult handles any information about the trade, as well as any errors that the trade resulted in
     """
+    trades = None
     try:
-        trades: list[types.Trade[HyperdriveMarketAction]] = agent.get_trades(interface=hyperdrive)
+        trades = agent.get_trades(interface=hyperdrive)
     except Exception as exc:  # pylint: disable=broad-exception-caught
         if any(error_msg in str(exc) for error_msg in ["index out of range", "pop from empty list"]):
             logging.info("Ran out of trades.")
@@ -77,18 +78,20 @@ async def async_execute_single_agent_trade(
     # to see order?
 
     # Sanity check
-    if len(wallet_deltas_or_exception) != len(trades):
-        raise AssertionError(
-            "The number of wallet deltas should match the number of trades, but does not."
-            f"\n{wallet_deltas_or_exception=}\n{trades=}"
-        )
-    for trade_object in trades:
-        logging.info(
-            "🤖%s to perform %s for %g",
-            agent.checksum_address.lower()[2:8],
-            trade_object.market_action.action_type,
-            float(trade_object.market_action.trade_amount),
-        )
+    if trades:
+        if len(wallet_deltas_or_exception) != len(trades):
+            raise AssertionError(
+                "The number of wallet deltas should match the number of trades, but does not."
+                f"\n{wallet_deltas_or_exception=}\n{trades=}"
+            )
+        for trade_object in trades:
+            logging.info(
+                "🤖%s to perform %s for %g",
+                agent.checksum_address.lower()[2:8],
+                trade_object.market_action.action_type,
+                float(trade_object.market_action.trade_amount),
+            )
+    assert isinstance(trades, list)
 
     # The wallet update after should be fine, since we can see what trades went through
     # and only apply those wallet deltas. Wallet deltas are also invariant to order
