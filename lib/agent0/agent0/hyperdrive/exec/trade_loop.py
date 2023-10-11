@@ -111,6 +111,7 @@ def trade_if_new_block(
                 assert trade_result.pool_config is not None
                 assert trade_result.pool_info is not None
 
+                # known exception
                 if "0x512095c7" in str(trade_result.exception):
                     logging.info("Pool can't open any more longs.")
                     if halt_on_errors:

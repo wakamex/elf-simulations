@@ -91,18 +91,20 @@ async def async_execute_single_agent_trade(
     # to see order?
 
     # Sanity check
-    if len(wallet_deltas_or_exception) != len(trades):
-        raise AssertionError(
-            "The number of wallet deltas should match the number of trades, but does not."
-            f"\n{wallet_deltas_or_exception=}\n{trades=}"
-        )
-    for trade_object in trades:
-        logging.info(
-            "🤖%s to perform %s for %g",
-            agent.checksum_address.lower()[2:8],
-            trade_object.market_action.action_type,
-            float(trade_object.market_action.trade_amount),
-        )
+    if trades:
+        if len(wallet_deltas_or_exception) != len(trades):
+            raise AssertionError(
+                "The number of wallet deltas should match the number of trades, but does not."
+                f"\n{wallet_deltas_or_exception=}\n{trades=}"
+            )
+        for trade_object in trades:
+            logging.info(
+                "🤖%s to perform %s for %g",
+                agent.checksum_address.lower()[2:8],
+                trade_object.market_action.action_type,
+                float(trade_object.market_action.trade_amount),
+            )
+    assert isinstance(trades, list)
 
     # The wallet update after should be fine, since we can see what trades went through
     # and only apply those wallet deltas. Wallet deltas are also invariant to order
