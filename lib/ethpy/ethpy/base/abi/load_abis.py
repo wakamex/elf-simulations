@@ -45,7 +45,7 @@ def load_all_abis(abi_folder: str, return_bytecode: bool = False) -> dict | tupl
             loaded.append(abi_file)
         except AssertionError as err:
             logging.debug("JSON file %s did not contain an ABI.\nError: %s", abi_file, err)
-    logging.debug("Loaded ABI files %s", str(loaded))
+    logging.log(9, "Loaded ABI files %s", str(loaded))
     if return_bytecode:
         return abis, bytecodes
     return abis
