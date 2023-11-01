@@ -6,6 +6,7 @@ from .deterministic import DBot
 from .minimal import MBot
 from .oneline import OBot
 from .arbitrage import ArbitragePolicy
+from .opener import Opener
 
 @dataclass
 class Policies:
@@ -14,3 +15,4 @@ class Policies:
     deterministic = DBot
     minimal = MBot
     oneline = OBot
+    opener = Opener
