@@ -67,18 +67,20 @@ def run_trades(env_config:EnvironmentConfig|None=None, agent_config:AgentConfig 
         assert env_config is not None, "env_config must be set"
     if agent_config is None:
         agent_config = globals().get("agent_config")
+        print(f"{agent_config=}")
         assert agent_config is not None, "agent_config must be set"
-        if not isinstance(agent_config, list):
-            agent_config_list = [agent_config]
-        else:
-            agent_config_list = agent_config
-        assert agent_config_list is not None, "agent_config_list failed to be set"
+    if not isinstance(agent_config, list):
+        agent_config_list = [agent_config]
+    else:
+        agent_config_list = agent_config
+    assert agent_config_list is not None, "agent_config_list failed to be set"
     if account_key_config is None:
         account_key_config = globals().get("account_key_config")
         assert account_key_config is not None, "account_key_config must be set"
     if eth_config is None:
         eth_config = globals().get("eth_config")
         assert eth_config is not None, "eth_config must be set"
-    agent_config_list[0].policy_config.trade_list = trade_list
+    if hasattr(agent_config_list[0].policy_config, 'trade_list'):
+        agent_config_list[0].policy_config.trade_list = trade_list
     assert isinstance(agent_config_list, list)
     run_agents(environment_config=env_config, agent_config=agent_config_list, account_key_config=account_key_config, eth_config=eth_config)

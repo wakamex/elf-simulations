@@ -7,6 +7,7 @@ import time
 import json
 import warnings
 from decimal import Decimal
+from dataclasses import fields
 
 from cycler import Cycler
 import numpy as np

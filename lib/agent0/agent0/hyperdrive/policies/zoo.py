@@ -5,6 +5,7 @@ from typing import NamedTuple
 
 from agent0.hyperdrive.policies.arbitrage import Arbitrage
 from agent0.hyperdrive.policies.lpandarb import LPandArb
+from agent0.hyperdrive.policies.opener import Opener
 from agent0.hyperdrive.policies.random import Random
 from agent0.hyperdrive.policies.smart_long import SmartLong
 from agent0.hyperdrive.policies.deterministic import DBot
@@ -23,6 +24,7 @@ class Zoo(NamedTuple):
     deterministic = DBot
     minimal = MBot
     oneline = OneLineBot
+    opener = Opener
 
     def describe(self, policies: list | str | None = None) -> str:
         """Describe policies, either specific ones provided, or all of them."""
