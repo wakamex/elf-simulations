@@ -2,6 +2,7 @@
 # pylint: disable=invalid-name, unused-import
 import logging
 import os
+import asyncio
 from pathlib import Path
 import time
 import json
@@ -19,8 +20,8 @@ from numpy import size
 from agent0 import initialize_accounts
 from agent0.accounts_config import AccountKeyConfig
 from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import create_and_fund_user_account, setup_experiment, fund_agents, run_agents
-from agent0.hyperdrive.policies.zoo import Policies
+from agent0.hyperdrive.exec import create_and_fund_user_account, setup_experiment, async_fund_agents, run_agents
+from agent0.hyperdrive.policies.zoo import Zoo
 from ethpy import EthConfig
 from ethpy.hyperdrive import AssetIdPrefix
 

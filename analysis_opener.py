@@ -5,7 +5,7 @@
 # bot script setup
 from script_functions import check_docker
 
-check_docker(restart=True)
+# check_docker(restart=True)
 from script_setup import *
 
 print("\n ==== Pool Config ===")
@@ -15,11 +15,11 @@ for k, v in config_data.items():
 # %%
 # set up opener
 agent_config = AgentConfig(
-    policy=Policies.opener,
+    policy=Zoo.opener,
     number_of_agents=1,
     base_budget_wei=FixedPoint(1e9).scaled_value,  # 1 billion base
     eth_budget_wei=FixedPoint(1).scaled_value,  # 1 Eth
-    policy_config=Policies.opener.Config(trade_amount=FixedPoint(1_000_000)),
+    policy_config=Zoo.opener.Config(trade_amount=FixedPoint(1_000_000)),
 )
 env_config.halt_on_errors = False
 

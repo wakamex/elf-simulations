@@ -33,11 +33,11 @@ env_config = EnvironmentConfig(
 )
 agent_config: list[AgentConfig] = [
     AgentConfig(
-        policy=Policies.deterministic,
+        policy=Zoo.deterministic,
         number_of_agents=1,
         base_budget_wei=FixedPoint(1e9).scaled_value,  # 1 billion base
         eth_budget_wei=FixedPoint(1).scaled_value,  # 1 Eth
-        policy_config=Policies.deterministic.Config(trade_list=[("open_long", 100)] * 1)
+        policy_config=Zoo.deterministic.Config(trade_list=[("open_long", 100)] * 1)
     ),
 ]
 session = initialize_session()  # initialize the postgres session
@@ -47,7 +47,7 @@ eth_config = build_eth_config()
 eth_config.rpc_uri = URI("http://localhost:8546")
 contract_addresses = fetch_hyperdrive_address_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
 user_account = create_and_fund_user_account(eth_config, account_key_config, contract_addresses)
-fund_agents(user_account, eth_config, account_key_config, contract_addresses)
+asyncio.run(async_fund_agents(user_account, eth_config, account_key_config, contract_addresses))
 hyperdrive, agent_accounts = setup_experiment(eth_config, env_config, agent_config, account_key_config, contract_addresses)
 config_data = get_pool_config(session, coerce_float=False)
 while config_data.empty:
