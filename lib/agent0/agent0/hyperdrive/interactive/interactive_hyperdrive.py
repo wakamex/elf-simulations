@@ -130,6 +130,8 @@ class InteractiveHyperdrive:
             The upper bound on the flat fee that governance can set.
         max_governance_fee: FixedPoint
             The upper bound on the governance fee that governance can set.
+        calc_pnl: bool
+            Whether to calculate pnl. Defaults to True.
         """
 
         # Environment variables
@@ -156,6 +158,7 @@ class InteractiveHyperdrive:
         max_curve_fee: FixedPoint = FixedPoint("0.3")  # 30%
         max_flat_fee: FixedPoint = FixedPoint("0.0015")  # 0.15%
         max_governance_fee: FixedPoint = FixedPoint("0.30")  # 30%
+        calc_pnl: bool = True
 
         def __post_init__(self):
             # Random generator
@@ -192,6 +195,7 @@ class InteractiveHyperdrive:
         full_path = os.path.realpath(__file__)
         current_file_dir, _ = os.path.split(full_path)
         abi_dir = os.path.join(current_file_dir, "..", "..", "..", "..", "..", "packages", "hyperdrive", "src", "abis")
+        self.calc_pnl = config.calc_pnl
 
         self.eth_config = EthConfig(
             artifacts_uri="not_used",
@@ -378,6 +382,7 @@ class InteractiveHyperdrive:
             db_session=self.db_session,
             exit_on_catch_up=True,
             suppress_logs=True,
+            calc_pnl=self.calc_pnl,
         )
 
     def _cleanup(self):
