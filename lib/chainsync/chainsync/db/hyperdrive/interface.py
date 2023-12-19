@@ -97,9 +97,10 @@ def add_pool_config(pool_config: PoolConfig, session: Session) -> None:
             new_value = getattr(pool_config, key)
             old_value = existing_pool_config.loc[0, key]
             if new_value != old_value:
-                raise ValueError(
-                    f"Adding pool configuration field: key {key} doesn't match (new: {new_value}, old:{old_value})"
-                )
+                if abs(new_value - old_value) > 1e-14:
+                    raise ValueError(
+                        f"Adding pool configuration field: key {key} doesn't match (new: {new_value}, old:{old_value})"
+                    )
     else:
         # Should never get here, contract_address is primary_key, which is unique
         raise ValueError

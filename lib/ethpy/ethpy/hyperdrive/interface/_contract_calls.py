@@ -301,7 +301,7 @@ async def _async_open_short(
 ) -> ReceiptBreakdown:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
-    max_deposit = int(MAX_WEI)
+    max_deposit = int(1e38)
     # min_share_price: int
     #   Minium share price at which to open the short.
     #   This allows traders to protect themselves from opening a long in

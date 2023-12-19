@@ -9,11 +9,12 @@ from typing import Type, cast
 import pandas as pd
 import sqlalchemy
 from chainsync import PostgresConfig, build_postgres_config
-from sqlalchemy import URL, Column, Engine, MetaData, String, Table, create_engine, exc, func, inspect
+from sqlalchemy import URL, Column, Engine, Integer, MetaData, String, Table, create_engine, exc, func, inspect
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.sql import text
+from sqlalchemy.schema import Sequence, CreateSequence
 from sqlalchemy_utils import create_database, database_exists
 
 from .schema import AddrToUsername, Base, UsernameToUser
@@ -127,8 +128,6 @@ def initialize_session(
     Arguments
     ---------
     postgres_config: PostgresConfig | None, optional
-        The postgres config. If none, will set from `postgres.env` file or set to defaults.
-    drop: bool, optional
         If true, will drop all tables in the database before doing anything for debugging.
         Defaults to false.
     ensure_database_created: bool, optional
@@ -160,6 +159,8 @@ def initialize_session(
     exception = None
     for _ in range(10):
         try:
+            for table in Base.metadata.tables.values():
+                _create_sequences_for_table(table, session)
             # create tables
             Base.metadata.create_all(engine)
             # commit the transaction
@@ -178,6 +179,59 @@ def initialize_session(
 
     return session
 
+def _create_sequences_for_table(table, connection):
+    """Create sequemces for auto-incrementing columns in a table."""
+    for column in table.columns:
+        # Check if the column is an Integer and autoincrement is True
+        if isinstance(column.type, Integer) and column.autoincrement:
+            sequence_name = f"{table.name}_{column.name}_seq"
+            connection.execute(CreateSequence(Sequence(sequence_name)))
+            connection.commit()
+
+def initialize_duck() -> Session:
+    """Initialize the duckdb session.
+
+    Returns
+    -------
+    Session
+        The initialized session object
+    """
+    # Create an in-memory DuckDB engine
+    engine = create_engine('duckdb:///:memory:')
+
+    # create a configured "Session" class
+    session_class = sessionmaker(bind=engine)
+    # create a session
+    session = session_class()
+
+    # There sometimes is a race condition here between data and analysis, keep trying until successful
+    exception = None
+    for _ in range(1):
+        try:
+            # sequence = Sequence('checkpoint_info_block_number_seq')
+            # session.execute(CreateSequence(sequence))
+            # Create the sequence using direct execution
+            # session.execute(CreateSequence(Sequence('checkpoint_info_block_number_seq')))
+            # session.commit()
+            for table in Base.metadata.tables.values():
+                _create_sequences_for_table(table, session)
+            # Create tables in the in-memory DuckDB database
+            Base.metadata.create_all(engine)
+            # commit the transaction
+            session.commit()
+            exception = None
+            break
+        # Catching general exception for retry, will throw if it keeps happening
+        # pylint: disable=broad-except
+        except Exception as ex:
+            logging.warning("Error creating tables, retrying")
+            exception = ex
+            time.sleep(1)
+
+    if exception is not None:
+        raise exception
+
+    return session
 
 def close_session(session: Session) -> None:
     """Close the session.

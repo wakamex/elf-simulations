@@ -49,6 +49,7 @@ class Chain:
         snapshot_dir: str = ".interactive_state/snapshot/"
         saved_state_dir: str = ".interactive_state/"
         experimental_data_threading: bool = False
+        use_duck_db: bool = False
 
     def __init__(self, rpc_uri: str, config: Config | None = None):
         """Initialize the Chain class that connects to an existing chain.
@@ -71,11 +72,13 @@ class Chain:
         formatted_rpc_url = (
             self.rpc_uri.replace("http://", "").replace("https://", "").replace(".", "-").replace(":", "-")
         )
-        db_container_name = f"postgres-interactive-hyperdrive-{formatted_rpc_url}"
-        self.postgres_config, self.postgres_container = self._initialize_postgres_container(
-            db_container_name, config.db_port, config.remove_existing_db_container
-        )
-        assert isinstance(self.postgres_container, Container)
+        self.use_duck_db = config.use_duck_db
+        if self.use_duck_db is False:
+            db_container_name = f"postgres-interactive-hyperdrive-{formatted_rpc_url}"
+            self.postgres_config, self.postgres_container = self._initialize_postgres_container(
+                db_container_name, config.db_port, config.remove_existing_db_container
+            )
+            assert isinstance(self.postgres_container, Container)
 
         # Snapshot bookkeeping
         self._snapshot_dir = config.snapshot_dir
@@ -89,7 +92,8 @@ class Chain:
         # Runs cleanup on all deployed pools
         for pool in self._deployed_hyperdrive_pools:
             pool._cleanup()  # pylint: disable=protected-access
-        self.postgres_container.kill()
+        if self.use_duck_db is False:
+            self.postgres_container.kill()
 
     def __del__(self):
         """Kill postgres container in this class' destructor."""
@@ -436,7 +440,7 @@ class LocalChain(Chain):
         block_time: int | None = None
         block_timestamp_interval: int | None = None
         chain_port: int = 10_000
-        transaction_block_keeper: int = 10_000
+        transaction_block_keeper: int = 100
 
     def __init__(self, config: Config | None = None):
         """Initialize the Chain class that connects to an existing chain.

@@ -14,9 +14,7 @@ import numpy as np
 import pandas as pd
 from chainsync import PostgresConfig
 from chainsync.dashboard.usernames import build_user_mapping
-from chainsync.db.base import add_addr_to_username, get_addr_to_username, get_username_to_user, initialize_session
-from chainsync.db.hyperdrive import get_checkpoint_info
-from chainsync.db.hyperdrive import get_current_wallet as chainsync_get_current_wallet
+from chainsync.db.base import add_addr_to_username, get_addr_to_username, get_username_to_user, initialize_session, initialize_duck
 from chainsync.db.hyperdrive import (
     get_latest_block_number_from_analysis_table,
     get_pool_analysis,
@@ -159,6 +157,7 @@ class InteractiveHyperdrive:
         max_flat_fee: FixedPoint = FixedPoint("0.0015")  # 0.15%
         max_governance_fee: FixedPoint = FixedPoint("0.30")  # 30%
         calc_pnl: bool = True
+        use_duck_db: bool = False
 
         def __post_init__(self):
             # Random generator
@@ -216,17 +215,20 @@ class InteractiveHyperdrive:
             self.hyperdrive_interface.get_current_block()
         )
 
-        # Make a copy of the dataclass to avoid changing the base class
-        self.postgres_config = PostgresConfig(**asdict(chain.postgres_config))
-        # Update the database field to use a unique name for this pool using the hyperdrive contract address
-        self.postgres_config.POSTGRES_DB = "interactive-hyperdrive-" + str(
-            self.hyperdrive_interface.hyperdrive_contract.address
-        )
+        if config.use_duck_db is False:
+            # Make a copy of the dataclass to avoid changing the base class
+            self.postgres_config = PostgresConfig(**asdict(chain.postgres_config))
+            # Update the database field to use a unique name for this pool using the hyperdrive contract address
+            self.postgres_config.POSTGRES_DB = "interactive-hyperdrive-" + str(
+                self.hyperdrive_interface.hyperdrive_contract.address
+            )
 
-        # Store the db_id here for later reference
-        self._db_name = self.postgres_config.POSTGRES_DB
+            # Store the db_id here for later reference
+            self._db_name = self.postgres_config.POSTGRES_DB
 
-        self.db_session = initialize_session(self.postgres_config, ensure_database_created=True)
+            self.db_session = initialize_session(self.postgres_config, ensure_database_created=True)
+        else:
+            self.db_session = initialize_duck()
 
         # Keep track of how much base have been minted per agent
         self._initial_funds: dict[ChecksumAddress, FixedPoint] = {}

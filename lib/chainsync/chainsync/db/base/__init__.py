@@ -11,6 +11,7 @@ from .interface import (
     get_username_to_user,
     initialize_engine,
     initialize_session,
+    initialize_duck,
     query_tables,
 )
 from .schema import AddrToUsername, Base, UsernameToUser
