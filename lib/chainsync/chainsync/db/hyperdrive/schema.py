@@ -17,8 +17,8 @@ from chainsync.db.base import Base
 # The high precision doesn't actually allocate memory in postgres, as numeric is variable size
 # https://stackoverflow.com/questions/40686571/performance-of-numeric-type-with-high-precisions-and-scales-in-postgresql
 # the maximum allowed precision for duckdb is 38
-FIXED_NUMERIC = Numeric(precision=100, scale=20)
-FIXED_INT = Numeric(precision=100, scale=20)
+FIXED_NUMERIC = Numeric(precision=38, scale=24)
+FIXED_INT = Numeric(precision=38, scale=0)
 
 ## Base schemas for raw data
 

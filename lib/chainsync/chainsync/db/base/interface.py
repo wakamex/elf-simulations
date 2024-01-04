@@ -14,7 +14,6 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.sql import text
-from sqlalchemy.schema import Sequence, CreateSequence
 from sqlalchemy_utils import create_database, database_exists
 
 from .schema import AddrToUsername, Base, UsernameToUser
@@ -189,13 +188,9 @@ def _create_sequences_for_table(table, connection):
     for column in table.columns:
         if isinstance(column.type, Integer) and column.autoincrement:
             sequence_name = f"{table.name}_{column.name}_seq"
-
-            # Check if the sequence already exists using text()
-            result = connection.execute(text(f"SELECT to_regclass('public.{sequence_name}')"))
-            if result.fetchone()[0] is None:
-                # Create the sequence if it doesn't exist
-                connection.execute(CreateSequence(Sequence(sequence_name)))
-                connection.commit()
+            # Use CREATE SEQUENCE IF NOT EXISTS
+            connection.execute(text(f"CREATE SEQUENCE IF NOT EXISTS {sequence_name} START WITH 1;"))
+            connection.commit()
 
 
 def initialize_duck() -> Session:

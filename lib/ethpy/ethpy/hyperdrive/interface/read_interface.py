@@ -519,7 +519,7 @@ class HyperdriveReadInterface:
     def add_liquidity_trade(
         trade_amount: FixedPoint,
         min_apr: FixedPoint = FixedPoint(scaled_value=1),
-        max_apr: FixedPoint = FixedPoint(scaled_value=2**256 - 1),
+        max_apr: FixedPoint = FixedPoint(scaled_value=int(1e37 - 1)),
     ) -> Trade[HyperdriveMarketAction]:
         """Return a trade object for adding liquidity.
 

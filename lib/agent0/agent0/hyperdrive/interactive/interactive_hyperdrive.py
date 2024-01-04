@@ -138,6 +138,8 @@ class InteractiveHyperdrive:
             The upper bound on the governance fee that governance can set.
         calc_pnl: bool
             Whether to calculate pnl. Defaults to True.
+        use_duck_db: bool
+            Whether to use in-demmory DuckDB database isntead of Postgres. Defaults to false.
         """
 
         # Environment variables
@@ -233,9 +235,12 @@ class InteractiveHyperdrive:
 
             # Store the db_id here for later reference
             self._db_name = self.postgres_config.POSTGRES_DB
+            self.use_duck_db = False
 
             self.db_session = initialize_session(self.postgres_config, ensure_database_created=True)
         else:
+            self._db_name = "DuckDB"
+            self.use_duck_db = True
             self.db_session = initialize_duck()
 
         # Keep track of how much base have been minted per agent

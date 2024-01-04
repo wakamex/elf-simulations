@@ -18,7 +18,22 @@ from .interactive_hyperdrive import InteractiveHyperdrive
 # ruff: noqa: PLR2004 (comparison against magic values (literals like numbers))
 
 
-@pytest.mark.anvil
+@pytest.fixture(params=[True, False], ids=["DuckDB", "PostgresDB"])
+def use_duck_db(request):
+    """Fixture which toggle the use of DuckDB on and off.
+
+    Arguments
+    ---------
+    request: pytest.FixtureRequest
+        Pytest fixture request object
+
+    Returns
+    -------
+    bool
+        Whether or not to use DuckDB"""
+    return request.param
+
+
 def _ensure_db_wallet_matches_agent_wallet(
     interactive_hyperdrive: InteractiveHyperdrive, agent_wallet: HyperdriveWallet
 ):
@@ -29,7 +44,9 @@ def _ensure_db_wallet_matches_agent_wallet(
 
     base_wallet_df = current_wallet_df[current_wallet_df["base_token_type"] == BASE_TOKEN_SYMBOL]
     assert len(base_wallet_df) == 1
-    assert agent_wallet.balance.amount == FixedPoint(base_wallet_df.iloc[0]["position"])
+    assert abs(agent_wallet.balance.amount - FixedPoint(base_wallet_df.iloc[0]["position"])) <= (
+        FixedPoint(1e-12) if interactive_hyperdrive.use_duck_db else FixedPoint(0)
+    )
 
     # Check lp
     lp_wallet_df = current_wallet_df[current_wallet_df["base_token_type"] == "LP"]
@@ -39,14 +56,18 @@ def _ensure_db_wallet_matches_agent_wallet(
         check_value = FixedPoint(lp_wallet_df.iloc[0]["position"])
     else:
         assert False
-    assert check_value == agent_wallet.lp_tokens
+    assert abs(check_value - agent_wallet.lp_tokens) <= (
+        FixedPoint(1e-14) if interactive_hyperdrive.use_duck_db else FixedPoint(0)
+    )
 
     # Check longs
     long_wallet_df = current_wallet_df[current_wallet_df["base_token_type"] == "LONG"]
     assert len(long_wallet_df) == len(agent_wallet.longs)
     for _, long_df in long_wallet_df.iterrows():
         assert long_df["maturity_time"] in agent_wallet.longs
-        assert agent_wallet.longs[long_df["maturity_time"]].balance == long_df["position"]
+        assert abs(agent_wallet.longs[long_df["maturity_time"]].balance - long_df["position"]) <= (
+            FixedPoint(1e-12) if interactive_hyperdrive.use_duck_db else FixedPoint(0)
+        )
 
     # Check shorts
     short_wallet_df = current_wallet_df[current_wallet_df["base_token_type"] == "SHORT"]
@@ -71,10 +92,10 @@ def _ensure_db_wallet_matches_agent_wallet(
 # pylint: disable=too-many-statements
 # ruff: noqa: PLR0915 (too many statements)
 @pytest.mark.anvil
-def test_funding_and_trades(chain: LocalChain):
+def test_funding_and_trades(chain: LocalChain, use_duck_db: bool):
     """Deploy 2 pools, 3 agents, and test funding and each trade type."""
     # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
-    initial_pool_config = InteractiveHyperdrive.Config()
+    initial_pool_config = InteractiveHyperdrive.Config(use_duck_db=use_duck_db)
     # Launches 2 pools on the same local chain
     interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
     interactive_hyperdrive_2 = InteractiveHyperdrive(chain, initial_pool_config)
@@ -194,10 +215,10 @@ def test_advance_time(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_advance_time_with_checkpoints(chain: LocalChain):
+def test_advance_time_with_checkpoints(chain: LocalChain, use_duck_db: bool):
     """Checkpoint creation with advance time."""
     # We need the underlying hyperdrive interface here to test time
-    config = InteractiveHyperdrive.Config(checkpoint_duration=3600)
+    config = InteractiveHyperdrive.Config(checkpoint_duration=3600, use_duck_db=use_duck_db)
     interactive_hyperdrive = InteractiveHyperdrive(chain, config)
     hyperdrive_interface = interactive_hyperdrive.hyperdrive_interface
 
@@ -249,10 +270,10 @@ def test_advance_time_with_checkpoints(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_save_load_snapshot(chain: LocalChain):
+def test_save_load_snapshot(chain: LocalChain, use_duck_db: bool):
     """Save and load snapshot."""
     # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
-    initial_pool_config = InteractiveHyperdrive.Config()
+    initial_pool_config = InteractiveHyperdrive.Config(use_duck_db=use_duck_db)
     interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
     hyperdrive_interface = interactive_hyperdrive.hyperdrive_interface
 
@@ -281,10 +302,7 @@ def test_save_load_snapshot(chain: LocalChain):
     hyperdrive_agent.remove_liquidity(shares=FixedPoint(444))
 
     # Ensure state has changed
-    (
-        check_eth_on_chain,
-        check_base_on_chain,
-    ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
+    check_eth_on_chain, check_base_on_chain = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
     check_agent_wallet = hyperdrive_agent.wallet
     check_db_wallet = interactive_hyperdrive.get_current_wallet(coerce_float=False)
     check_pool_info_on_chain = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state().pool_info
@@ -300,10 +318,7 @@ def test_save_load_snapshot(chain: LocalChain):
     # Save snapshot and check for equality
     chain.load_snapshot()
 
-    (
-        check_eth_on_chain,
-        check_base_on_chain,
-    ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
+    check_eth_on_chain, check_base_on_chain = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
     check_agent_wallet = hyperdrive_agent.wallet
     check_db_wallet = interactive_hyperdrive.get_current_wallet(coerce_float=False)
     check_pool_info_on_chain = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state().pool_info
@@ -324,10 +339,7 @@ def test_save_load_snapshot(chain: LocalChain):
     hyperdrive_agent.remove_liquidity(shares=FixedPoint(555))
 
     # Ensure state has changed
-    (
-        check_eth_on_chain,
-        check_base_on_chain,
-    ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
+    check_eth_on_chain, check_base_on_chain = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
     check_agent_wallet = hyperdrive_agent.wallet
     check_db_wallet = interactive_hyperdrive.get_current_wallet(coerce_float=False)
     check_pool_info_on_chain = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state().pool_info
@@ -343,10 +355,7 @@ def test_save_load_snapshot(chain: LocalChain):
     # Save snapshot and check for equality
     chain.load_snapshot()
 
-    (
-        check_eth_on_chain,
-        check_base_on_chain,
-    ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
+    check_eth_on_chain, check_base_on_chain = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
     check_agent_wallet = hyperdrive_agent.wallet
     check_db_wallet = interactive_hyperdrive.get_current_wallet(coerce_float=False)
     check_pool_info_on_chain = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state().pool_info
@@ -367,10 +376,7 @@ def test_save_load_snapshot(chain: LocalChain):
     hyperdrive_agent.remove_liquidity(shares=FixedPoint(555))
 
     # Ensure state has changed
-    (
-        check_eth_on_chain,
-        check_base_on_chain,
-    ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
+    check_eth_on_chain, check_base_on_chain = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
     check_agent_wallet = hyperdrive_agent.wallet
     check_db_wallet = interactive_hyperdrive.get_current_wallet(coerce_float=False)
     check_pool_info_on_chain = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state().pool_info
@@ -386,10 +392,7 @@ def test_save_load_snapshot(chain: LocalChain):
     # Save snapshot and check for equality
     chain.load_snapshot()
 
-    (
-        check_eth_on_chain,
-        check_base_on_chain,
-    ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
+    check_eth_on_chain, check_base_on_chain = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
     check_agent_wallet = hyperdrive_agent.wallet
     check_db_wallet = interactive_hyperdrive.get_current_wallet(coerce_float=False)
     check_pool_info_on_chain = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state().pool_info
@@ -404,10 +407,10 @@ def test_save_load_snapshot(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_set_variable_rate(chain: LocalChain):
+def test_set_variable_rate(chain: LocalChain, use_duck_db: bool):
     """Set the variable rate."""
     # We need the underlying hyperdrive interface here to test time
-    config = InteractiveHyperdrive.Config(initial_variable_rate=FixedPoint("0.05"))
+    config = InteractiveHyperdrive.Config(initial_variable_rate=FixedPoint("0.05"), use_duck_db=use_duck_db)
     interactive_hyperdrive = InteractiveHyperdrive(chain, config)
 
     # Make a trade to mine the block on this variable rate so it shows up in the data pipeline
@@ -420,16 +423,14 @@ def test_set_variable_rate(chain: LocalChain):
     # Ensure variable rate has changed
     pool_state_df = interactive_hyperdrive.get_pool_state(coerce_float=False)
 
-    assert pool_state_df["variable_rate"].iloc[0] == Decimal("0.05")
-    assert pool_state_df["variable_rate"].iloc[-1] == Decimal("0.10")
+    assert abs(pool_state_df["variable_rate"].iloc[0] - Decimal("0.05")) < FixedPoint(1e-17)
+    assert abs(pool_state_df["variable_rate"].iloc[-1] - Decimal("0.10")) < FixedPoint(1e-17)
 
 
 @pytest.mark.anvil
-def test_access_deployer_account(chain: LocalChain):
+def test_access_deployer_account(chain: LocalChain, use_duck_db: bool):
     """Access the deployer account."""
-    config = InteractiveHyperdrive.Config(
-        initial_liquidity=FixedPoint("100"),
-    )
+    config = InteractiveHyperdrive.Config(initial_liquidity=FixedPoint("100"), use_duck_db=use_duck_db)
     interactive_hyperdrive = InteractiveHyperdrive(chain, config)
     privkey = chain.get_deployer_account_private_key()  # anvil account 0
     pubkey = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
@@ -438,11 +439,9 @@ def test_access_deployer_account(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_remove_deployer_liquidity(chain: LocalChain):
+def test_remove_deployer_liquidity(chain: LocalChain, use_duck_db: bool):
     """Remove liquidity from the deployer account."""
-    config = InteractiveHyperdrive.Config(
-        initial_liquidity=FixedPoint(100),
-    )
+    config = InteractiveHyperdrive.Config(initial_liquidity=FixedPoint(100), use_duck_db=use_duck_db)
     interactive_hyperdrive = InteractiveHyperdrive(chain, config)
     privkey = chain.get_deployer_account_private_key()  # anvil account 0
     larry = interactive_hyperdrive.init_agent(base=FixedPoint(100_000), name="larry", private_key=privkey)
@@ -454,17 +453,19 @@ def test_remove_deployer_liquidity(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_get_config_no_transactions(chain: LocalChain):
+def test_get_config_no_transactions(chain: LocalChain, use_duck_db: bool):
     """Get pool config before executing any transactions."""
-    interactive_hyperdrive = InteractiveHyperdrive(chain)
+    config = InteractiveHyperdrive.Config(use_duck_db=use_duck_db)
+    interactive_hyperdrive = InteractiveHyperdrive(chain, config)
     pool_config = interactive_hyperdrive.get_pool_config()
     assert isinstance(pool_config, Series)
 
 
 @pytest.mark.anvil
-def test_get_config_with_transactions(chain: LocalChain):
+def test_get_config_with_transactions(chain: LocalChain, use_duck_db: bool):
     """Get pool config after executing one transaction."""
-    interactive_hyperdrive = InteractiveHyperdrive(chain)
+    config = InteractiveHyperdrive.Config(use_duck_db=use_duck_db)
+    interactive_hyperdrive = InteractiveHyperdrive(chain, config)
     agent0 = interactive_hyperdrive.init_agent(base=FixedPoint(100000), eth=FixedPoint(100), name="alice")
     agent0.open_long(base=FixedPoint(11111))
     pool_config = interactive_hyperdrive.get_pool_config()
@@ -472,9 +473,10 @@ def test_get_config_with_transactions(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_liquidate(chain: LocalChain):
+def test_liquidate(chain: LocalChain, use_duck_db: bool):
     """Test liquidation."""
-    interactive_hyperdrive = InteractiveHyperdrive(chain)
+    config = InteractiveHyperdrive.Config(use_duck_db=use_duck_db)
+    interactive_hyperdrive = InteractiveHyperdrive(chain, config)
     alice = interactive_hyperdrive.init_agent(base=FixedPoint(10_000), name="alice")
     alice.open_long(base=FixedPoint(100))
     alice.open_short(bonds=FixedPoint(100))
@@ -487,10 +489,10 @@ def test_liquidate(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_random_liquidate(chain: LocalChain):
+def test_random_liquidate(chain: LocalChain, use_duck_db: bool):
     """Test random liquidation."""
     # Explicitly setting a random seed to remove randomness in the test
-    interactive_config = InteractiveHyperdrive.Config(rng_seed=1234)
+    interactive_config = InteractiveHyperdrive.Config(rng_seed=1234, use_duck_db=use_duck_db)
     interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
     alice = interactive_hyperdrive.init_agent(base=FixedPoint(10_000), name="alice")
 
@@ -531,9 +533,9 @@ def test_random_liquidate(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_policy_config_none_rng(chain: LocalChain):
+def test_policy_config_none_rng(chain: LocalChain, use_duck_db: bool):
     """The policy config has rng set to None."""
-    interactive_config = InteractiveHyperdrive.Config()
+    interactive_config = InteractiveHyperdrive.Config(use_duck_db=use_duck_db)
     interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
     agent_policy = Zoo.random.Config()
     agent_policy.rng = None
@@ -547,9 +549,9 @@ def test_policy_config_none_rng(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_policy_config_forgotten(chain: LocalChain):
+def test_policy_config_forgotten(chain: LocalChain, use_duck_db: bool):
     """The policy config is not passed in."""
-    interactive_config = InteractiveHyperdrive.Config()
+    interactive_config = InteractiveHyperdrive.Config(use_duck_db=use_duck_db)
     interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
     alice = interactive_hyperdrive.init_agent(
         base=FixedPoint(10_000),
