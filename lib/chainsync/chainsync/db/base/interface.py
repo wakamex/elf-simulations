@@ -128,8 +128,9 @@ def initialize_session(
     Arguments
     ---------
     postgres_config: PostgresConfig | None, optional
-        If true, will drop all tables in the database before doing anything for debugging.
-        Defaults to false.
+        The postgres config. If none, will load from `postgres.env` or set to defaults.
+    drop: bool, optional
+        If true, will drop all tables in the database before doing anything for debugging. Defaults to false.
     ensure_database_created: bool, optional
         If true, will create the database within postgres if it doesn't exist. Defaults to false.
 

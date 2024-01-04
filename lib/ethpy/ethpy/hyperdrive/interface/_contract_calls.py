@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from eth_utils.currency import MAX_WEI
 from ethpy.base import (
     async_smart_contract_transact,
     get_account_balance,

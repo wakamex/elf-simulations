@@ -14,9 +14,8 @@ from chainsync.db.base import Base, initialize_engine, _create_sequences_for_tab
 from docker.errors import APIError, DockerException, NotFound
 from docker.models.containers import Container
 from pytest_postgresql.janitor import DatabaseJanitor
-from sqlalchemy import Engine, Integer
+from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.schema import Sequence, CreateSequence
 
 TEST_POSTGRES_NAME = "postgres_test"
 

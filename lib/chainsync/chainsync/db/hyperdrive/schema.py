@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Union
 
-from sqlalchemy import ARRAY, DECIMAL, VARCHAR, BigInteger, Boolean, DateTime, Float, Integer, Numeric, String, text
+from sqlalchemy import ARRAY, VARCHAR, BigInteger, Boolean, DateTime, Integer, Numeric, String, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from chainsync.db.base import Base

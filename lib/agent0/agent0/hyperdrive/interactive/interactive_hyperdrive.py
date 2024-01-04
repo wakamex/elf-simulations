@@ -642,7 +642,8 @@ class InteractiveHyperdrive:
             if coerce_float:
                 out_df.loc[row_idxs, value_column] += float(initial_balance)
             else:
-                out_df.loc[row_idxs, value_column] += Decimal(str(initial_balance))
+                # Pandas is smart enough to handle "+=" for "Series[Unknown]" and "Decimal"
+                out_df.loc[row_idxs, value_column] += Decimal(str(initial_balance))  # type: ignore
         return out_df
 
     def get_current_wallet(self, coerce_float: bool = True) -> pd.DataFrame:
