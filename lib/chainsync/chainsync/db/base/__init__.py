@@ -13,5 +13,6 @@ from .interface import (
     initialize_session,
     initialize_duck,
     query_tables,
+    _create_sequences_for_table,
 )
 from .schema import AddrToUsername, Base, UsernameToUser

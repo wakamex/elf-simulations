@@ -39,4 +39,4 @@ class HyperdriveMarketAction(BaseMarketAction[HyperdriveActionType]):
     slippage_tolerance: FixedPoint | None = None
     # min_apr and max_apr used only for add_liquidity trades to control slippage
     min_apr: FixedPoint = FixedPoint(scaled_value=1)
-    max_apr: FixedPoint = FixedPoint(scaled_value=int(1e37-1))  # 38 decimals of precision in duckdb
+    max_apr: FixedPoint = FixedPoint(scaled_value=int(1e37 - 1))  # 38 decimals of precision in duckdb

@@ -17,8 +17,8 @@ from chainsync.db.base import Base
 # The high precision doesn't actually allocate memory in postgres, as numeric is variable size
 # https://stackoverflow.com/questions/40686571/performance-of-numeric-type-with-high-precisions-and-scales-in-postgresql
 # the maximum allowed precision for duckdb is 38
-FIXED_NUMERIC = Numeric(precision=38, scale=20)
-FIXED_INT = Numeric(precision=38, scale=0)
+FIXED_NUMERIC = Numeric(precision=100, scale=20)
+FIXED_INT = Numeric(precision=100, scale=20)
 
 ## Base schemas for raw data
 
@@ -52,7 +52,9 @@ class CheckpointInfo(Base):
 
     __tablename__ = "checkpoint_info"
 
-    block_number: Mapped[int] = mapped_column(BigInteger, primary_key=True, server_default=text("nextval('checkpoint_info_block_number_seq')"))
+    block_number: Mapped[int] = mapped_column(
+        BigInteger, primary_key=True, server_default=text("nextval('checkpoint_info_block_number_seq')")
+    )
     timestamp: Mapped[datetime] = mapped_column(DateTime)
     share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     exposure: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
@@ -66,7 +68,9 @@ class PoolInfo(Base):
 
     __tablename__ = "pool_info"
 
-    block_number: Mapped[int] = mapped_column(BigInteger, primary_key=True, server_default=text("nextval('pool_info_block_number_seq')"))
+    block_number: Mapped[int] = mapped_column(
+        BigInteger, primary_key=True, server_default=text("nextval('pool_info_block_number_seq')")
+    )
     timestamp: Mapped[datetime] = mapped_column(DateTime)
     share_reserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     bond_reserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
@@ -92,7 +96,9 @@ class WalletDelta(Base):
     __tablename__ = "wallet_delta"
 
     # Default table primary key
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, init=False, server_default=text("nextval('wallet_delta_id_seq')"))
+    id: Mapped[int] = mapped_column(
+        BigInteger, primary_key=True, init=False, server_default=text("nextval('wallet_delta_id_seq')")
+    )
     transaction_hash: Mapped[str] = mapped_column(String, index=True)
     block_number: Mapped[int] = mapped_column(BigInteger, index=True)
     wallet_address: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
@@ -114,7 +120,9 @@ class HyperdriveTransaction(Base):
     __tablename__ = "transactions"
 
     # Default table primary key
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, init=False, server_default=text("nextval('transactions_id_seq')"))
+    id: Mapped[int] = mapped_column(
+        BigInteger, primary_key=True, init=False, server_default=text("nextval('transactions_id_seq')")
+    )
     transaction_hash: Mapped[str] = mapped_column(String, index=True, unique=True)
 
     #### Fields from base transactions ####
@@ -228,7 +236,9 @@ class PoolAnalysis(Base):
 
     __tablename__ = "pool_analysis"
 
-    block_number: Mapped[int] = mapped_column(BigInteger, primary_key=True, server_default=text("nextval('pool_analysis_block_number_seq')"))
+    block_number: Mapped[int] = mapped_column(
+        BigInteger, primary_key=True, server_default=text("nextval('pool_analysis_block_number_seq')")
+    )
 
     spot_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     fixed_rate: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
@@ -241,7 +251,9 @@ class CurrentWallet(Base):
     __tablename__ = "current_wallet"
 
     # Default table primary key
-    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, init=False, server_default=text("nextval('current_wallet_id_seq')"))
+    id: Mapped[int] = mapped_column(
+        BigInteger(), primary_key=True, init=False, server_default=text("nextval('current_wallet_id_seq')")
+    )
     block_number: Mapped[int] = mapped_column(BigInteger, index=True)
     wallet_address: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
     # base_token_type can be BASE, LONG, SHORT, LP, or WITHDRAWAL_SHARE
@@ -261,7 +273,9 @@ class Ticker(Base):
 
     __tablename__ = "ticker"
 
-    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, init=False, server_default=text("nextval('ticker_id_seq')"))
+    id: Mapped[int] = mapped_column(
+        BigInteger(), primary_key=True, init=False, server_default=text("nextval('ticker_id_seq')")
+    )
     block_number: Mapped[int] = mapped_column(BigInteger, index=True)
     timestamp: Mapped[datetime] = mapped_column(DateTime)
     wallet_address: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
@@ -280,7 +294,9 @@ class WalletPNL(Base):
     __tablename__ = "wallet_pnl"
 
     # Default table primary key
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, init=False, server_default=text("nextval('wallet_pnl_id_seq')"))
+    id: Mapped[int] = mapped_column(
+        BigInteger, primary_key=True, init=False, server_default=text("nextval('wallet_pnl_id_seq')")
+    )
     block_number: Mapped[int] = mapped_column(BigInteger, index=True)
     wallet_address: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
     # base_token_type can be BASE, LONG, SHORT, LP, or WITHDRAWAL_SHARE

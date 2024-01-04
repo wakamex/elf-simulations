@@ -159,6 +159,9 @@ def initialize_session(
     exception = None
     for _ in range(10):
         try:
+            # Create the sequence using direct execution
+            # session.execute(CreateSequence(Sequence('checkpoint_info_block_number_seq')))
+            # session.commit()
             for table in Base.metadata.tables.values():
                 _create_sequences_for_table(table, session)
             # create tables
@@ -179,14 +182,20 @@ def initialize_session(
 
     return session
 
+
 def _create_sequences_for_table(table, connection):
-    """Create sequemces for auto-incrementing columns in a table."""
+    """Create sequences for auto-incrementing columns in a table."""
     for column in table.columns:
-        # Check if the column is an Integer and autoincrement is True
         if isinstance(column.type, Integer) and column.autoincrement:
             sequence_name = f"{table.name}_{column.name}_seq"
-            connection.execute(CreateSequence(Sequence(sequence_name)))
-            connection.commit()
+
+            # Check if the sequence already exists using text()
+            result = connection.execute(text(f"SELECT to_regclass('public.{sequence_name}')"))
+            if result.fetchone()[0] is None:
+                # Create the sequence if it doesn't exist
+                connection.execute(CreateSequence(Sequence(sequence_name)))
+                connection.commit()
+
 
 def initialize_duck() -> Session:
     """Initialize the duckdb session.
@@ -197,7 +206,7 @@ def initialize_duck() -> Session:
         The initialized session object
     """
     # Create an in-memory DuckDB engine
-    engine = create_engine('duckdb:///:memory:')
+    engine = create_engine("duckdb:///:memory:")
 
     # create a configured "Session" class
     session_class = sessionmaker(bind=engine)
@@ -206,10 +215,8 @@ def initialize_duck() -> Session:
 
     # There sometimes is a race condition here between data and analysis, keep trying until successful
     exception = None
-    for _ in range(1):
+    for _ in range(10):
         try:
-            # sequence = Sequence('checkpoint_info_block_number_seq')
-            # session.execute(CreateSequence(sequence))
             # Create the sequence using direct execution
             # session.execute(CreateSequence(Sequence('checkpoint_info_block_number_seq')))
             # session.commit()
@@ -232,6 +239,7 @@ def initialize_duck() -> Session:
         raise exception
 
     return session
+
 
 def close_session(session: Session) -> None:
     """Close the session.
